@@ -24,6 +24,12 @@ interface AdminSidebarProps {
 }
 
 export default function AdminSidebar({ activeTab, setActiveTab, onClose }: AdminSidebarProps) {
+  const Shield = ({ size }: { size: number }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+  );
+
   const tabs = [
     { title: 'عام', items: [
       { id: 'overview', icon: <LayoutDashboard size={18} />, label: 'لوحة القيادة' },
@@ -54,12 +60,6 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
       { id: 'clubs', icon: <Shield size={18} />, label: 'قائمة الأندية' },
     ]}
   ];
-
-  const Shield = ({ size }: { size: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-    </svg>
-  );
 
   return (
     <div className="w-64 bg-white dark:bg-card-dark border-l border-border-light dark:border-border-dark flex flex-col h-full overflow-y-auto no-scrollbar py-6">
