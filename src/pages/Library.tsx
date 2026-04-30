@@ -25,7 +25,19 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 export default function Library() {
-  const { songs, setSongs, books, setBooks, albums, setAlbums, currentSong, setCurrentSong, setIsPlaying, isPlaying } = useAppStore();
+  const { 
+    songs, 
+    setSongs, 
+    books, 
+    setBooks, 
+    albums, 
+    setAlbums, 
+    currentSong, 
+    setCurrentSong, 
+    setIsPlaying, 
+    isPlaying,
+    setActivePlaylist 
+  } = useAppStore();
   const [activeTab, setActiveTab] = useState<'music' | 'books'>('music');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBook, setSelectedBook] = useState<any>(null);
@@ -61,6 +73,7 @@ export default function Library() {
     if (currentSong?.id === song.id) {
       setIsPlaying(!isPlaying);
     } else {
+      setActivePlaylist(filteredSongs);
       setCurrentSong(song);
       setIsPlaying(true);
     }

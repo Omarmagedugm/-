@@ -170,15 +170,15 @@ const UploadOrUrlField = ({
   formData: any
 }) => {
   const isExternalUrl = currentUrl && currentUrl.startsWith('http') && !currentUrl.includes('firebasestorage');
-  const [mode, setMode] = useState<'upload' | 'url'>(isExternalUrl ? 'url' : 'upload');
-
-  // Handle mode switching externally without resetting on every parent re-render
   const [internalMode, setInternalMode] = useState<'upload' | 'url'>(isExternalUrl ? 'url' : 'upload');
 
-  // Keep internal mode in sync when clicking toggles
-  const switchMode = (m: 'upload' | 'url') => {
-    setInternalMode(m);
-  };
+  // Keep internal mode in sync ONLY when field is initialized (e.g. opening different edit modals)
+  useEffect(() => {
+    if (currentUrl) {
+      const isExt = currentUrl.startsWith('http') && !currentUrl.includes('firebasestorage');
+      if (isExt) setInternalMode('url');
+    }
+  }, [fieldName]); // Re-evaluate only when the field being edited changes
 
   return (
     <div className="space-y-2 bg-slate-50/50 dark:bg-white/5 p-3 rounded-2xl border border-slate-100 dark:border-white/5">
@@ -187,14 +187,14 @@ const UploadOrUrlField = ({
         <div className="flex gap-1 bg-white dark:bg-surface-dark p-1 rounded-lg border border-slate-200 dark:border-border-dark">
           <button 
             type="button"
-            onClick={() => switchMode('upload')}
+            onClick={() => setInternalMode('upload')}
             className={`text-[8px] font-black px-2.5 py-1 rounded-md transition-all ${internalMode === 'upload' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
           >
             UPLD
           </button>
           <button 
             type="button"
-            onClick={() => switchMode('url')}
+            onClick={() => setInternalMode('url')}
             className={`text-[8px] font-black px-2.5 py-1 rounded-md transition-all ${internalMode === 'url' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
           >
             URL
