@@ -47,17 +47,25 @@ import {
   limit,
   onSnapshot,
   arrayUnion,
-  deleteDoc
+  deleteDoc,
+  where
 } from 'firebase/firestore';
 
 export default function FanZone() {
   const { polls, matches, clubs, profile, fanPosts, predictions, users } = useAppStore();
+  
+  // High-level admin check
+  const isOmar = auth.currentUser?.email === 'omarmagedugm@ittihad.club';
+  const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com';
+  const isAdmin = profile.role === 'admin' || isOmar || isDev;
+
   const [activeTab, setActiveTab] = useState<'all' | 'matchday' | 'polls' | 'chat' | 'predictions'>('all');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedPrediction, setSelectedPrediction] = useState<{ matchId: string; home: number; away: number } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newPost, setNewPost] = useState({ content: '', image: '', location: '', poll: null as { options: string[] } | null });
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showLocationInput, setShowLocationInput] = useState(false);
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const [postComments, setPostComments] = useState<any[]>([]);
@@ -80,10 +88,7 @@ export default function FanZone() {
   };
 
   const handleAddLocation = () => {
-    const loc = prompt('أدخل الموقع (مثال: استاد الإسكندرية)');
-    if (loc) {
-      setNewPost(prev => ({ ...prev, location: loc }));
-    }
+    setShowLocationInput(!showLocationInput);
   };
 
   useEffect(() => {
@@ -349,21 +354,46 @@ export default function FanZone() {
           text: post.content,
           url: window.location.href,
         });
-      } catch (err) {
-        console.error('Error sharing:', err);
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Error sharing:', err);
+        }
       }
     } else {
-      copyToClipboard(window.location.href);
+      handleCopyText(post.content);
     }
   };
 
-  const copyToClipboard = (text: string) => {
+  const handleCopyText = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('تم نسخ الرابط!');
+    alert('تم نسخ النص!');
   };
 
-  const handleBookmark = (postId: string) => {
-    alert('تم حفظ المنشور في المفضلة!');
+  const handleBookmark = async (post: any) => {
+    if (!auth.currentUser) {
+      alert('يجب تسجيل الدخول لحفظ المنشور');
+      return;
+    }
+    
+    try {
+      const q = query(
+        collection(db, 'bookmarks'),
+        where('userId', '==', auth.currentUser.uid),
+        where('postId', '==', post.id)
+      );
+      // For simplicity, we just add it. In a real app we'd toggle.
+      await addDoc(collection(db, 'bookmarks'), {
+        userId: auth.currentUser.uid,
+        postId: post.id,
+        postContent: post.content,
+        postAuthor: post.userName,
+        createdAt: serverTimestamp()
+      });
+      alert('تم حفظ المنشور في المفضلة!');
+    } catch (error) {
+      console.error('Error bookmarking:', error);
+      alert('حدث خطأ أثناء الحفظ');
+    }
   };
 
   const handleCreatePost = async () => {
@@ -485,37 +515,6 @@ export default function FanZone() {
 
   return (
     <div className="flex-1 pb-24 flex flex-col bg-background-light dark:bg-background-dark min-h-screen text-slate-800 dark:text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl glass-card p-0.5 overflow-hidden ring-1 ring-primary/20">
-            <img src={profile.avatar} className="w-full h-full object-cover rounded-2xl" alt="profile" />
-          </div>
-          <motion.button 
-            whileTap={{ scale: 0.9 }}
-            className="relative w-10 h-10 flex items-center justify-center glass-card rounded-2xl text-slate-500 dark:text-slate-400 hover:text-primary transition-all shadow-premium"
-          >
-            <Bell size={20} />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-background-dark shadow-glow"></span>
-          </motion.button>
-        </div>
-        
-        <div className="flex flex-col items-center">
-           <h1 className="text-xl font-black tracking-tight text-primary-dark dark:text-white uppercase leading-none">منطقة الجماهير</h1>
-           <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Fan Zone Hub</span>
-        </div>
-        
-        <motion.button 
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setIsMenuOpen(true)} 
-          className="w-10 h-10 flex items-center justify-center glass-card rounded-2xl text-slate-500 dark:text-slate-400 hover:text-primary transition-all shadow-premium"
-        >
-          <Menu size={24} />
-        </motion.button>
-      </header>
-
-      <Sidebar isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} profile={profile} />
-
       <main className="p-4 space-y-8">
         {/* Post Creation Box Upgrade */}
         {auth.currentUser && (
@@ -585,19 +584,46 @@ export default function FanZone() {
                     <button onClick={() => setNewPost(prev => ({ ...prev, location: '' }))} className="mr-2 text-primary/50 hover:text-primary"><X size={12}/></button>
                   </motion.div>
                 )}
+
+                {showLocationInput && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-4"
+                  >
+                    <div className="flex bg-slate-50/50 dark:bg-surface-dark/50 p-4 rounded-[28px] border border-border-light dark:border-border-dark flex-col gap-2">
+                      <div className="flex justify-between items-center mb-1 px-1">
+                         <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">Add Location</span>
+                         <button onClick={() => setShowLocationInput(false)} className="text-red-400 hover:text-red-500 transition-colors"><X size={14}/></button>
+                      </div>
+                      <input 
+                        type="text"
+                        placeholder="أدخل الموقع (مثال: استاد الإسكندرية)"
+                        className="w-full bg-white dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 dark:text-white focus:border-primary/50 outline-none transition-all shadow-sm"
+                        value={newPost.location}
+                        onChange={(e) => setNewPost(prev => ({ ...prev, location: e.target.value }))}
+                        autoFocus
+                      />
+                    </div>
+                  </motion.div>
+                )}
               </div>
             </div>
             
             <div className="flex items-center justify-between mt-6 pt-4 border-t border-border-light/40 dark:border-border-dark/40 relative z-10">
               <div className="flex items-center gap-4">
                 <label className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-primary/10 text-slate-400 hover:text-primary transition-all cursor-pointer">
-                  <ImageIcon size={20} />
-                  <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                  {uploadingImage ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}><ImageIcon size={20} className="opacity-50" /></motion.div> : <ImageIcon size={20} />}
+                  <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} />
                 </label>
                 <button onClick={handleAddPoll} className={`flex h-10 w-10 items-center justify-center rounded-xl hover:bg-primary/10 transition-all ${newPost.poll ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:text-primary'}`}>
                   <BarChart2 size={20} />
                 </button>
-                <button onClick={handleAddLocation} className={`flex h-10 w-10 items-center justify-center rounded-xl hover:bg-primary/10 transition-all ${newPost.location ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:text-primary'}`}>
+                <button 
+                  onClick={handleAddLocation} 
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl hover:bg-primary/10 transition-all ${newPost.location || showLocationInput ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:text-primary'}`}
+                  title="إضافة موقع"
+                >
                   <MapPin size={20} />
                 </button>
               </div>
@@ -753,7 +779,33 @@ export default function FanZone() {
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="text-[14px] font-black text-slate-800 dark:text-white uppercase tracking-tight">{post.userName}</h4>
-                          <div className="bg-primary/10 text-primary text-[8px] font-black px-2 py-0.5 rounded-lg border border-primary/10 uppercase tracking-tighter">Active Fan</div>
+                          {(() => {
+                            const postUser = users.find(u => u.uid === post.userId);
+                            const tier = postUser?.tier || 'new';
+                            const role = postUser?.role || 'user';
+                            const isManagement = role === 'admin' || post.userId === 'omarmagedugm' || post.userId === 'copyrightofficialco';
+                            
+                            if (isManagement) return (
+                              <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-yellow-400/20 text-yellow-600 dark:text-yellow-400 text-[8px] font-black uppercase ring-1 ring-yellow-400/30">
+                                <ShieldCheck size={10} />
+                                Admin
+                              </span>
+                            );
+
+                            const tierMap: any = {
+                               diamond: { label: 'Diamond', color: 'bg-cyan-500' },
+                               gold: { label: 'Gold', color: 'bg-yellow-500' },
+                               silver: { label: 'Silver', color: 'bg-slate-400' },
+                               bronze: { label: 'Bronze', color: 'bg-orange-700' },
+                               new: { label: 'Fan', color: 'bg-primary' }
+                            };
+                            const tData = tierMap[tier] || tierMap.new;
+                            return (
+                              <div className={`${tData.color} text-white text-[8px] font-black px-2 py-0.5 rounded-lg uppercase tracking-tighter shadow-sm flex items-center gap-1`}>
+                                {tData.label}
+                              </div>
+                            );
+                          })()}
                         </div>
                         <div className="flex items-center gap-2 text-[9px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest">
                            {format(new Date(post.date || Date.now()), 'HH:mm', { locale: ar })}
@@ -765,7 +817,7 @@ export default function FanZone() {
                         </div>
                       </div>
                     </div>
-                    {(post.userId === auth.currentUser?.uid || profile.role === 'admin') && (
+                    {(post.userId === auth.currentUser?.uid || isAdmin) && (
                       <div className="flex items-center gap-1">
                         <button 
                           onClick={() => {
@@ -870,7 +922,7 @@ export default function FanZone() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-4 gap-4 items-center border-t border-border-light/40 dark:border-border-dark/40 pt-6 relative z-10">
+                      <div className="grid grid-cols-5 gap-3 items-center border-t border-border-light/40 dark:border-border-dark/40 pt-6 relative z-10">
                       <motion.button 
                         whileTap={{ scale: 0.9 }}
                         onClick={() => handleLikePost(post.id)}
@@ -891,6 +943,15 @@ export default function FanZone() {
 
                       <motion.button 
                         whileTap={{ scale: 0.9 }}
+                        onClick={() => handleCopyText(post.content)}
+                        className="flex items-center justify-center h-10 rounded-2xl glass-card text-slate-500 hover:text-primary transition-all"
+                        title="نسخ النص"
+                      >
+                        <span className="material-symbols-outlined !text-[18px]">content_copy</span>
+                      </motion.button>
+                      
+                      <motion.button 
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => handleShare(post)}
                         className="flex items-center justify-center h-10 rounded-2xl glass-card text-slate-500 hover:text-primary transition-all"
                       >
@@ -899,7 +960,7 @@ export default function FanZone() {
 
                       <motion.button 
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => handleBookmark(post.id)}
+                        onClick={() => handleBookmark(post)}
                         className="flex items-center justify-center h-10 rounded-2xl glass-card text-slate-500 hover:text-primary transition-all"
                       >
                         <Bookmark size={18} />
@@ -956,8 +1017,15 @@ export default function FanZone() {
                                     <Heart size={10} fill={comment.likedBy?.includes(auth.currentUser?.uid) ? 'currentColor' : 'none'} />
                                     {comment.likes || 0}
                                   </button>
-                                  {(comment.userId === auth.currentUser?.uid || profile.role === 'admin') && (
+                                  {(comment.userId === auth.currentUser?.uid || isAdmin) && (
                                     <div className="flex items-center gap-1 opacity-0 group-hover/comment:opacity-100 transition-opacity">
+                                      <button 
+                                        onClick={() => handleCopyText(comment.text)}
+                                        className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 rounded-md"
+                                        title="نسخ التعليق"
+                                      >
+                                        <span className="material-symbols-outlined !text-[12px]">content_copy</span>
+                                      </button>
                                       <button 
                                         onClick={() => {
                                           setEditingCommentId(comment.id);
@@ -1056,7 +1124,7 @@ export default function FanZone() {
                       <div className={`max-w-[80%] ${isOwn ? 'items-end text-left' : 'items-start text-right'} flex flex-col gap-1.5`}>
                         <div className="flex items-center gap-2 px-1">
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{msg.userName}</span>
-                          {(isOwn || profile.role === 'admin') && (
+                          {(isOwn || isAdmin) && (
                             <button 
                               onClick={() => handleDeleteChatMessage(msg.id)}
                               className="text-red-400 hover:text-red-500 transition-colors"

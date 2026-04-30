@@ -140,24 +140,9 @@ export default function Live() {
 
   return (
     <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-24 bg-background-light dark:bg-background-dark min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background-light/90 dark:bg-background-dark/95 backdrop-blur-xl border-b border-border-light dark:border-border-dark px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link to="/" className="flex items-center justify-center p-2 -ml-2 rounded-full text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-surface-dark transition-all">
-            <span className="material-symbols-outlined">arrow_forward</span>
-          </Link>
-          <h1 className="text-lg font-bold">البث المباشر</h1>
-        </div>
-        {liveStream.isActive && (
-          <span className="bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1.5 animate-pulse-subtle">
-             <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> مباشر
-          </span>
-        )}
-      </header>
-
       <main className="flex-1 flex flex-col">
         {/* Video Player */}
-        <section className="relative w-full aspect-video bg-black shadow-lg sticky top-[60px] z-40 lg:static">
+        <section className="relative w-full aspect-video bg-black shadow-lg sticky top-[64px] z-40 lg:static">
           {renderPlayer()}
           
           {/* Overlay info if not playing native video (fallback) */}

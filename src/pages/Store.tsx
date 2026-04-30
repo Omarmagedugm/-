@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShoppingBag, 
   ArrowRight, 
@@ -65,11 +65,13 @@ export default function Store() {
     try {
       await addDoc(collection(db, 'orders'), {
         userId: auth.currentUser.uid,
+        userEmail: auth.currentUser.email,
         userName: formData.name,
         userPhone: formData.phone,
         userAddress: formData.address,
         productId: selectedProduct.id,
         productName: selectedProduct.name,
+        productImage: selectedProduct.imageUrl,
         quantity: formData.quantity,
         totalPrice: selectedProduct.price * formData.quantity,
         status: 'pending',

@@ -70,6 +70,27 @@ export function useFirestoreSync() {
       }
     }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/liveStream'));
 
+    // Sync Club History
+    const unsubHistoryStats = onSnapshot(collection(db, 'club_stats'), (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      useAppStore.getState().setClubStats(items);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'club_stats'));
+
+    const unsubHistoryTitles = onSnapshot(collection(db, 'club_titles'), (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      useAppStore.getState().setClubTitles(items);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'club_titles'));
+
+    const unsubHistoryTimeline = onSnapshot(query(collection(db, 'club_timeline'), orderBy('year', 'asc')), (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      useAppStore.getState().setHistoryEvents(items);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'club_timeline'));
+
+    const unsubHistoryStadiums = onSnapshot(collection(db, 'club_stadiums'), (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      useAppStore.getState().setStadiums(items);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'club_stadiums'));
+
     // Sync Current User Profile
     let unsubProfile = () => {};
     const currentUser = auth.currentUser;
@@ -84,7 +105,9 @@ export function useFirestoreSync() {
           updateProfile(userData);
           
           // Auto-upgrade bootstrap admin
-          if (currentUser.email?.toLowerCase() === 'copyrightofficialco@gmail.com' && userData.role !== 'admin') {
+          const email = currentUser.email?.toLowerCase();
+          const isBootstrap = email === 'copyrightofficialco@gmail.com' || email === 'omarmagedugm@ittihad.club';
+          if (isBootstrap && userData.role !== 'admin') {
             updateDoc(doc(db, 'users', currentUser.uid), { role: 'admin' })
               .catch(err => console.error('Failed to auto-upgrade admin:', err));
           }
@@ -115,6 +138,10 @@ export function useFirestoreSync() {
       unsubMedia();
       unsubSettings();
       unsubLive();
+      unsubHistoryStats();
+      unsubHistoryTitles();
+      unsubHistoryTimeline();
+      unsubHistoryStadiums();
       unsubProfile();
       unsubUsers();
     };

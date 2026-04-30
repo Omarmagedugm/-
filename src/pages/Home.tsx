@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
+import { auth } from '../lib/firebase';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'motion/react';
@@ -9,7 +10,6 @@ import Sidebar from '../components/Sidebar';
 
 export default function Home() {
   const { news, media, matches, liveStream, profile, appSettings } = useAppStore();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const navigate = useNavigate();
 
@@ -31,6 +31,11 @@ export default function Home() {
   const liveMatch = matches.find(m => m.status === 'live');
   const heroMatch = liveMatch || matches.find(m => m.status === 'upcoming') || matches[0];
   const upcomingMatches = matches.filter(m => m.status === 'upcoming').slice(0, 3);
+  
+  // High-level admin check
+  const isOmar = auth.currentUser?.email === 'omarmagedugm@ittihad.club';
+  const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com';
+  const isAdmin = profile.role === 'admin' || isOmar || isDev;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -51,39 +56,6 @@ export default function Home() {
 
   return (
     <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-24 px-0 bg-background-light dark:bg-background-dark min-h-screen">
-      {/* Premium Header */}
-      <header className="sticky top-0 z-40 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <motion.button 
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsMenuOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-600 dark:text-slate-300 hover:text-primary transition-all duration-300"
-          >
-            <Menu size={20} strokeWidth={2.5} />
-          </motion.button>
-
-          <div className="flex flex-col items-center">
-            <h1 className="text-sm font-black tracking-tight text-primary-dark dark:text-white uppercase">قناة الاتحاد السكندري</h1>
-            <div className="flex items-center gap-1">
-              <div className="h-1 w-1 bg-accent rounded-full animate-pulse"></div>
-              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Official Platform</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <motion.button 
-              whileTap={{ scale: 0.9 }}
-              className="relative flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-500 dark:text-slate-400 hover:text-primary transition-all duration-300"
-            >
-              <Bell size={20} strokeWidth={2.5} />
-              <span className="absolute top-2 right-2 h-2 w-2 bg-accent rounded-full ring-2 ring-white dark:ring-surface-dark"></span>
-            </motion.button>
-          </div>
-        </div>
-      </header>
-
-      <Sidebar isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} profile={profile} />
-
       <motion.main 
         variants={containerVariants}
         initial="hidden"
@@ -93,7 +65,7 @@ export default function Home() {
         {/* Main Match Card - Immersive Upgrade */}
         {heroMatch && (
           <motion.section variants={itemVariants} className="relative group">
-            {profile.role === 'admin' && (
+            {isAdmin && (
                <button 
                  onClick={() => navigate('/admin', { state: { editCategory: 'matches', editId: heroMatch.id } })}
                  className="absolute -top-2 -left-2 z-50 p-2.5 bg-accent text-white rounded-2xl shadow-premium shadow-accent/20 pressable"

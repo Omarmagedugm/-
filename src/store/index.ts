@@ -147,22 +147,27 @@ export interface StoreOrder {
   userName: string;
   userPhone: string;
   userAddress: string;
+  userEmail?: string;
   productId: string;
   productName: string;
+  productImage?: string;
   quantity: number;
   totalPrice: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'ready' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   createdAt: string;
 }
 
 export interface UserProfile {
   uid?: string;
   name: string;
+  username?: string;
   location: string;
   joinDate: string;
   avatar: string;
   isVerified?: boolean;
-  role?: 'user' | 'admin';
+  role?: 'user' | 'admin' | 'moderator';
+  tier?: 'new' | 'bronze' | 'silver' | 'gold' | 'diamond';
+  bio?: string;
   email?: string;
   stats: {
     predictions: number;
@@ -301,15 +306,19 @@ const defaultLiveStream: LiveStream = {
 };
 
 const defaultProfile: UserProfile = {
-  name: 'أحمد حسان',
+  name: 'مشجع سكندري',
+  username: 'fan_ittihad',
   location: 'الإسكندرية، مصر',
-  joinDate: '٢٠١٨',
-  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuART5YPR2Zh5GE1f6BgzZdo0gAuNI_r2zmSy81b5UM5fkx6tGUYhRhD2X8SshJ2To-JtmeHfvz64RaHM5Q_JlGW6orP67LkUtb6Dg2ithzxUWvVtpNDGMY24OaVFykdic4IqqF07jdklAFRW0qC-IER686Ha_E82_vvri6sLjGjtL67DlmZhKtVLW3jiZvXgMeIO-w6iJZAM4tMF1okvQ_w8dpZGrI2581QgolFPkuYZYOKORPG8FCrXMvnUbg4u3IdMA-mhE0RhYo',
-  isVerified: true,
+  joinDate: '٢٠٢٤',
+  avatar: 'https://ui-avatars.com/api/?name=%D9%85%D8%B4%D8%AC%D8%B9+%D8%B3%D9%83%D9%86%D8%AF%D8%B1%D9%8A&background=random',
+  isVerified: false,
+  role: 'user',
+  tier: 'new',
+  bio: 'مشجع عاشق لنادي الاتحاد السكندري - زعيم الثغر',
   stats: {
-    predictions: 42,
-    comments: 156,
-    favorites: 12
+    predictions: 0,
+    comments: 0,
+    favorites: 0
   }
 };
 
@@ -331,10 +340,45 @@ export const useAppStore = create<AppState>()(
       liveStream: defaultLiveStream,
       theme: 'dark',
       profile: defaultProfile,
-      clubTitles: [],
-      clubStats: [],
-      historyEvents: [],
-      stadiums: [],
+      clubTitles: [
+        { id: uuidv4(), name: 'كأس مصر', count: 6, icon: 'trophy', category: 'football' },
+        { id: uuidv4(), name: 'دوري الأسكندرية', count: 27, icon: 'shield', category: 'football' },
+        { id: uuidv4(), name: 'كأس السلطان', count: 1, icon: 'star', category: 'football' },
+        { id: uuidv4(), name: 'الدورة الصيفية', count: 9, icon: 'star', category: 'football' },
+        { id: uuidv4(), name: 'كأس ستاد البلدية', count: 1, icon: 'star', category: 'football' },
+        { id: uuidv4(), name: 'كأس بورسودان', count: 1, icon: 'star', category: 'football' },
+        { id: uuidv4(), name: 'الدوري العام', count: 16, icon: 'trophy', category: 'basketball' },
+        { id: uuidv4(), name: 'كأس مصر', count: 15, icon: 'trophy', category: 'basketball' },
+        { id: uuidv4(), name: 'الدوري المرتبط', count: 9, icon: 'shield', category: 'basketball' },
+        { id: uuidv4(), name: 'بطولة أفريقيا', count: 1, icon: 'star', category: 'basketball' },
+        { id: uuidv4(), name: 'البطولة العربية', count: 9, icon: 'star', category: 'basketball' },
+        { id: uuidv4(), name: 'دورة الحريري', count: 6, icon: 'star', category: 'basketball' },
+        { id: uuidv4(), name: 'السوبر المصري', count: 4, icon: 'star', category: 'basketball' },
+        { id: uuidv4(), name: 'سوبر مصر البحرين', count: 1, icon: 'star', category: 'basketball' },
+        { id: uuidv4(), name: 'بطولة دبي', count: 1, icon: 'star', category: 'basketball' },
+        { id: uuidv4(), name: 'دورة حلب', count: 1, icon: 'star', category: 'basketball' },
+        { id: uuidv4(), name: 'مصر الدولية', count: 1, icon: 'star', category: 'basketball' },
+        { id: uuidv4(), name: 'بطولة أخبار اليوم', count: 1, icon: 'star', category: 'basketball' },
+        { id: uuidv4(), name: 'دورة الوحدة', count: 1, icon: 'star', category: 'basketball' },
+      ],
+      clubStats: [
+        { id: uuidv4(), label: 'سنة مرت', value: 120, icon: 'calendar' },
+        { id: uuidv4(), label: 'كأس مصر', value: 6, icon: 'trophy' },
+        { id: uuidv4(), label: 'دوري منطقة', value: 27, icon: 'shield' },
+        { id: uuidv4(), label: 'بطولة سلة', value: 75, icon: 'award' },
+      ],
+      historyEvents: [
+        { id: uuidv4(), year: '1906', title: 'تأسيس النادي', desc: 'أسس حسن رسمي ناديًا باسم نادي الاتحاد، في منطقة رأس التين واتخذ من غرفة بالدور الأرضي بمنزله مقرًّا له، أمام مدرسة رأس التين الثانوية العسكرية.' },
+        { id: uuidv4(), year: '1908', title: 'الأتحاد الوطني', desc: 'تمت إضافة كلمة الوطني على الاسم كمدلول للنادي ليكون فعليًّا أول نادٍ شعبي وطني حيث لم يتدخل في تأسيسه أجانب كما كان الحال مع بقية الأندية المصرية التي تأسست في هذه الفترة، وكذلك تيمنًا بالحزب الوطني الذي أسسه مصطفى كامل في 1908.' },
+        { id: uuidv4(), year: '1916', title: 'الابطال المتحدة', desc: 'وافق حسن رسمي على تولي رئاسة نادي الأبطال ولكن بشرط واحد وهو تغيير اسم نادي الأبطال المتحدة ليصبح نادي الاتحاد، وذلك ليكون امتدادًا لنادي الاتحاد الوطني الذي أسسه حسن رسمي في 1906، ليعود من جديد اسم نادي الاتحاد للظهور مرة أخرى برئاسة حسن رسمي.' },
+        { id: uuidv4(), year: '1918', title: 'النادي السكندري', desc: 'في عام 1918 تولى محمد شاهين رئاسة نادي الاتحاد، وبدأ تواصل مسئولي نادي الاتحاد في أحدى المناسبات مع مسئولي النادي السكندري، وذلك لتكوين فريق قوي يضم العناصر الممتازة من الفريقين بتوحديهما فريق واحد، وانتهت المفاوضات بتوحيد اسم الناديين تحت اسم الاتحاد السكندري ليجمع بين اسمي نادي الاتحاد والنادي السكندري.' },
+        { id: uuidv4(), year: '2014', title: 'مئوية سيد البلد', desc: 'تم الاحتفال بمئوية نادي الاتحاد السكندري عام 2014.' },
+      ],
+      stadiums: [
+        { id: uuidv4(), name: 'ملعب المتروبول بالمنشية', type: 'أول ملعب للفريق', desc: 'بعد انتخاب السيد علي عبادي سكرتير عام محافظة الإسكندرية رئيسًا للنادي، حصل النادي على قطعة أرض أمام مركز مطافي المنشية لتكون ملعبه وكان معروفة باسم ملعب المتروبول (محكمة الإسكندرية حالًّيا) وبعد ذلك حصل النادي على إذن حتى يستخدم لاعبوه إحدى الحجرات داخل مركز الإطفاء المواجه للملعب لتغيير ملابسهم.', imageUrl: 'https://images.unsplash.com/photo-1543351611-58f69d7c1781?auto=format&fit=crop&q=80' },
+        { id: uuidv4(), name: 'أرض الحضرة', type: 'ثاني ملعب للفريق', desc: 'تعد أرض الحضرة ثاني الملاعب لنادي الاتحاد السكندري، وقد حصل عليها النادي عام 1928، وكانت عبارة عن أرض من أملاك الحكومة وكانت تشغلها ورش البلدية بجوار السكة الحديد، وبدأت قصة هذه الأرض بإعجاب محمود فهمي النقراشي باشا بنادي الاتحاد بعد فوزه بكأس التفوق المصري عام 1926.', imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80' },
+        { id: uuidv4(), name: 'إستاد الشاطبي', type: 'ملعب الشاطبي 1914', desc: 'أسسه أنجلو بولاناكي في 1914، وهو أول ملعب في العالم يرفع على ساريته العلم الأوليمبي وكان ذلك في 5 إبريل عام 1914، واستمر عليه الاتحاد حتى يومنا هذا معقلاً لزعيم الثغر.', imageUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&q=80' },
+      ],
       newsCategories: ['أخبار الفريق', 'كرة سلة', 'ألعاب أخرى', 'تقارير', 'انتقالات'],
       products: [],
       orders: [],

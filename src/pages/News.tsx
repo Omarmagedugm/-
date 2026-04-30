@@ -38,26 +38,6 @@ export default function News() {
 
   return (
     <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-24 px-0 bg-background-light dark:bg-background-dark min-h-screen">
-      <header className="sticky top-0 z-40 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-600 dark:text-slate-300 hover:text-primary transition-all duration-300">
-              <span className="material-symbols-outlined text-2xl rotate-180">chevron_right</span>
-            </Link>
-            <div className="flex flex-col">
-               <h1 className="text-xl font-black tracking-tight text-primary-dark dark:text-white uppercase leading-none">مركز الأخبار</h1>
-               <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Latest Updates</span>
-            </div>
-          </div>
-          <motion.button 
-            whileTap={{ scale: 0.9 }}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-500 dark:text-slate-400 hover:text-primary transition-all duration-300"
-          >
-            <Search size={20} strokeWidth={2.5} />
-          </motion.button>
-        </div>
-      </header>
-
       <motion.main 
         variants={containerVariants}
         initial="hidden"

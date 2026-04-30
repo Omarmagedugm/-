@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAppStore } from './store';
 import { useFirestoreSync } from './hooks/useFirestore';
+import { auth } from './lib/firebase';
 import Splash from './pages/Splash';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
@@ -15,7 +16,9 @@ import Admin from './pages/Admin';
 import FanZone from './pages/FanZone';
 import History from './pages/History';
 import Store from './pages/Store';
+import Bookmarks from './pages/Bookmarks';
 import BottomNav from './components/BottomNav';
+import TopHeader from './components/TopHeader';
 
 export default function App() {
   const { theme } = useAppStore();
@@ -30,9 +33,12 @@ export default function App() {
     }
   }, [theme]);
 
+  // Auth Redirection Logic
   return (
     <BrowserRouter>
+      <AuthRedirector />
       <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display antialiased overflow-x-hidden transition-colors duration-200">
+        <TopHeader />
         <Routes>
           <Route path="/splash" element={<Splash />} />
           <Route path="/auth" element={<Auth />} />
@@ -48,11 +54,32 @@ export default function App() {
           <Route path="/fan-zone" element={<FanZone />} />
           <Route path="/history" element={<History />} />
           <Route path="/store" element={<Store />} />
+          <Route path="/bookmarks" element={<Bookmarks />} />
         </Routes>
         <AppNav />
       </div>
     </BrowserRouter>
   );
+}
+
+function AuthRedirector() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const unsub = auth.onAuthStateChanged((user) => {
+      const publicPaths = ['/auth', '/splash'];
+      const isPublicPath = publicPaths.includes(location.pathname);
+      
+      if (!user && !isPublicPath) {
+        navigate('/auth');
+      }
+    });
+
+    return () => unsub();
+  }, [navigate, location.pathname]);
+
+  return null;
 }
 
 function AppNav() {

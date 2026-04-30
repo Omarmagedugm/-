@@ -12,11 +12,14 @@ export default function Profile() {
   const updateProfile = useAppStore(state => state.updateProfile);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
   const [editData, setEditData] = useState<UserProfile>({ ...profile });
   const [newPassword, setNewPassword] = useState('');
+  const [newEmail, setNewEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -38,23 +41,32 @@ export default function Profile() {
     }
   }, [showEditModal, profile]);
 
+  const TIER_DATA = {
+    new: { label: 'عضو جديد', color: 'bg-blue-500', icon: 'person_add' },
+    bronze: { label: 'عضو برونزي', color: 'bg-orange-700', icon: 'workspace_premium' },
+    silver: { label: 'عضو فضي', color: 'bg-slate-400', icon: 'stars' },
+    gold: { label: 'عضو ذهبي', color: 'bg-yellow-500', icon: 'diamond' },
+    diamond: { label: 'عضو ماسي', color: 'bg-cyan-400', icon: 'auto_awesome' },
+  };
+
   const handleSaveProfile = async () => {
     if (!auth.currentUser) return;
     setLoading(true);
     setMessage(null);
-    console.log('Saving profile...', editData);
     try {
       // Create user data object for Firestore
       const docData = {
         name: editData.name || profile.name,
+        username: editData.username || profile.username || '',
+        bio: editData.bio || profile.bio || '',
         location: editData.location || profile.location || '',
         avatar: editData.avatar || profile.avatar,
         email: profile.email || auth.currentUser.email || '',
         role: profile.role || 'user',
+        tier: profile.tier || 'new',
         uid: auth.currentUser.uid,
       };
       
-      console.log('Pushing to Firestore:', docData);
       // Use setDoc with merge for robustness
       await setDoc(doc(db, 'users', auth.currentUser.uid), docData, { merge: true });
 
@@ -87,17 +99,51 @@ export default function Profile() {
       setMessage({ text: 'تم تغيير كلمة المرور بنجاح', type: 'success' });
     } catch (err: any) {
       console.error(err);
-      setMessage({ text: err.message === 'Firebase: Error (auth/requires-recent-login).' ? 'يجب تسجيل الخروج والدخول مرة أخرى لتغيير كلمة المرور' : 'حدث خطأ في تغيير كلمة المرور', type: 'error' });
+      setMessage({ text: err.message === 'Firebase: Error (auth/requires-recent-login).' || err.code === 'auth/requires-recent-login' ? 'يجب تسجيل الخروج والدخول مرة أخرى لتغيير كلمة المرور' : 'حدث خطأ في تغيير كلمة المرور', type: 'error' });
     } finally {
       setPasswordLoading(false);
       setTimeout(() => setMessage(null), 3000);
     }
   };
 
+  const handleChangeEmail = async () => {
+    if (!auth.currentUser || !newEmail) return;
+    setEmailLoading(true);
+    setMessage(null);
+    try {
+      const { updateEmail } = await import('firebase/auth');
+      await updateEmail(auth.currentUser, newEmail);
+      
+      // Also update in Firestore
+      await updateDoc(doc(db, 'users', auth.currentUser.uid), { email: newEmail });
+      
+      setShowEmailModal(false);
+      setNewEmail('');
+      setMessage({ text: 'تم تغيير البريد الإلكتروني بنجاح', type: 'success' });
+      window.location.reload();
+    } catch (err: any) {
+      console.error(err);
+      setMessage({ text: err.code === 'auth/requires-recent-login' ? 'يجب تسجيل الخروج والدخول مرة أخرى لتغيير البريد الإلكتروني' : 'حدث خطأ في تغيير البريد الإلكتروني', type: 'error' });
+    } finally {
+      setEmailLoading(false);
+      setTimeout(() => setMessage(null), 3000);
+    }
+  };
+
+  // High-level admin check
+  const isOmar = auth.currentUser?.email === 'omarmagedugm@ittihad.club';
+  const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com';
+  const isAdmin = profile.role === 'admin' || isOmar || isDev;
+
   const handleLogout = async () => {
-    if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+    try {
       await auth.signOut();
-      navigate('/auth');
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Logout error:', error);
+      window.location.href = '/auth';
     }
   };
 
@@ -144,28 +190,6 @@ export default function Profile() {
 
   return (
     <div className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden pb-24 w-full max-w-lg mx-auto bg-background-light dark:bg-background-dark min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-40 flex items-center justify-between bg-background-light/90 dark:bg-background-dark/90 px-4 py-3 pb-4 pt-5 backdrop-blur-xl border-b border-border-light/50 dark:border-border-dark/50">
-        <Link to="/" className="flex items-center justify-center p-2 -ml-2 rounded-full text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-surface-dark transition-colors pressable">
-          <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-        </Link>
-        <h2 className="flex-1 text-right pr-4 text-xl font-black drop-shadow-sm tracking-tight text-slate-900 dark:text-white">ملفي الشخصي</h2>
-        <div className="flex items-center gap-2">
-          {profile.role === 'admin' && (
-             <div className="h-8 px-3 rounded-xl bg-yellow-400/20 text-yellow-600 dark:text-yellow-400 text-[10px] font-black flex items-center gap-1 border border-yellow-400/30 shadow-sm">
-                <ShieldCheck size={14} />
-                مدير النظام
-             </div>
-          )}
-          <button 
-            onClick={() => setShowEditModal(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light transition-colors pressable"
-          >
-            <span className="material-symbols-outlined text-[20px]">edit</span>
-          </button>
-        </div>
-      </header>
-
       <div className="flex flex-col flex-1">
         {/* Messages */}
         <AnimatePresence>
@@ -180,48 +204,6 @@ export default function Profile() {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Global Admin Activator (For Omar only) */}
-        {auth.currentUser?.email?.toLowerCase() === 'omarmagedugm@gmail.com' && profile.role !== 'admin' && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-4 mt-6 p-5 rounded-[2.5rem] bg-gradient-to-br from-primary to-primary-dark text-white shadow-xl shadow-primary/30 relative overflow-hidden group"
-          >
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-               <ShieldCheck size={120} />
-            </div>
-            <h3 className="text-lg font-black mb-2 relative z-10">مرحباً بك يا مدير!</h3>
-            <p className="text-white/80 text-xs font-bold mb-4 relative z-10 leading-relaxed">
-              لقد تم التعرف على بريدك الإلكتروني. قم بتفعيل لوحة التحكم الآن للبدء في إدارة المحتوى والأعضاء.
-            </p>
-            <button 
-              onClick={async () => {
-                if (confirm('هل تريد تفعيل صلاحيات الإدارة الكاملة الآن؟')) {
-                  setLoading(true);
-                  try {
-                    await setDoc(doc(db, 'users', auth.currentUser!.uid), { 
-                      role: 'admin',
-                      uid: auth.currentUser!.uid,
-                      email: auth.currentUser!.email,
-                      name: profile.name || auth.currentUser?.displayName || 'المدير عمر'
-                    }, { merge: true });
-                    alert('تم تفعيل الإدارة بنجاح! سيتم إعادة تحميل التطبيق لتفعيل كافة الخيارات.');
-                    window.location.reload();
-                  } catch (e: any) {
-                    alert('خطأ: ' + e.message);
-                  } finally {
-                    setLoading(false);
-                  }
-                }
-              }}
-              className="w-full bg-white text-primary py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all relative z-10 flex items-center justify-center gap-2"
-            >
-              <ShieldCheck size={18} />
-              تفعيل لوحة التحكم (Admin)
-            </button>
-          </motion.div>
-        )}
 
         {/* Profile Card Section */}
         <motion.div
@@ -247,6 +229,20 @@ export default function Profile() {
             <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-900 dark:text-white drop-shadow-sm">
               {profile.name || auth.currentUser?.displayName || 'مستخدم جديد'}
             </h1>
+            <p className="text-slate-500 dark:text-slate-400 text-xs font-bold -mt-1">@{profile.username || 'user'}</p>
+            
+            {profile.tier && (
+              <div className={`mt-2 flex items-center gap-1.5 px-3 py-1 rounded-full text-white text-[10px] font-black shadow-sm ${TIER_DATA[profile.tier as keyof typeof TIER_DATA]?.color || 'bg-slate-500'}`}>
+                <span className="material-symbols-outlined !text-[14px]">{TIER_DATA[profile.tier as keyof typeof TIER_DATA]?.icon}</span>
+                <span>{TIER_DATA[profile.tier as keyof typeof TIER_DATA]?.label}</span>
+              </div>
+            )}
+
+            {profile.bio && (
+              <p className="mt-3 text-slate-600 dark:text-slate-300 text-xs font-medium max-w-[280px] leading-relaxed">
+                {profile.bio}
+              </p>
+            )}
             <div className="flex items-center gap-2 mt-1">
               <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-bold text-sm">
                 <span className="material-symbols-outlined !text-[16px]">location_on</span>
@@ -339,7 +335,7 @@ export default function Profile() {
             </button>
             <div className="h-px w-full bg-slate-100 dark:border-t dark:border-border-dark"></div>
             {/* Admin Panel */}
-            {profile.role === 'admin' && (
+            {isAdmin && (
               <>
                 <Link to="/admin" className="flex w-full items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-surface-dark pressable group">
                   <div className="flex items-center gap-4">
@@ -361,6 +357,25 @@ export default function Profile() {
           </div>
 
             <div className="h-px w-full bg-slate-100 dark:border-t dark:border-border-dark"></div>
+            {/* Change Email */}
+            <button 
+              onClick={() => setShowEmailModal(true)}
+              className="flex w-full items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-surface-dark pressable group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-surface-dark dark:text-slate-300 group-hover:text-primary transition-colors">
+                  <span className="material-symbols-outlined !text-[20px]">mail</span>
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-bold text-slate-900 dark:text-white">تغيير البريد الإلكتروني</span>
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">تحديث بريدك الإلكتروني المسجل</span>
+                </div>
+              </div>
+              <span className="material-symbols-outlined text-slate-400 !text-[20px]">chevron_left</span>
+            </button>
+
+            <div className="h-px w-full bg-slate-100 dark:border-t dark:border-border-dark"></div>
+            {/* Change Password */}
             <button 
               onClick={() => setShowPasswordModal(true)}
               className="flex w-full items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-surface-dark pressable group"
@@ -501,12 +516,31 @@ export default function Profile() {
                   />
                 </div>
                 <div>
+                  <label className="text-xs font-bold text-slate-500 mb-1.5 block">اسم المستخدم (بالإنجليزي)</label>
+                  <input 
+                    type="text" 
+                    dir="ltr"
+                    value={editData.username}
+                    onChange={(e) => setEditData({...editData, username: e.target.value})}
+                    className="w-full bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-xl px-4 py-3 text-sm focus:border-primary transition-colors outline-none font-mono"
+                  />
+                </div>
+                <div>
                   <label className="text-xs font-bold text-slate-500 mb-1.5 block">الموقع</label>
                   <input 
                     type="text" 
                     value={editData.location}
                     onChange={(e) => setEditData({...editData, location: e.target.value})}
                     className="w-full bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-xl px-4 py-3 text-sm focus:border-primary transition-colors outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 mb-1.5 block">السيرة الذاتية</label>
+                  <textarea 
+                    value={editData.bio}
+                    onChange={(e) => setEditData({...editData, bio: e.target.value})}
+                    rows={2}
+                    className="w-full bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-xl px-4 py-3 text-sm focus:border-primary transition-colors outline-none resize-none"
                   />
                 </div>
               </div>
@@ -587,6 +621,67 @@ export default function Profile() {
                 </button>
               </div>
               <p className="mt-4 text-[10px] text-center text-slate-400 font-bold">لأسباب أمنية قد يطلب منك النظام إعادة تسجيل الدخول</p>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Change Email Modal */}
+      <AnimatePresence>
+        {showEmailModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowEmailModal(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm bg-white dark:bg-card-dark rounded-3xl p-6 shadow-2xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-black">تغيير البريد الإلكتروني</h3>
+                <button onClick={() => setShowEmailModal(false)} className="p-1 px-2 text-slate-400 hover:text-slate-900 transition-colors"><X size={20} /></button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 mb-1.5 block">البريد الإلكتروني الجديد</label>
+                  <div className="relative">
+                    <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      type="email" 
+                      dir="ltr"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      placeholder="example@email.com"
+                      className="w-full bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-xl pr-12 pl-4 py-3 text-sm focus:border-primary transition-colors outline-none font-bold"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-8">
+                <button 
+                  onClick={handleChangeEmail}
+                  disabled={emailLoading || !newEmail}
+                  className="flex-1 bg-primary text-white py-3 rounded-2xl font-black text-sm shadow-md shadow-primary/20 hover:scale-[1.02] transition-transform active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {emailLoading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                  تحديث البريد
+                </button>
+                <button 
+                  onClick={() => setShowEmailModal(false)}
+                  className="flex-1 bg-slate-100 dark:bg-surface-dark text-slate-600 dark:text-slate-300 py-3 rounded-2xl font-black text-sm"
+                >
+                  إلغاء
+                </button>
+              </div>
+              <p className="mt-4 text-[10px] text-center text-slate-400 font-bold">يجب تسجيل الدخول مرة أخرى بعد تغيير البريد</p>
             </motion.div>
           </div>
         )}

@@ -1,8 +1,9 @@
 import { motion, useInView, useMotionValue, useTransform, animate } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { Trophy, History as HistoryIcon, MapPin, Calendar, Star, Award, Shield, ChevronRight } from 'lucide-react';
-import { useAppStore } from '../store';
 import { useNavigate } from 'react-router-dom';
+import { db } from '../lib/firebase';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 const AnimatedCounter = ({ value, duration = 2 }: { value: number; duration?: number }) => {
   const count = useMotionValue(0);
@@ -23,7 +24,35 @@ const AnimatedCounter = ({ value, duration = 2 }: { value: number; duration?: nu
 export default function History() {
   const [activeTab, setActiveTab] = useState<'titles' | 'timeline' | 'stadiums'>('titles');
   const navigate = useNavigate();
-  const { clubStats, clubTitles, historyEvents, stadiums } = useAppStore();
+  
+  const [clubStats, setClubStats] = useState<any[]>([]);
+  const [clubTitles, setClubTitles] = useState<any[]>([]);
+  const [historyEvents, setHistoryEvents] = useState<any[]>([]);
+  const [stadiums, setStadiums] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubStats = onSnapshot(collection(db, 'club_stats'), (snap) => {
+      setClubStats(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    const unsubTitles = onSnapshot(collection(db, 'club_titles'), (snap) => {
+      setClubTitles(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    const unsubTimeline = onSnapshot(query(collection(db, 'club_timeline'), orderBy('year', 'asc')), (snap) => {
+      setHistoryEvents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    const unsubStadiums = onSnapshot(collection(db, 'club_stadiums'), (snap) => {
+      setStadiums(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    });
+
+    return () => {
+      unsubStats();
+      unsubTitles();
+      unsubTimeline();
+      unsubStadiums();
+    };
+  }, []);
   
   const getStatIcon = (label: string) => {
     if (label.includes('سنة')) return <Calendar className="text-blue-500" />;
@@ -52,8 +81,11 @@ export default function History() {
             <ChevronRight size={20} className="rotate-180" />
           </button>
           <div className="text-right">
-            <h1 className="text-lg font-black text-primary-dark dark:text-white uppercase">تاريخ زعيم الثغر</h1>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Club History & Heritage</span>
+            <div className="flex items-center gap-2 justify-end">
+              <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg mb-1 inline-block">EST. 1906</span>
+              <h1 className="text-lg font-black text-primary-dark dark:text-white uppercase leading-none">تاريخ زعيم الثغر</h1>
+            </div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 inline-block">Club History & Heritage</span>
           </div>
         </div>
       </header>

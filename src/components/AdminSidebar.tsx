@@ -1,4 +1,5 @@
 import React from 'react';
+import { auth } from '../lib/firebase';
 import { 
   LayoutDashboard, 
   Newspaper, 
@@ -115,7 +116,20 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
              </div>
              <p className="text-[10px] font-black text-slate-500 uppercase">حالة النظام: متصل</p>
           </div>
-          <button className="w-full py-2.5 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-[10px] font-black text-slate-500 hover:text-red-500 transition-colors">
+          <button 
+            onClick={async () => {
+              try {
+                await auth.signOut();
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = '/auth';
+              } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/auth';
+              }
+            }}
+            className="w-full py-2.5 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-[10px] font-black text-slate-500 hover:text-red-500 transition-colors"
+          >
             تسجيل الخروج من الإدارة
           </button>
         </div>

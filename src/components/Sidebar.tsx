@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, LayoutDashboard, Flag, MessageSquare, Info, Mail, Home, ShieldCheck } from 'lucide-react';
+import { auth } from '../lib/firebase';
+import { useNavigate } from 'react-router-dom';
+import { X, LayoutDashboard, Flag, MessageSquare, Info, Mail, Home, LogOut, ShieldCheck } from 'lucide-react';
 import { useAppStore, UserProfile } from '../store';
 
 interface SidebarProps {
@@ -11,7 +13,25 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
   const { appSettings } = useAppStore();
-  const isAdmin = profile.role === 'admin';
+  const navigate = useNavigate();
+  
+  // High-level admin check
+  const isOmar = auth.currentUser?.email === 'omarmagedugm@ittihad.club';
+  const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com';
+  const isAdmin = profile.role === 'admin' || isOmar || isDev;
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      localStorage.clear();
+      sessionStorage.clear();
+      onClose();
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Logout error:', error);
+      window.location.href = '/auth';
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -111,9 +131,21 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                 <span className="material-symbols-outlined !text-[20px]">shopping_bag</span>
                 <span className="text-sm font-bold">متجر الجماهير</span>
               </Link>
+              <Link to="/bookmarks" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable uppercase">
+                <span className="material-symbols-outlined !text-[20px]">bookmark</span>
+                <span className="text-sm font-bold">محفوظاتي</span>
+              </Link>
               <button onClick={() => { alert('يمكنك مراسلتنا عبر: support@itthifan.app'); onClose(); }} className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable text-right">
                 <Mail size={20} />
                 <span className="text-sm font-bold">اتصل بنا</span>
+              </button>
+              
+              <button 
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-red-50 text-red-500 dark:hover:bg-red-500/10 transition-colors pressable text-right mt-4"
+              >
+                <LogOut size={20} />
+                <span className="text-sm font-black">تسجيل الخروج</span>
               </button>
             </div>
 

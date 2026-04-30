@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db, auth, uploadImage } from '../lib/firebase';
 import { 
   collection, 
+  getDocs,
   addDoc, 
   updateDoc, 
   deleteDoc, 
@@ -38,7 +39,10 @@ import {
   UserPlus,
   Check,
   Menu,
-  Tags
+  Tags,
+  Star,
+  History as HistoryIcon,
+  ShoppingCart
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 
@@ -208,8 +212,12 @@ export default function Admin() {
   }, [location.state, news, media, matches]);
 
   // Security check
-  const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com';
-  if (profile.role !== 'admin' && !isDev) {
+  const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com' || auth.currentUser?.email === 'omarmagedugm@ittihad.club';
+  
+  // If Omar or Dev, they are always admin in UI regardless of DB role
+  const effectiveRole = isDev ? 'admin' : profile.role;
+
+  if (effectiveRole !== 'admin') {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-background-dark flex flex-col items-center justify-center p-6 text-center">
         <ShieldAlert size={64} className="text-red-500 mb-4" />
@@ -267,7 +275,8 @@ export default function Admin() {
       } else if (activeTab === 'users') {
         const payload = {
           name: formData.name || '',
-          role: formData.role || 'user'
+          role: formData.role || 'user',
+          tier: formData.tier || 'new'
         };
 
         if (isEditing && editingId) {
@@ -508,9 +517,83 @@ export default function Admin() {
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
+    // Auto-seed history if empty
+    const seedHistory = async () => {
+      // Check if all history collections are empty to avoid partial seeding
+      // We use a local check to avoid double-seeding if the state hasn't updated yet
+      const isSeededKey = 'history_data_seeded_v1';
+      if (localStorage.getItem(isSeededKey)) return;
+
+      if (clubStats.length === 0 && clubTitles.length === 0 && historyEvents.length === 0 && stadiums.length === 0) {
+        console.log('Seeding initial history data...');
+        try {
+          // Double check with a real server fetch to be absolutely sure
+          const statsSnap = await getDocs(collection(db, 'club_stats'));
+          if (!statsSnap.empty) {
+            localStorage.setItem(isSeededKey, 'true');
+            return;
+          }
+
+          const stats = [
+            { label: 'سنة مرت', value: 120, icon: 'calendar' },
+            { label: 'كأس مصر', value: 6, icon: 'trophy' },
+            { label: 'دوري منطقة', value: 27, icon: 'shield' },
+            { label: 'بطولة سلة', value: 75, icon: 'award' },
+          ];
+          for (const s of stats) await addDoc(collection(db, 'club_stats'), s);
+
+          const titles = [
+            { name: 'كأس مصر', count: 6, icon: 'trophy', category: 'football' },
+            { name: 'دوري الأسكندرية', count: 27, icon: 'shield', category: 'football' },
+            { name: 'كأس السلطان', count: 1, icon: 'star', category: 'football' },
+            { name: 'الدورة الصيفية', count: 9, icon: 'star', category: 'football' },
+            { name: 'كأس ستاد البلدية', count: 1, icon: 'star', category: 'football' },
+            { name: 'كأس بورسودان', count: 1, icon: 'star', category: 'football' },
+            { name: 'بطولة سلة', count: 75, icon: 'award', category: 'basketball' },
+            { name: 'الدوري العام', count: 16, icon: 'trophy', category: 'basketball' },
+            { name: 'كأس مصر', count: 15, icon: 'trophy', category: 'basketball' },
+            { name: 'الدوري المرتبط', count: 9, icon: 'shield', category: 'basketball' },
+            { name: 'بطولة أفريقيا', count: 1, icon: 'star', category: 'basketball' },
+            { name: 'البطولة العربية', count: 9, icon: 'star', category: 'basketball' },
+            { name: 'دورة الحريري', count: 6, icon: 'star', category: 'basketball' },
+            { name: 'السوبر المصري', count: 4, icon: 'star', category: 'basketball' },
+            { name: 'سوبر مصر البحرين', count: 1, icon: 'star', category: 'basketball' },
+            { name: 'بطولة دبي', count: 1, icon: 'star', category: 'basketball' },
+            { name: 'دورة حلب', count: 1, icon: 'star', category: 'basketball' },
+            { name: 'مصر الدولية', count: 1, icon: 'star', category: 'basketball' },
+            { name: 'بطولة أخبار اليوم', count: 1, icon: 'star', category: 'basketball' },
+            { name: 'دورة الوحدة', count: 1, icon: 'star', category: 'basketball' },
+          ];
+          for (const t of titles) await addDoc(collection(db, 'club_titles'), t);
+
+          const timeline = [
+            { year: '1906', title: 'تأسيس النادي', desc: 'أسس حسن رسمي ناديًا باسم نادي الاتحاد، في منطقة رأس التين واتخذ من غرفة بالدور الأرضي بمنزله مقرًّا له، أمام مدرسة رأس التين الثانوية العسكرية.' },
+            { year: '1908', title: 'الأتحاد الوطني', desc: 'تمت إضافة كلمة الوطني على الاسم ليكون فعليًّا أول نادٍ شعبي وطني حيث لم يتدخل في تأسيسه أجانب كما كان الحال مع بقية الأندية المصرية التي تأسست في هذه الفترة، وكذلك تيمنًا بالحزب الوطني الذي أسسه مصطفى كامل في 1908.' },
+            { year: '1916', title: 'الابطال المتحدة', desc: 'وافق حسن رسمي على تولي رئاسة نادي الأبطال ولكن بشرط واحد وهو تغيير اسم نادي الأبطال المتحدة ليصبح نادي الاتحاد، وذلك ليكون امتدادًا لنادي الاتحاد الوطني الذي أسسه حسن رسمي في 1906.' },
+            { year: '1918', title: 'النادي السكندري', desc: 'في عام 1918 تولى محمد شاهين رئاسة نادي الاتحاد، وبدأ تواصل مسئولي نادي الاتحاد في أحدى المناسبات مع مسئولي النادي السكندري، وذلك لتكوين فريق قوي يضم العناصر الممتازة من الفريقين بتوحديهما فريق واحد، وانتهت المفاوضات بتوحيد اسم الناديين تحت اسم الاتحاد السكندري ليجمع بين اسمي نادي الاتحاد والنادي السكندري' },
+            { year: '2014', title: 'مئوية سيد البلد', desc: 'تم الاحتفال بمئوية نادي الاتحاد السكندري عام 2014' },
+          ];
+          for (const ev of timeline) await addDoc(collection(db, 'club_timeline'), ev);
+
+          const stadiumsList = [
+            { name: 'ملعب المتروبول بالمنشية', type: 'أول ملعب لنادي الاتحاد', desc: 'بعد انتخاب السيد علي عبادي سكرتير عام محافظة الإسكندرية رئيسًا للنادي، حصل النادي على قطعة أرض أمام مركز مطافي المنشية لتكون ملعبه وكان معروفًا باسم ملعب المتروبول (محكمة الإسكندرية حالًّيا).', imageUrl: 'https://images.unsplash.com/photo-1543351611-58f69d7c1781' },
+            { name: 'أرض الحضرة', type: 'ثاني ملعب لنادي الاتحاد', desc: 'تعد أرض الحضرة ثاني الملاعب لنادي الاتحاد السكندري، وقد حصل عليها النادي عام 1928، وكانت عبارة عن أرض من أملاك الحكومة وكانت تشغلها ورش البلدية بجوار السكة الحديد، ساعد محمود فهمي النقراشي باشا النادي في الحصول عليها.', imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018' },
+            { name: 'إستاد الشاطبي', type: 'ملعب الشاطبي 1914', desc: 'أسسه أنجلو بولاناكي في 1914، وهو أول ملعب في العالم يرفع على ساريته العلم الأوليمبي وكان ذلك في 5 إبريل عام 1914، واستمر عليه الاتحاد حتى يومنا هذا، حيث انتقل إليه النادي كملعب دائم.', imageUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e' },
+          ];
+          for (const st of stadiumsList) await addDoc(collection(db, 'club_stadiums'), st);
+
+          console.log('Seeding complete.');
+          localStorage.setItem(isSeededKey, 'true');
+        } catch (error) {
+          console.error('Error auto-seeding history:', error);
+        }
+      }
+    };
+    seedHistory();
+
     const timer = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [clubStats.length, clubTitles.length, historyEvents.length, stadiums.length]);
 
   const calculateCurrentMinute = (match: any) => {
     if (!match.isTimerRunning || !match.timerStartTime) return Number(match.timerBaseMinute || 0);
@@ -561,33 +644,35 @@ export default function Admin() {
         <AdminSidebar activeTab={activeTab} setActiveTab={(tab) => { setActiveTab(tab); setShowSidebar(false); }} onClose={() => setShowSidebar(false)} />
       </div>
 
-      {/* Header Mobile */}
-      <div className="bg-white dark:bg-card-dark border-b border-border-light dark:border-border-dark p-4 sticky top-0 z-40">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-             <button onClick={() => setShowSidebar(true)} className="w-10 h-10 bg-slate-50 dark:bg-surface-dark rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 pressable">
-               <Menu size={20} />
-             </button>
-             <div className="flex flex-col">
-               <h2 className="font-black text-sm tracking-tight leading-none">إدارة المنصة</h2>
-               <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Admin Panel</span>
-             </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Link to="/profile" className="text-[10px] bg-slate-100 dark:bg-surface-dark text-slate-500 px-3 py-1.5 rounded-lg font-bold pressable">
-              خروج
-            </Link>
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-          </div>
-        </div>
+      <div className="p-4 flex items-center justify-between gap-3">
+         <button onClick={() => setShowSidebar(true)} className="flex-1 h-12 bg-white dark:bg-surface-dark rounded-2xl flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 border border-border-light dark:border-border-dark shadow-sm pressable active:scale-95 transition-all">
+           <Menu size={18} />
+           <span className="text-[10px] font-black uppercase tracking-widest">قائمة الإدارة</span>
+         </button>
+         
+         <button 
+           onClick={async () => {
+             try {
+               await auth.signOut();
+               localStorage.clear();
+               sessionStorage.clear();
+               window.location.href = '/auth';
+             } catch (error) {
+               console.error('Logout error:', error);
+               window.location.href = '/auth';
+             }
+           }}
+           className="h-12 px-5 bg-red-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm pressable active:scale-95 transition-all"
+         >
+           خروج
+         </button>
       </div>
 
       {/* Main Content */}
       <main className="flex-1 p-4 overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-            {activeTab === 'overview' ? 'نظرة عامة على المنتدى' :
+            {activeTab === 'overview' ? 'لوحة التحكم' :
              activeTab === 'news' ? 'إدارة الأخبار' : 
              activeTab === 'news-categories' ? 'إدارة أقسام الأخبار' :
              activeTab === 'fanzone' ? 'إدارة منطقة الجماهير' :
@@ -598,10 +683,13 @@ export default function Admin() {
              activeTab === 'users' ? 'إدارة الأعضاء' : 
              activeTab === 'settings' ? 'إعدادات التطبيق' : 
              activeTab === 'clubs' ? 'إدارة الأندية' : 
+             activeTab === 'orders' ? 'إدارة المشتريات' :
              activeTab === 'polls' ? 'إدارة الاستطلاعات' : 
-             activeTab === 'comments' ? 'إدارة التعليقات' : 'البث المباشر'}
+             activeTab === 'history' ? 'تاريخ النادي' :
+             activeTab === 'live' ? 'البث المباشر' :
+             activeTab === 'comments' ? 'تعليقات البث المباشر' : 'لوحة التحكم'}
           </h1>
-          {['news', 'media', 'matches', 'clubs', 'polls', 'predictions'].includes(activeTab) && (
+          {['news', 'media', 'matches', 'clubs', 'polls', 'predictions', 'products', 'history', 'history-stadiums', 'history-timeline', 'history-titles', 'history-stats'].includes(activeTab) && (
             <button 
               onClick={openAddModal}
               className="flex items-center gap-1 bg-primary text-white px-3 py-1.5 rounded-lg font-bold shadow-sm shadow-primary/20 hover:scale-105 transition-all text-xs"
@@ -681,59 +769,6 @@ export default function Admin() {
 
           {activeTab === 'overview' && (
             <div className="space-y-4">
-              {/* Seed Data Action */}
-              <div className="bg-gradient-to-r from-primary to-primary-dark p-6 rounded-[32px] text-white shadow-lg overflow-hidden relative group">
-                <div className="relative z-10">
-                   <h3 className="text-lg font-black mb-2">إعداد المحتوى الافتراضي</h3>
-                   <p className="text-xs text-white/80 font-bold mb-4 leading-relaxed">إذا كانت لوحة التحكم فارغة، يمكنك إضافة بيانات تجريبية (أخبار، ميديا، منتجات) بضغطة واحدة.</p>
-                   <button 
-                     onClick={async () => {
-                       if (window.confirm('هل تريد إضافة بيانات تجريبية للمتجر والأخبار والميديا؟')) {
-                         setLoading(true);
-                         try {
-                           // Seed Products
-                           const mockProducts = [
-                             { name: 'تيشيرت الاتحاد الأصلي 2024', price: 850, category: 'tshirt', description: 'التيشيرت الرسمي لنادي الاتحاد سيد البلد لموسم 2024/2025', imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab', stock: 50 },
-                             { name: 'مج زعيم الثغر الحراري', price: 150, category: 'mug', description: 'مج حراري عالي الجودة بشعار النادي وتصميم عصري', imageUrl: 'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d', stock: 100 },
-                             { name: 'سكارف أخضر وأبيض فائق الجودة', price: 200, category: 'scarf', description: 'سكارف شتوي مميز بشعار سيد البلد لإطلالة تفاعلية', imageUrl: 'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9', stock: 75 },
-                             { name: 'حظاظة المشجع السيلاوي', price: 35, category: 'bracelet', description: 'حظاظة من السيليكون الطبي بشعار وكلمات النادي', imageUrl: 'https://images.unsplash.com/photo-1573812195421-50a396d17893', stock: 500 },
-                           ];
-                           for (const p of mockProducts) await addDoc(collection(db, 'products'), p);
-
-                           // Seed News
-                           const mockNews = [
-                             { title: 'الاتحاد السكندري يفتتح فرعاً جديداً للنادي', content: 'في إطار خطة التوسع العمراني، النادي بصدد افتتاح فرع جديد لخدمة الأعضاء.', image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018', category: 'أخبار الفريق', date: new Date().toISOString(), author: 'المشرف' },
-                             { title: 'كواليس فوز سلة الاتحاد بالبطولة العربية', content: 'رحلة كفاح طويلة تكللت بالنجاح ورفع علم مصر والاتحاد عالياً.', image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc', category: 'كرة سلة', date: new Date().toISOString(), author: 'المشرف' },
-                           ];
-                           for (const n of mockNews) await addDoc(collection(db, 'news'), n);
-
-                           // Seed Media
-                           const mockMedia = [
-                             { title: 'أهداف مباراة الاتحاد والأهلي التاريخية', type: 'video', source: 'youtube', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', thumbnailUrl: 'https://images.unsplash.com/photo-1510563399035-7140409890a5', date: new Date().toISOString(), views: '1.2K' },
-                             { title: 'كواليس تدريبات الفريق الأول', type: 'video', source: 'youtube', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', thumbnailUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e', date: new Date().toISOString(), views: '800' },
-                           ];
-                           for (const m of mockMedia) await addDoc(collection(db, 'media'), m);
-
-                           alert('تم إضافة البيانات بنجاح!');
-                         } catch (err) {
-                           console.error(err);
-                           alert('فشل في إضافة البيانات');
-                         } finally {
-                           setLoading(false);
-                         }
-                       }
-                     }}
-                     disabled={loading}
-                     className="bg-white text-primary px-6 py-2.5 rounded-2xl font-black text-xs shadow-xl active:scale-95 transition-all flex items-center gap-2"
-                   >
-                     {loading ? <Loader2 className="animate-spin" size={14} /> : <Plus size={14} />}
-                     إضافة بيانات تجريبية
-                   </button>
-                </div>
-                <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all"></div>
-                <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rotate-45 translate-x-12 -translate-y-12"></div>
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white dark:bg-card-dark p-4 rounded-2xl border border-border-light dark:border-border-dark flex flex-col gap-1 shadow-sm">
                    <div className="bg-primary/10 w-8 h-8 rounded-lg flex items-center justify-center text-primary mb-1">
@@ -867,7 +902,7 @@ export default function Admin() {
           {activeTab === 'products' && (
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
-                <button onClick={handleAdd} className="bg-primary text-white px-4 py-2 rounded-xl font-bold text-[11px] flex items-center gap-2 pressable">
+                <button onClick={openAddModal} className="bg-primary text-white px-4 py-2 rounded-xl font-bold text-[11px] flex items-center gap-2 pressable">
                   <Plus size={14} /> منتج جديد
                 </button>
                 <div className="text-right">
@@ -900,24 +935,35 @@ export default function Admin() {
                <div className="grid grid-cols-1 gap-3">
                  {orders.map(order => (
                    <div key={order.id} className="bg-white dark:bg-card-dark p-4 rounded-3xl border border-border-light dark:border-border-dark text-right space-y-3">
-                     <div className="flex items-center justify-between border-b border-slate-50 dark:border-border-dark pb-2">
+                     <div className="flex items-center justify-between border-b border-slate-50 dark:border-border-dark pb-3">
                         <span className={`text-[9px] font-black px-2 py-1 rounded-lg ${
                           order.status === 'pending' ? 'bg-orange-100 text-orange-600' :
-                          order.status === 'delivered' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+                          order.status === 'ready' ? 'bg-blue-100 text-blue-600' : 
+                          order.status === 'delivered' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-600'
                         }`}>
-                          {order.status === 'pending' ? 'بانتظار التأكيد' : 
-                          order.status === 'delivered' ? 'تم التوصيل' : 'جاري التنفيذ'}
+                          {order.status === 'pending' ? 'تحت التحضير' : 
+                           order.status === 'ready' ? 'جاهز' : 
+                           order.status === 'delivered' ? 'تم التسليم' : 'جاري التنفيذ'}
                         </span>
-                        <span className="text-[10px] font-bold text-slate-400 tabular-nums">{new Date(order.createdAt).toLocaleDateString('ar-EG')}</span>
+                        <span className="text-[10px] font-bold text-slate-400 tabular-nums">{new Date(order.createdAt).toLocaleString('ar-EG')}</span>
                      </div>
-                     <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                           <p className="text-xs font-black text-slate-800 dark:text-white">{order.productName}</p>
-                           <p className="text-[10px] text-primary font-bold tabular-nums">الإجمالي: {order.totalPrice} ج.م</p>
+                     <div className="flex gap-4 items-start">
+                        <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-50 dark:bg-surface-dark border border-border-light dark:border-border-dark">
+                           <img src={order.productImage || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=200'} alt="" className="w-full h-full object-cover" />
                         </div>
-                        <div className="text-left">
-                           <p className="text-[10px] font-bold text-slate-800 dark:text-white">{order.userName}</p>
-                           <p className="text-[10px] text-slate-500 font-bold tabular-nums">{order.userPhone}</p>
+                        <div className="flex-1 space-y-1">
+                           <div className="flex justify-between items-start">
+                              <div className="space-y-0.5">
+                                 <p className="text-xs font-black text-slate-800 dark:text-white">{order.productName}</p>
+                                 <p className="text-[10px] text-primary font-bold tabular-nums">الإجمالي: {order.totalPrice} ج.م</p>
+                                 <p className="text-[9px] text-slate-500 font-bold">الكمية: {order.quantity || 1}</p>
+                              </div>
+                              <div className="text-left">
+                                 <p className="text-[10px] font-black text-slate-800 dark:text-white">{order.userName}</p>
+                                 <p className="text-[10px] text-slate-500 font-bold tabular-nums">{order.userPhone}</p>
+                                 <p className="text-[9px] text-slate-400 font-bold">{order.userEmail}</p>
+                              </div>
+                           </div>
                         </div>
                      </div>
                      <div className="bg-slate-50 dark:bg-surface-dark p-3 rounded-2xl text-[10px] font-bold text-slate-500">
@@ -926,21 +972,21 @@ export default function Admin() {
                      <div className="flex gap-2">
                         {order.status === 'pending' && (
                           <button 
-                            onClick={() => updateDoc(doc(db, 'orders', order.id), { status: 'processing' })}
-                            className="flex-1 py-2 bg-primary text-white rounded-xl text-[10px] font-black"
+                            onClick={() => updateDoc(doc(db, 'orders', order.id), { status: 'ready' })}
+                            className="flex-1 py-2.5 bg-primary text-white rounded-xl text-[10px] font-black shadow-lg shadow-primary/20"
                           >
-                            تجهيز الطلب
+                            جاهز للتسليم
                           </button>
                         )}
-                        {order.status === 'processing' && (
+                        {order.status === 'ready' && (
                           <button 
                             onClick={() => updateDoc(doc(db, 'orders', order.id), { status: 'delivered' })}
-                            className="flex-1 py-2 bg-green-500 text-white rounded-xl text-[10px] font-black"
+                            className="flex-1 py-2.5 bg-green-500 text-white rounded-xl text-[10px] font-black shadow-lg shadow-green-500/20"
                           >
                             تم التوصيل
                           </button>
                         )}
-                        <button onClick={() => handleDelete('orders', order.id)} className="p-2 text-red-500 border border-red-100 rounded-xl"><Trash2 size={16} /></button>
+                        <button onClick={() => { if(window.confirm('هل أنت متأكد من حذف الطلب؟')) handleDelete('orders', order.id) }} className="p-2.5 text-red-500 border border-red-100 dark:border-red-900/30 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/10 transition-all"><Trash2 size={18} /></button>
                      </div>
                    </div>
                  ))}
@@ -1161,8 +1207,11 @@ export default function Admin() {
                   <h4 className="text-sm font-bold leading-tight">{u.name}</h4>
                   <p className="text-[10px] text-slate-500 font-bold mb-1">{u.email}</p>
                   <div className="flex items-center gap-2">
-                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${u.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500'}`}>
+                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${u.role === 'admin' ? 'bg-yellow-400/20 text-yellow-600' : 'bg-slate-100 text-slate-500'}`}>
                       {u.role === 'admin' ? 'مدير نظام' : 'عضو'}
+                    </span>
+                    <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-primary/10 text-primary uppercase">
+                      {u.tier || 'new'}
                     </span>
                     <span className="text-[8px] text-slate-400 font-bold">عضو منذ {u.joinDate}</span>
                   </div>
@@ -1335,6 +1384,22 @@ export default function Admin() {
 
           {activeTab === 'history' && (
             <div className="flex flex-col gap-6">
+              {/* History Header */}
+              <div className="bg-gradient-to-r from-primary to-primary-dark p-8 rounded-[40px] text-white shadow-2xl shadow-primary/20 p-8 border border-white/10 group overflow-hidden relative">
+                <div className="relative z-10">
+                   <div className="flex items-center gap-3 mb-2 opacity-80">
+                      <HistoryIcon size={18} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">History Management</span>
+                   </div>
+                   <h2 className="text-3xl font-black mb-1 tracking-tighter">إدارة البيانات التاريخية</h2>
+                   <p className="text-sm text-white/70 max-w-md font-bold">
+                      تحكم في سجل البطولات والأرقام القياسية والتاريخ العريق لناديكم المفضل.
+                   </p>
+                </div>
+                <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all"></div>
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rotate-45 translate-x-12 -translate-y-12"></div>
+              </div>
+
               <div className="flex p-1 bg-slate-100 dark:bg-surface-dark rounded-2xl">
                 {['stats', 'titles', 'timeline', 'stadiums'].map((sub) => (
                   <button 
@@ -1500,6 +1565,7 @@ export default function Admin() {
                   activeTab === 'media' ? 'ميديا' : 
                   activeTab === 'matches' ? 'مباراة' : 
                   activeTab === 'clubs' ? 'نادي' : 
+                  activeTab === 'products' ? 'منتج' :
                   activeTab === 'history' ? (historySubTab === 'stats' ? 'رقم' : historySubTab === 'titles' ? 'بطولة' : historySubTab === 'timeline' ? 'حدث' : 'ملعب') :
                   'استطلاع'
                 }
@@ -1648,14 +1714,38 @@ export default function Admin() {
 
                {activeTab === 'users' && (
                  <>
+                   <div className="flex flex-col items-center mb-4">
+                     <img src={formData.avatar} className="w-20 h-20 rounded-full border-2 border-primary mb-2 shadow-lg" alt="avatar" />
+                     <p className="text-[10px] font-bold text-slate-400 capitalize">{formData.tier || 'new'} Member</p>
+                   </div>
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">اسم العضو</label>
                      <input type="text" placeholder="الاسم الجديد" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} />
                    </div>
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">البريد الإلكتروني (للعرض فقط)</label>
-                     <input type="text" disabled className="w-full p-3 rounded-xl border border-border-light bg-slate-200 dark:bg-slate-800 dark:border-border-dark text-sm opacity-50 cursor-not-allowed" value={formData.email || ''} />
+                     <input type="text" disabled className="w-full p-3 rounded-xl border border-border-light bg-slate-200 dark:bg-slate-800 dark:border-border-dark text-sm opacity-50 cursor-not-allowed text-left dir-ltr" value={formData.email || ''} />
                    </div>
+                   <div className="grid grid-cols-2 gap-3 mt-3">
+                      <div>
+                        <label className="text-[10px] font-black text-slate-500 mb-1 block">الصلاحيات</label>
+                        <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.role || 'user'} onChange={(e) => setFormData({...formData, role: e.target.value})}>
+                          <option value="user">عضو عادي</option>
+                          <option value="moderator">مشرف</option>
+                          <option value="admin">مدير نظام</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-slate-500 mb-1 block">الرتبة</label>
+                        <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.tier || 'new'} onChange={(e) => setFormData({...formData, tier: e.target.value})}>
+                          <option value="new">عضو جديد (New)</option>
+                          <option value="bronze">عضو برونزي (Bronze)</option>
+                          <option value="silver">عضو فضي (Silver)</option>
+                          <option value="gold">عضو ذهبي (Gold)</option>
+                          <option value="diamond">عضو ماسي (Diamond)</option>
+                        </select>
+                      </div>
+                    </div>
                  </>
                )}
 

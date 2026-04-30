@@ -158,20 +158,7 @@ export default function Matches() {
 
   return (
     <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-24 px-0 bg-background-light dark:bg-background-dark min-h-screen">
-      <header className="sticky top-0 z-40 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-600 dark:text-slate-300 hover:text-primary transition-all duration-300">
-              <span className="material-symbols-outlined text-2xl rotate-180">chevron_right</span>
-            </Link>
-            <div className="flex flex-col">
-               <h1 className="text-xl font-black tracking-tight text-primary-dark dark:text-white uppercase leading-none">جدول المباريات</h1>
-               <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Season Fixtures</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Premium Tabs */}
+      <div className="sticky top-[65px] z-30 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl px-4 py-2 border-b border-border-light/40 dark:border-border-dark/40">
         <div className="flex gap-2 p-1 bg-slate-100 dark:bg-surface-dark rounded-2xl">
           {[
             { id: 'all', label: 'الكل' },
@@ -181,7 +168,7 @@ export default function Matches() {
             <button 
               key={tab.id}
               onClick={() => setFilter(tab.id as any)}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all duration-300 ${
+              className={`flex-1 py-2 rounded-xl text-[10px] font-black transition-all duration-300 ${
                 filter === tab.id 
                   ? 'bg-white dark:bg-primary text-primary-dark dark:text-white shadow-premium' 
                   : 'text-slate-500 hover:text-primary-dark dark:hover:text-white'
@@ -191,7 +178,7 @@ export default function Matches() {
             </button>
           ))}
         </div>
-      </header>
+      </div>
 
       <motion.main 
         key={filter}

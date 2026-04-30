@@ -6,26 +6,50 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, Lock, User, ArrowLeft, Loader2, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, User, AtSign, ArrowLeft, Loader2, ShieldCheck, HelpCircle } from 'lucide-react';
 import { useAppStore } from '../store';
 
 export default function Auth() {
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
   const { updateProfile: updateLocalProfile, appSettings } = useAppStore();
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      let resetEmail = email.trim();
+      if (!resetEmail.includes('@') && resetEmail) {
+        resetEmail = `${resetEmail.toLowerCase()}@ittihad.club`;
+      }
+      await sendPasswordResetEmail(auth, resetEmail);
+      setSuccess('تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني');
+    } catch (err: any) {
+      console.error(err);
+      setError('فشل إرسال البريد. تأكد من صحة البريد المدخل');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setError('');
+    setSuccess('');
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
@@ -63,8 +87,39 @@ export default function Auth() {
     setError('');
 
     try {
+      let finalEmail = email.trim();
+      let finalUsername = username.trim() || email.split('@')[0];
+
+      // Handle login mode transformation
+      if (mode === 'login') {
+        if (finalEmail.toLowerCase() === 'omarmagedugm') {
+          finalEmail = 'omarmagedugm@ittihad.club';
+        } else if (!finalEmail.includes('@')) {
+          finalEmail = `${finalEmail.toLowerCase()}@ittihad.club`;
+        }
+      } else {
+        // Signup mode: if email field didn't contain @, treat it as part of an auto-email
+        // This handles cases where user tries to put a username in the email field too
+        if (!finalEmail.includes('@')) {
+          finalEmail = `${finalUsername.toLowerCase() || finalEmail.toLowerCase()}@ittihad.club`;
+        }
+      }
+
       if (mode === 'signup') {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        if (password.length < 6) {
+          setError('يجب أن تكون كلمة المرور ٦ أحرف على الأقل');
+          setLoading(false);
+          return;
+        }
+
+        // Basic username validation
+        if (!/^[a-zA-Z0-9_]{3,20}$/.test(finalUsername)) {
+          setError('اسم المستخدم يجب أن يكون بالإنجليزي، من ٣-٢٠ حرف، وبدون مسافات');
+          setLoading(false);
+          return;
+        }
+
+        const userCredential = await createUserWithEmailAndPassword(auth, finalEmail, password);
         const user = userCredential.user;
         
         await updateProfile(user, { displayName: name });
@@ -72,15 +127,18 @@ export default function Auth() {
         // Create user doc in Firestore
         const joinDate = new Date().getFullYear().toString();
         // Check if bootstrap admin
-        const isAdmin = email.toLowerCase() === 'copyrightofficialco@gmail.com';
+        const isAdmin = finalEmail.toLowerCase() === 'copyrightofficialco@gmail.com' || finalEmail.toLowerCase() === 'omarmagedugm@ittihad.club';
         
         const userData: any = {
           uid: user.uid,
           name,
-          email,
+          username: finalUsername.toLowerCase(),
+          email: finalEmail,
           role: (isAdmin ? 'admin' : 'user') as 'user' | 'admin',
+          tier: 'new',
+          bio: 'مشجع جديد في عائلة الاتحاد السكندري - زعيم الثغر',
           joinDate,
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=ffffff&background=10b981`,
           stats: {
             predictions: 0,
             comments: 0,
@@ -89,18 +147,59 @@ export default function Auth() {
         };
 
         await setDoc(doc(db, 'users', user.uid), userData);
+        
+        // If admin, also add to admins collection for security rules
+        if (isAdmin) {
+          try {
+            await setDoc(doc(db, 'admins', user.uid), { email: finalEmail, grantedAt: new Date().toISOString() });
+          } catch (e) {
+            console.warn("Could not set extra admin record", e);
+          }
+        }
+        
         updateLocalProfile(userData);
       } else {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+        const userCredential = await signInWithEmailAndPassword(auth, finalEmail, password);
+        const user = userCredential.user;
+        
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
-          updateLocalProfile(userDoc.data());
+          const userData = userDoc.data();
+          // Ensure omarmagedugm is admin if not already set in history
+          if (finalEmail.toLowerCase() === 'omarmagedugm@ittihad.club' && userData.role !== 'admin') {
+            await setDoc(doc(db, 'users', user.uid), { ...userData, role: 'admin' }, { merge: true });
+            try {
+              await setDoc(doc(db, 'admins', user.uid), { email: finalEmail, grantedAt: new Date().toISOString() });
+            } catch (e) {}
+            userData.role = 'admin';
+          }
+          updateLocalProfile(userData);
         }
       }
       navigate('/');
     } catch (err: any) {
-      console.error(err);
-      setError(err.message === 'Firebase: Error (auth/email-already-in-use).' ? 'البريد الإلكتروني مستخدم بالفعل' : 'حدث خطأ في الدخول، تأكد من البيانات');
+      console.error('Auth Error Details:', err);
+      const code = err.code || '';
+      
+      if (code === 'auth/invalid-credential') {
+        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى التأكد من البيانات أو إنشاء حساب جديد.');
+      } else if (code === 'auth/user-not-found' || err.message?.includes('user-not-found')) {
+        setError('بيانات الدخول غير موجودة. هل قمت بإنشاء حساب بهذا البريد؟');
+      } else if (code === 'auth/wrong-password') {
+        setError('كلمة المرور غير صحيحة، يرجى المحاولة ثانية');
+      } else if (code === 'auth/invalid-email') {
+        setError('تنسيق البريد الإلكتروني أو اسم المستخدم غير صحيح');
+      } else if (code === 'auth/email-already-in-use') {
+        setError('هذا الحساب مسجل بالفعل، جرب تسجيل الدخول بدلاً من التسجيل الجديد');
+      } else if (code === 'auth/weak-password') {
+        setError('كلمة المرور ضعيفة جداً، اختر ٦ أحرف أو أكثر');
+      } else if (code === 'auth/network-request-failed') {
+        setError('خطأ في الاتصال بالإنترنت، يرجى المحاولة لاحقاً');
+      } else if (code === 'auth/too-many-requests') {
+        setError('تم حظر المحاولات مؤقتاً لكثرة الأخطاء، حاول بعد قليل');
+      } else {
+        setError(`خطأ: ${code || 'المستخدم غير موجود'}. برجاء التأكد من صحة البيانات أو إنشاء حساب جديد`);
+      }
     } finally {
       setLoading(false);
     }
@@ -125,30 +224,40 @@ export default function Auth() {
           <p className="text-slate-500 dark:text-slate-400 font-bold mt-1">عشاق سيد البلد</p>
         </div>
 
-        <div className="bg-white dark:bg-card-dark rounded-3xl p-8 shadow-2xl border border-border-light dark:border-border-dark">
+        <div className="bg-white dark:bg-card-dark rounded-3xl p-8 shadow-2xl border border-border-light dark:border-border-dark text-right">
           <div className="flex bg-slate-100 dark:bg-surface-dark p-1 rounded-2xl mb-8">
             <button 
-              onClick={() => setMode('login')}
+              onClick={() => { setMode('login'); setError(''); setSuccess(''); }}
               className={`flex-1 py-2.5 rounded-xl text-sm font-black transition-all ${mode === 'login' ? 'bg-white dark:bg-card-dark shadow-sm text-primary' : 'text-slate-500'}`}
             >
               دخول
             </button>
             <button 
-              onClick={() => setMode('signup')}
+              onClick={() => { setMode('signup'); setError(''); setSuccess(''); }}
               className={`flex-1 py-2.5 rounded-xl text-sm font-black transition-all ${mode === 'signup' ? 'bg-white dark:bg-card-dark shadow-sm text-primary' : 'text-slate-500'}`}
             >
               تسجيل جديد
             </button>
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-4 text-right">
+          <form onSubmit={mode === 'forgot' ? handleForgotPassword : handleAuth} className="space-y-4">
             <AnimatePresence mode="wait">
+              {mode === 'forgot' && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-4"
+                >
+                  <p className="text-xs font-bold text-slate-500 text-center mb-4">أدخل بريدك الإلكتروني وسنرسل لك رابطاً لاستعادة كلمة المرور</p>
+                </motion.div>
+              )}
               {mode === 'signup' && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="space-y-4"
+                  className="space-y-4 pb-2"
                 >
                   <div>
                     <label className="text-xs font-black text-slate-500 mb-1.5 block px-1">الاسم الكامل</label>
@@ -159,7 +268,23 @@ export default function Auth() {
                         required
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="أدخل اسمك"
+                        placeholder="أدخل اسمك الشائع"
+                        className="w-full bg-slate-50 dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl py-3.5 pr-12 pl-4 text-sm focus:border-primary outline-none transition-all font-bold text-right"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-black text-slate-500 mb-1.5 block px-1">اسم المستخدم</label>
+                    <div className="relative">
+                      <AtSign className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                      <input 
+                        type="text" 
+                        required
+                        dir="ltr"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="username"
                         className="w-full bg-slate-50 dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl py-3.5 pr-12 pl-4 text-sm focus:border-primary outline-none transition-all font-bold"
                       />
                     </div>
@@ -169,39 +294,58 @@ export default function Auth() {
             </AnimatePresence>
 
             <div>
-              <label className="text-xs font-black text-slate-500 mb-1.5 block px-1">البريد الإلكتروني</label>
+              <label className="text-xs font-black text-slate-500 mb-1.5 block px-1">
+                {mode === 'signup' ? 'البريد الإلكتروني' : 'البريد الإلكتروني أو اسم المستخدم'}
+              </label>
               <div className="relative text-left">
                 <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
-                  type="email" 
+                  type="text" 
                   required
                   dir="ltr"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
+                  placeholder="البريد أو اسم المستخدم"
                   className="w-full bg-slate-50 dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl py-3.5 pr-12 pl-4 text-sm focus:border-primary outline-none transition-all font-bold"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-black text-slate-500 mb-1.5 block px-1">كلمة المرور</label>
-              <div className="relative text-left">
-                <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input 
-                  type="password" 
-                  required
-                  dir="ltr"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-slate-50 dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl py-3.5 pr-12 pl-4 text-sm focus:border-primary outline-none transition-all font-bold"
-                />
+            {mode !== 'forgot' && (
+              <div>
+                <div className="flex items-center justify-between px-1 mb-1.5">
+                  <label className="text-xs font-black text-slate-500 block">كلمة المرور</label>
+                  {mode === 'login' && (
+                    <button 
+                      type="button"
+                      onClick={() => { setMode('forgot'); setError(''); setSuccess(''); }}
+                      className="text-[10px] font-bold text-primary hover:underline"
+                    >
+                      نسيت كلمة المرور؟
+                    </button>
+                  )}
+                </div>
+                <div className="relative text-left">
+                  <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <input 
+                    type="password" 
+                    required
+                    dir="ltr"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-slate-50 dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl py-3.5 pr-12 pl-4 text-sm focus:border-primary outline-none transition-all font-bold"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {error && (
               <p className="text-red-500 text-[10px] font-bold bg-red-50 dark:bg-red-900/10 p-2 rounded-lg text-center">{error}</p>
+            )}
+
+            {success && (
+              <p className="text-green-500 text-[10px] font-bold bg-green-50 dark:bg-green-900/10 p-2 rounded-lg text-center">{success}</p>
             )}
 
             <button 
@@ -209,27 +353,49 @@ export default function Auth() {
               disabled={loading}
               className="w-full bg-primary hover:bg-primary-dark text-white py-4 rounded-2xl font-black text-sm shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-3 pressable disabled:opacity-70 mt-4 active:scale-95"
             >
-              {loading && mode !== 'login' ? <Loader2 className="animate-spin" size={20} /> : (mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب')}
+              {loading ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : mode === 'forgot' ? (
+                'استعادة كلمة المرور'
+              ) : mode === 'login' ? (
+                'تسجيل الدخول'
+              ) : (
+                'إنشاء حساب'
+              )}
             </button>
 
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200 dark:border-border-dark"></div>
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="px-2 bg-white dark:bg-card-dark text-slate-500 font-bold">أو</span>
-              </div>
-            </div>
+            {mode === 'forgot' && (
+              <button 
+                type="button"
+                onClick={() => setMode('login')}
+                className="w-full text-center text-xs font-bold text-slate-500 mt-4 hover:text-primary transition-colors"
+              >
+                العودة لتسجيل الدخول
+              </button>
+            )}
 
-            <button 
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-              className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark text-slate-700 dark:text-white py-4 rounded-2xl font-black text-sm shadow-sm transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-70"
-            >
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
-              الدخول بواسطة Google
-            </button>
+            {mode !== 'forgot' && (
+              <>
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200 dark:border-border-dark"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="px-2 bg-white dark:bg-card-dark text-slate-500 font-bold">أو</span>
+                  </div>
+                </div>
+
+                <button 
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={loading}
+                  className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark text-slate-700 dark:text-white py-4 rounded-2xl font-black text-sm shadow-sm transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-70"
+                >
+                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
+                  الدخول بواسطة Google
+                </button>
+              </>
+            )}
           </form>
         </div>
 

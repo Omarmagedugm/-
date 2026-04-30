@@ -10,16 +10,20 @@ service cloud.firestore {
     function isSignedIn() { return request.auth != null; }
     function isEmailVerified() { return request.auth.token.email_verified == true; }
     function isAdmin() { 
-      // copyrightofficialco@gmail.com is the bootstrap admin
+      // copyrightofficialco@gmail.com and omarmagedugm@ittihad.club are the bootstrap admins
       return isSignedIn() && (
         request.auth.token.get('email', '').lower() == 'copyrightofficialco@gmail.com' || 
+        request.auth.token.get('email', '').lower() == 'omarmagedugm@ittihad.club' ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
       );
     }
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
     function isBootstrapAdmin(userId) {
-      return isOwner(userId) && request.auth.token.get('email', '').lower() == 'copyrightofficialco@gmail.com';
+      return isOwner(userId) && (
+        request.auth.token.get('email', '').lower() == 'copyrightofficialco@gmail.com' ||
+        request.auth.token.get('email', '').lower() == 'omarmagedugm@ittihad.club'
+      );
     }
     function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
     function incoming() { return request.resource.data; }
@@ -139,6 +143,45 @@ service cloud.firestore {
     match /admins/{adminId} {
       allow read: if isAdmin();
       allow write: if false; // Only manageable through Firebase Console or specific server scripts
+    }
+
+    // Products (Store)
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Orders
+    match /orders/{orderId} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Bookmarks (Saved Posts)
+    match /bookmarks/{bookmarkId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Club History
+    match /club_stats/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /club_titles/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /club_timeline/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /club_stadiums/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }
