@@ -179,7 +179,7 @@ export default function Live() {
               <div key={msg.id} className={`flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300`}>
                 <div className="relative flex-shrink-0">
                   {msg.userAvatar ? (
-                    <img src={msg.userAvatar} className="w-8 h-8 rounded-full border shadow-sm" alt="" />
+                    <img src={msg.userAvatar} referrerPolicy="no-referrer" className="w-8 h-8 rounded-full border shadow-sm" alt="" />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-surface-dark flex items-center justify-center text-slate-500 border border-border-light dark:border-border-dark">
                       <User size={16} />

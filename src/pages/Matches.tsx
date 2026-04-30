@@ -210,7 +210,7 @@ export default function Matches() {
                 <div className="grid grid-cols-3 items-center gap-4 my-2">
                   <div className="flex flex-col items-center gap-4">
                     <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-[28px] p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float">
-                      <img src={newestMatch.homeLogo} alt={newestMatch.homeTeam} className="w-full h-full object-contain filter drop-shadow-2xl" />
+                      <img src={newestMatch.homeLogo} alt={newestMatch.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
                     </div>
                     <span className="text-white font-black text-[10px] text-center uppercase tracking-widest">{newestMatch.homeTeam}</span>
                   </div>
@@ -240,7 +240,7 @@ export default function Matches() {
 
                   <div className="flex flex-col items-center gap-4">
                     <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-[28px] p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float [animation-delay:0.5s]">
-                      <img src={newestMatch.awayLogo} alt={newestMatch.awayTeam} className="w-full h-full object-contain filter drop-shadow-2xl" />
+                      <img src={newestMatch.awayLogo} alt={newestMatch.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
                     </div>
                     <span className="text-white font-black text-[10px] text-center uppercase tracking-widest">{newestMatch.awayTeam}</span>
                   </div>
@@ -324,7 +324,7 @@ export default function Matches() {
                 <div className="grid grid-cols-3 items-center gap-2">
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-12 h-12 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center">
-                      <img src={match.homeLogo} alt={match.homeTeam} className="w-full h-full object-contain" />
+                      <img src={match.homeLogo} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
                     </div>
                     <span className="text-[10px] font-black text-slate-800 dark:text-white uppercase text-center line-clamp-1">{match.homeTeam}</span>
                   </div>
@@ -348,7 +348,7 @@ export default function Matches() {
 
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-12 h-12 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center">
-                      <img src={match.awayLogo} alt={match.awayTeam} className="w-full h-full object-contain" />
+                      <img src={match.awayLogo} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
                     </div>
                     <span className="text-[10px] font-black text-slate-800 dark:text-white uppercase text-center line-clamp-1">{match.awayTeam}</span>
                   </div>
@@ -509,7 +509,7 @@ export default function Matches() {
                      <div className="flex items-center justify-between px-4">
                         <div className="flex flex-col items-center gap-3">
                            <div className="w-16 h-16 bg-slate-50 dark:bg-surface-dark rounded-2xl p-3 flex items-center justify-center border border-border-light dark:border-border-dark">
-                             <img src={match.homeLogo} alt={match.homeTeam} className="w-full h-full object-contain" />
+                             <img src={match.homeLogo} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
                            </div>
                            <span className="text-[10px] font-black uppercase text-center w-20 line-clamp-1">{match.homeTeam}</span>
                            <input 
@@ -525,7 +525,7 @@ export default function Matches() {
 
                         <div className="flex flex-col items-center gap-3">
                            <div className="w-16 h-16 bg-slate-50 dark:bg-surface-dark rounded-2xl p-3 flex items-center justify-center border border-border-light dark:border-border-dark">
-                             <img src={match.awayLogo} alt={match.awayTeam} className="w-full h-full object-contain" />
+                             <img src={match.awayLogo} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
                            </div>
                            <span className="text-[10px] font-black uppercase text-center w-20 line-clamp-1">{match.awayTeam}</span>
                            <input 

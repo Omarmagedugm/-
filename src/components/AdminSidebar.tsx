@@ -15,7 +15,9 @@ import {
   MessageCircle,
   Tags,
   ShoppingBag,
-  ShoppingCart
+  ShoppingCart,
+  Music,
+  BookOpen
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -34,6 +36,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
   const tabs = [
     { title: 'عام', items: [
       { id: 'overview', icon: <LayoutDashboard size={18} />, label: 'لوحة القيادة' },
+      { id: 'layout', icon: <LayoutDashboard size={18} />, label: 'إدارة الصفحة الرئيسية' },
       { id: 'settings', icon: <SettingsIcon size={18} />, label: 'إعدادات التطبيق' },
     ]},
     { title: 'المحتوى', items: [
@@ -44,6 +47,8 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
       { id: 'media', icon: <PlayCircle size={18} />, label: 'المالتيميديا' },
       { id: 'matches', icon: <Trophy size={18} />, label: 'المباريات' },
       { id: 'history', icon: <HistoryIcon size={18} />, label: 'تاريخ النادي' },
+      { id: 'music', icon: <Music size={18} />, label: 'المكتبة الموسيقية' },
+      { id: 'books', icon: <BookOpen size={18} />, label: 'الكتب والمجلات' },
       { id: 'live', icon: <Radio size={18} />, label: 'البث المباشر' },
     ]},
     { title: 'الجماهير', items: [

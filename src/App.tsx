@@ -17,8 +17,10 @@ import FanZone from './pages/FanZone';
 import History from './pages/History';
 import Store from './pages/Store';
 import Bookmarks from './pages/Bookmarks';
+import Library from './pages/Library';
 import BottomNav from './components/BottomNav';
 import TopHeader from './components/TopHeader';
+import MusicPlayer from './components/MusicPlayer';
 
 export default function App() {
   const { theme } = useAppStore();
@@ -55,8 +57,10 @@ export default function App() {
           <Route path="/history" element={<History />} />
           <Route path="/store" element={<Store />} />
           <Route path="/bookmarks" element={<Bookmarks />} />
+          <Route path="/library" element={<Library />} />
         </Routes>
         <AppNav />
+        <MusicPlayer />
       </div>
     </BrowserRouter>
   );

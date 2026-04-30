@@ -2,6 +2,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 
+export interface HomeSection {
+  id: string;
+  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom';
+  title?: string;
+  active: boolean;
+  order: number;
+}
+
 export interface NewsItem {
   id: string;
   title: string;
@@ -107,6 +115,7 @@ export interface ClubTitle {
   count: number;
   icon: string;
   category: 'football' | 'basketball';
+  hidden?: boolean;
 }
 
 export interface ClubStat {
@@ -114,6 +123,7 @@ export interface ClubStat {
   label: string;
   value: number;
   icon: string;
+  hidden?: boolean;
 }
 
 export interface HistoryEvent {
@@ -121,6 +131,49 @@ export interface HistoryEvent {
   year: string;
   title: string;
   desc: string;
+  hidden?: boolean;
+}
+
+export interface Song {
+  id: string;
+  title: string;
+  artist: string;
+  albumId?: string;
+  audioUrl: string;
+  coverUrl: string;
+  duration?: string;
+  category: 'anthem' | 'chant' | 'song';
+  lyrics?: string;
+  hidden?: boolean;
+  createdAt?: string;
+}
+
+export interface Album {
+  id: string;
+  title: string;
+  artist: string;
+  coverUrl: string;
+  year: string;
+  hidden?: boolean;
+}
+
+export interface Playlist {
+  id: string;
+  title: string;
+  coverUrl: string;
+  songIds: string[];
+  hidden?: boolean;
+}
+
+export interface Book {
+  id: string;
+  title: string;
+  author: string;
+  coverUrl: string;
+  pdfUrl: string;
+  desc: string;
+  category: string;
+  hidden?: boolean;
 }
 
 export interface StadiumItem {
@@ -129,6 +182,7 @@ export interface StadiumItem {
   type: string;
   desc: string;
   imageUrl: string;
+  hidden?: boolean;
 }
 
 export interface Product {
@@ -199,6 +253,15 @@ interface AppState {
   newsCategories: string[];
   products: Product[];
   orders: StoreOrder[];
+  homeSections: HomeSection[];
+  songs: Song[];
+  albums: Album[];
+  playlists: Playlist[];
+  books: Book[];
+  currentSong: Song | null;
+  isPlaying: boolean;
+  activePlaylist: Song[];
+  undoStack: { collection: string; action: 'add' | 'delete' | 'update'; data: any }[];
   setNews: (news: NewsItem[]) => void;
   addNews: (item: NewsItem) => void;
   deleteNews: (id: string) => void;
@@ -229,6 +292,16 @@ interface AppState {
   setNewsCategories: (categories: string[]) => void;
   setProducts: (products: Product[]) => void;
   setOrders: (orders: StoreOrder[]) => void;
+  setHomeSections: (sections: HomeSection[]) => void;
+  setSongs: (songs: Song[]) => void;
+  setAlbums: (albums: Album[]) => void;
+  setPlaylists: (playlists: Playlist[]) => void;
+  setBooks: (books: Book[]) => void;
+  setCurrentSong: (song: Song | null) => void;
+  setIsPlaying: (playing: boolean) => void;
+  setActivePlaylist: (songs: Song[]) => void;
+  pushToUndoStack: (op: { collection: string; action: 'add' | 'delete' | 'update'; data: any }) => void;
+  popFromUndoStack: () => { collection: string; action: 'add' | 'delete' | 'update'; data: any } | undefined;
 }
 
 const defaultNews: NewsItem[] = [
@@ -382,6 +455,22 @@ export const useAppStore = create<AppState>()(
       newsCategories: ['أخبار الفريق', 'كرة سلة', 'ألعاب أخرى', 'تقارير', 'انتقالات'],
       products: [],
       orders: [],
+      homeSections: [
+        { id: 'hero', type: 'hero', active: true, order: 0 },
+        { id: 'matches', type: 'matches', active: true, order: 1 },
+        { id: 'news', type: 'news', active: true, order: 2 },
+        { id: 'media', type: 'media', active: true, order: 3 },
+        { id: 'polls', type: 'polls', active: true, order: 4 },
+        { id: 'history', type: 'history', active: true, order: 5 },
+      ],
+      songs: [],
+      albums: [],
+      playlists: [],
+      books: [],
+      currentSong: null,
+      isPlaying: false,
+      activePlaylist: [],
+      undoStack: [],
       setNews: (news) => set({ news }),
       addNews: (item) => set((state) => ({ news: [item, ...state.news] })),
       deleteNews: (id) => set((state) => ({ news: state.news.filter(n => n.id !== id) })),
@@ -422,6 +511,27 @@ export const useAppStore = create<AppState>()(
       setNewsCategories: (newsCategories) => set({ newsCategories }),
       setProducts: (products) => set({ products }),
       setOrders: (orders) => set({ orders }),
+      setHomeSections: (homeSections) => set({ homeSections }),
+      setSongs: (songs) => set({ songs }),
+      setAlbums: (albums) => set({ albums }),
+      setPlaylists: (playlists) => set({ playlists }),
+      setBooks: (books) => set({ books }),
+      setCurrentSong: (currentSong) => set({ currentSong }),
+      setIsPlaying: (isPlaying) => set({ isPlaying }),
+      setActivePlaylist: (activePlaylist) => set({ activePlaylist }),
+      pushToUndoStack: (op) => set((state) => ({ 
+        undoStack: [op, ...state.undoStack].slice(0, 20) // Keep last 20 operations
+      })),
+      popFromUndoStack: () => {
+        let op: any = undefined;
+        set((state) => {
+          if (state.undoStack.length === 0) return state;
+          const [first, ...rest] = state.undoStack;
+          op = first;
+          return { undoStack: rest };
+        });
+        return op;
+      },
     }),
     {
       name: 'ittihad-app-storage',

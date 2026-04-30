@@ -56,7 +56,7 @@ export default function Splash() {
                 transition={{ duration: 2, repeat: Infinity }}
                 className="w-32 h-32 rounded-full overflow-hidden bg-white/10 backdrop-blur-md p-1 ring-4 ring-white/20"
               >
-                <img src={appSettings.appLogo} alt="Logo" className="w-full h-full object-contain" />
+                <img src={appSettings.appLogo} alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
               </motion.div>
             </div>
             

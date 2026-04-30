@@ -527,7 +527,7 @@ export default function FanZone() {
             
             <div className="flex gap-4 mb-4 relative z-10">
               <div className="w-12 h-12 rounded-2xl overflow-hidden glass-card ring-1 ring-primary/20 shrink-0">
-                <img src={profile.avatar} className="w-full h-full object-cover" alt="user" />
+                <img src={profile.avatar} className="w-full h-full object-cover" alt="user" referrerPolicy="no-referrer" />
               </div>
               <div className="flex-1">
                 <textarea 
@@ -631,7 +631,7 @@ export default function FanZone() {
               <div className="flex items-center gap-3">
                 {newPost.image && (
                   <div className="relative w-10 h-10 rounded-xl overflow-hidden glass-card ring-1 ring-primary/20 group">
-                    <img src={newPost.image} className="w-full h-full object-cover" alt="preview" />
+                    <img src={newPost.image} className="w-full h-full object-cover" alt="preview" referrerPolicy="no-referrer" />
                     <button 
                       onClick={() => setNewPost({ ...newPost, image: '' })}
                       className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -774,6 +774,7 @@ export default function FanZone() {
                           src={post.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.userId}`} 
                           className="w-full h-full object-cover rounded-2xl bg-slate-100" 
                           alt={post.userName}
+                          referrerPolicy="no-referrer"
                         />
                       </div>
                       <div>
@@ -917,7 +918,7 @@ export default function FanZone() {
 
                   {post.image && (
                     <div className="relative w-full aspect-[16/10] rounded-[36px] overflow-hidden mb-6 border border-border-light dark:border-border-dark shadow-premium group/img">
-                      <img src={post.image} className="w-full h-full object-cover transition-transform duration-1000 group-hover/img:scale-110" alt="post attachment" />
+                      <img src={post.image} className="w-full h-full object-cover transition-transform duration-1000 group-hover/img:scale-110" alt="post attachment" referrerPolicy="no-referrer" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity"></div>
                     </div>
                   )}
@@ -975,7 +976,7 @@ export default function FanZone() {
                     >
                       <div className="flex gap-3 mb-6">
                         <div className="w-10 h-10 rounded-xl overflow-hidden glass-card ring-1 ring-primary/20 shrink-0">
-                          <img src={profile.avatar} className="w-full h-full object-cover" alt="me" />
+                          <img src={profile.avatar} className="w-full h-full object-cover" alt="me" referrerPolicy="no-referrer" />
                         </div>
                         <div className="flex-1 flex gap-2 relative">
                           <input 
@@ -1005,7 +1006,7 @@ export default function FanZone() {
                             key={comment.id} 
                             className="flex gap-4 group/comment"
                           >
-                            <img src={comment.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.userId}`} className="w-9 h-9 rounded-[14px] bg-slate-100 shrink-0 border border-border-light dark:border-border-dark shadow-sm" alt="avatar" />
+                            <img src={comment.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.userId}`} className="w-9 h-9 rounded-[14px] bg-slate-100 shrink-0 border border-border-light dark:border-border-dark shadow-sm" alt="avatar" referrerPolicy="no-referrer" />
                             <div className="flex-1 bg-slate-50 dark:bg-surface-dark p-4 rounded-[24px] border border-border-light dark:border-border-dark shadow-sm group-hover/comment:border-primary/20 transition-colors">
                               <div className="flex items-center justify-between mb-1">
                                 <h5 className="text-[11px] font-black text-primary uppercase tracking-tighter">{comment.userName}</h5>
@@ -1120,7 +1121,7 @@ export default function FanZone() {
                       animate={{ opacity: 1, x: 0 }}
                       className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
                     >
-                      <img src={msg.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.userId}`} className="w-10 h-10 rounded-[14px] bg-slate-100 shadow-sm border border-border-light dark:border-border-dark shrink-0" alt="avatar" />
+                      <img src={msg.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.userId}`} className="w-10 h-10 rounded-[14px] bg-slate-100 shadow-sm border border-border-light dark:border-border-dark shrink-0" alt="avatar" referrerPolicy="no-referrer" />
                       <div className={`max-w-[80%] ${isOwn ? 'items-end text-left' : 'items-start text-right'} flex flex-col gap-1.5`}>
                         <div className="flex items-center gap-2 px-1">
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{msg.userName}</span>
@@ -1191,7 +1192,7 @@ export default function FanZone() {
                     <div className="flex items-center justify-center gap-8 w-full">
                        <div className="flex flex-col items-center gap-2">
                          <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
-                           <img src={nextMatch.homeLogo} className="w-8 h-8 object-contain" alt="home" />
+                           <img src={nextMatch.homeLogo} className="w-8 h-8 object-contain" alt="home" referrerPolicy="no-referrer" />
                          </div>
                          <span className="text-[10px] font-black uppercase text-center">{nextMatch.homeTeam}</span>
                        </div>
@@ -1214,7 +1215,7 @@ export default function FanZone() {
                        </div>
                        <div className="flex flex-col items-center gap-2">
                          <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
-                           <img src={nextMatch.awayLogo} className="w-8 h-8 object-contain" alt="away" />
+                           <img src={nextMatch.awayLogo} className="w-8 h-8 object-contain" alt="away" referrerPolicy="no-referrer" />
                          </div>
                          <span className="text-[10px] font-black uppercase text-center">{nextMatch.awayTeam}</span>
                        </div>
@@ -1267,9 +1268,9 @@ export default function FanZone() {
                            </div>
                            {match && (
                              <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-surface-dark rounded-xl text-[9px] font-black text-slate-500">
-                               <img src={match.homeLogo} className="w-4 h-4 object-contain" alt="" />
+                               <img src={match.homeLogo} className="w-4 h-4 object-contain" alt="" referrerPolicy="no-referrer" />
                                <span>VS</span>
-                               <img src={match.awayLogo} className="w-4 h-4 object-contain" alt="" />
+                               <img src={match.awayLogo} className="w-4 h-4 object-contain" alt="" referrerPolicy="no-referrer" />
                              </div>
                            )}
                          </div>
@@ -1400,7 +1401,7 @@ export default function FanZone() {
                     <div className="flex items-center justify-between gap-4 relative z-10">
                       <div className="flex flex-col items-center flex-1">
                         <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-3 backdrop-blur-md border border-white/20">
-                          <img src={nextMatch.homeLogo} className="w-10 h-10 object-contain" alt="home" />
+                          <img src={nextMatch.homeLogo} className="w-10 h-10 object-contain" alt="home" referrerPolicy="no-referrer" />
                         </div>
                         <span className="text-xs font-black text-center">{nextMatch.homeTeam}</span>
                       </div>
@@ -1422,7 +1423,7 @@ export default function FanZone() {
 
                       <div className="flex flex-col items-center flex-1">
                         <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-3 backdrop-blur-md border border-white/20">
-                          <img src={nextMatch.awayLogo} className="w-10 h-10 object-contain" alt="away" />
+                          <img src={nextMatch.awayLogo} className="w-10 h-10 object-contain" alt="away" referrerPolicy="no-referrer" />
                         </div>
                         <span className="text-xs font-black text-center">{nextMatch.awayTeam}</span>
                       </div>

@@ -183,5 +183,23 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Music and Books
+    match /songs/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /albums/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /playlists/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /books/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }

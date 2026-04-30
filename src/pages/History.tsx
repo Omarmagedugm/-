@@ -33,16 +33,16 @@ export default function History() {
 
   useEffect(() => {
     const unsubStats = onSnapshot(collection(db, 'club_stats'), (snap) => {
-      setClubStats(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setClubStats(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)).filter(i => !i.hidden));
     });
     const unsubTitles = onSnapshot(collection(db, 'club_titles'), (snap) => {
-      setClubTitles(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setClubTitles(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)).filter(i => !i.hidden));
     });
     const unsubTimeline = onSnapshot(query(collection(db, 'club_timeline'), orderBy('year', 'asc')), (snap) => {
-      setHistoryEvents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setHistoryEvents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)).filter(i => !i.hidden));
     });
     const unsubStadiums = onSnapshot(collection(db, 'club_stadiums'), (snap) => {
-      setStadiums(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setStadiums(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)).filter(i => !i.hidden));
       setLoading(false);
     });
 
@@ -228,6 +228,7 @@ export default function History() {
                     <div className="h-40 bg-slate-900 relative overflow-hidden">
                        <img 
                           src={stadium.imageUrl || 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=1000'} 
+                          referrerPolicy="no-referrer"
                           className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" 
                           alt={stadium.name} 
                        />

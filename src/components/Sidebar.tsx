@@ -62,7 +62,7 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
               </button>
               <Link to="/profile" onClick={onClose} className="flex items-center gap-4 relative z-10 pt-4 cursor-pointer hover:opacity-80 transition-opacity">
                 <div className="h-16 w-16 rounded-2xl bg-white/20 p-0.5 ring-1 ring-white/30 shadow-inner overflow-hidden">
-                  <img src={profile.avatar} alt="Profile" className="w-full h-full object-cover rounded-[14px]" />
+                  <img src={profile.avatar} alt="Profile" className="w-full h-full object-cover rounded-[14px]" referrerPolicy="no-referrer" />
                 </div>
                 <div>
                   <h3 className="text-lg font-black">{profile.name}</h3>
@@ -94,6 +94,11 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
               <Link to="/news" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
                 <span className="material-symbols-outlined !text-[20px]">newspaper</span>
                 <span className="text-sm font-bold">الأخبار والتغطيات</span>
+              </Link>
+
+              <Link to="/library" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
+                <span className="material-symbols-outlined !text-[20px]">library_music</span>
+                <span className="text-sm font-bold">المكتبة الرقمية</span>
               </Link>
 
               <Link to="/matches" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
@@ -151,7 +156,7 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
 
             <div className="p-6 border-t border-slate-100 dark:border-border-dark">
               <div className="flex items-center justify-center p-4 rounded-2xl bg-slate-50 dark:bg-card-dark/50 border border-border-light dark:border-border-dark gap-3">
-                <img src={appSettings.appLogo} className="h-8 w-8 opacity-40 grayscale" alt="" />
+                <img src={appSettings.appLogo} className="h-8 w-8 opacity-40 grayscale" alt="" referrerPolicy="no-referrer" />
                 <div className="text-center">
                   <p className="text-[10px] font-bold text-slate-400">إصدار التطبيق 1.2.0</p>
                   <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter">{appSettings.appName}</p>

@@ -70,6 +70,16 @@ export function useFirestoreSync() {
       }
     }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/liveStream'));
 
+    // Sync Home Layout
+    const unsubHomeLayout = onSnapshot(doc(db, 'settings', 'homeLayout'), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data && data.sections) {
+          useAppStore.getState().setHomeSections(data.sections);
+        }
+      }
+    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/homeLayout'));
+
     // Sync Club History
     const unsubHistoryStats = onSnapshot(collection(db, 'club_stats'), (snapshot) => {
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
@@ -90,6 +100,30 @@ export function useFirestoreSync() {
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
       useAppStore.getState().setStadiums(items);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'club_stadiums'));
+
+    // Sync Songs
+    const unsubSongs = onSnapshot(collection(db, 'songs'), (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      useAppStore.getState().setSongs(items);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'songs'));
+
+    // Sync Albums
+    const unsubAlbums = onSnapshot(collection(db, 'albums'), (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      useAppStore.getState().setAlbums(items);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'albums'));
+
+    // Sync Playlists
+    const unsubPlaylists = onSnapshot(collection(db, 'playlists'), (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      useAppStore.getState().setPlaylists(items);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'playlists'));
+
+    // Sync Books
+    const unsubBooks = onSnapshot(collection(db, 'books'), (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      useAppStore.getState().setBooks(items);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'books'));
 
     // Sync Current User Profile
     let unsubProfile = () => {};
@@ -138,10 +172,15 @@ export function useFirestoreSync() {
       unsubMedia();
       unsubSettings();
       unsubLive();
+      unsubHomeLayout();
       unsubHistoryStats();
       unsubHistoryTitles();
       unsubHistoryTimeline();
       unsubHistoryStadiums();
+      unsubSongs();
+      unsubAlbums();
+      unsubPlaylists();
+      unsubBooks();
       unsubProfile();
       unsubUsers();
     };

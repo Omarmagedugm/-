@@ -487,7 +487,7 @@ export default function Profile() {
                       onClick={() => setEditData({...editData, avatar: preset})}
                       className={`w-10 h-10 rounded-full border-2 transition-all ${editData.avatar === preset ? 'border-primary scale-110' : 'border-transparent'}`}
                     >
-                      <img src={preset} className="w-full h-full rounded-full" alt="preset" />
+                      <img src={preset} className="w-full h-full rounded-full" alt="preset" referrerPolicy="no-referrer" />
                     </button>
                   ))}
                 </div>

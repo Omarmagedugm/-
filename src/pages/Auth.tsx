@@ -217,7 +217,7 @@ export default function Auth() {
       >
         <div className="flex flex-col items-center mb-10">
           <div className="relative mb-4">
-             <img src={appSettings.appLogo} alt="Logo" className="h-20 w-20 object-contain drop-shadow-xl" />
+             <img src={appSettings.appLogo} alt="Logo" className="h-20 w-20 object-contain drop-shadow-xl" referrerPolicy="no-referrer" />
              <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full -z-10"></div>
           </div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{appSettings.appName}</h1>
@@ -391,7 +391,7 @@ export default function Auth() {
                   disabled={loading}
                   className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark text-slate-700 dark:text-white py-4 rounded-2xl font-black text-sm shadow-sm transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-70"
                 >
-                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
+                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" referrerPolicy="no-referrer" />
                   الدخول بواسطة Google
                 </button>
               </>

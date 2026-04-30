@@ -42,21 +42,231 @@ import {
   Tags,
   Star,
   History as HistoryIcon,
-  ShoppingCart
+  ShoppingCart,
+  Undo,
+  Eye,
+  EyeOff,
+  RotateCcw,
+  Music,
+  BookOpen,
+  Disc,
+  ListMusic
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
+
+const handleFileUploadFn = async (
+  e: React.ChangeEvent<HTMLInputElement>, 
+  fieldName: string, 
+  activeTab: string,
+  setUploading: (val: boolean) => void,
+  setFormData: (fn: any) => void,
+  type: 'image' | 'video' | 'audio' = 'image'
+) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setUploading(true);
+  try {
+    const url = await uploadImage(file, activeTab);
+    if (type === 'video' && activeTab === 'media') {
+      // Try to capture a frame or use a default thumbnail
+      setFormData((prev: any) => ({ ...prev, [fieldName]: url, thumbnailUrl: 'https://images.unsplash.com/photo-1510563399035-7140409890a5' }));
+    } else {
+      setFormData((prev: any) => ({ ...prev, [fieldName]: url }));
+    }
+  } catch (err) {
+    console.error(err);
+    alert('فشل في رفع الملف');
+  } finally {
+    setUploading(false);
+  }
+};
+
+const UploadField = ({ 
+  label, 
+  fieldName, 
+  currentUrl, 
+  type = 'image', 
+  uploading, 
+  handleFileUpload,
+  setFormData
+}: { 
+  label: string, 
+  fieldName: string, 
+  currentUrl?: string, 
+  type?: 'image' | 'video' | 'audio',
+  uploading: boolean,
+  handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, type: 'image' | 'video' | 'audio') => void,
+  setFormData: (data: any) => void
+}) => (
+  <div className="space-y-2">
+    {label && <label className="text-[10px] font-black text-slate-500 mb-1 block">{label}</label>}
+    <div className="flex flex-col gap-2">
+      {currentUrl && currentUrl.trim() !== '' ? (
+        <div className="relative w-full h-32 rounded-xl overflow-hidden border border-border-light dark:border-border-dark group flex items-center justify-center bg-slate-900 shadow-inner">
+          {type === 'image' ? (
+            <img src={currentUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+          ) : type === 'video' ? (
+            <video src={currentUrl} className="w-full h-full object-cover" />
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <Music size={32} className="text-primary" />
+              <span className="text-[10px] font-bold text-white uppercase px-4 truncate w-full text-center">Audio File</span>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <button 
+              type="button"
+              onClick={() => setFormData((prev: any) => ({ ...prev, [fieldName]: '' }))}
+              className="bg-red-500 text-white p-2 rounded-full shadow-lg hover:scale-110 transition-transform"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <label className="flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-surface-dark border-2 border-dashed border-slate-200 dark:border-border-dark py-6 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all group">
+          <input 
+            type="file" 
+            accept={type === 'image' ? "image/*" : type === 'video' ? "video/*" : "audio/*"} 
+            className="hidden" 
+            onChange={(e) => handleFileUpload(e, fieldName, type)}
+            disabled={uploading}
+          />
+          {uploading ? (
+            <Loader2 className="animate-spin text-primary" size={24} />
+          ) : (
+            <Plus size={24} className="text-slate-400 group-hover:text-primary transition-colors" />
+          )}
+          <div className="text-center">
+             <span className="text-[10px] font-black text-slate-500 block">
+               {uploading ? 'جاري الرفع...' : 'اضغط للرفع'}
+             </span>
+             <span className="text-[8px] text-slate-400 font-bold uppercase">{type === 'image' ? 'صورة' : type === 'video' ? 'فيديو' : 'صوت'}</span>
+          </div>
+        </label>
+      )}
+    </div>
+  </div>
+);
+
+const UploadOrUrlField = ({ 
+  label, 
+  fieldName, 
+  currentUrl, 
+  type = 'image', 
+  uploading, 
+  handleFileUpload,
+  setFormData,
+  formData
+}: { 
+  label: string, 
+  fieldName: string, 
+  currentUrl?: string, 
+  type?: 'image' | 'video' | 'audio',
+  uploading: boolean,
+  handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, type: 'image' | 'video' | 'audio') => void,
+  setFormData: (fn: any) => void,
+  formData: any
+}) => {
+  const isExternalUrl = currentUrl && currentUrl.startsWith('http') && !currentUrl.includes('firebasestorage');
+  const [mode, setMode] = useState<'upload' | 'url'>(isExternalUrl ? 'url' : 'upload');
+
+  // Handle mode switching externally without resetting on every parent re-render
+  const [internalMode, setInternalMode] = useState<'upload' | 'url'>(isExternalUrl ? 'url' : 'upload');
+
+  // Keep internal mode in sync when clicking toggles
+  const switchMode = (m: 'upload' | 'url') => {
+    setInternalMode(m);
+  };
+
+  return (
+    <div className="space-y-2 bg-slate-50/50 dark:bg-white/5 p-3 rounded-2xl border border-slate-100 dark:border-white/5">
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-tighter block">{label}</label>
+        <div className="flex gap-1 bg-white dark:bg-surface-dark p-1 rounded-lg border border-slate-200 dark:border-border-dark">
+          <button 
+            type="button"
+            onClick={() => switchMode('upload')}
+            className={`text-[8px] font-black px-2.5 py-1 rounded-md transition-all ${internalMode === 'upload' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+          >
+            UPLD
+          </button>
+          <button 
+            type="button"
+            onClick={() => switchMode('url')}
+            className={`text-[8px] font-black px-2.5 py-1 rounded-md transition-all ${internalMode === 'url' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+          >
+            URL
+          </button>
+        </div>
+      </div>
+      
+      {internalMode === 'upload' ? (
+        <UploadField 
+          label="" 
+          fieldName={fieldName} 
+          currentUrl={currentUrl} 
+          type={type} 
+          uploading={uploading} 
+          handleFileUpload={handleFileUpload} 
+          setFormData={setFormData}
+        />
+      ) : (
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <input 
+              type="text" 
+              placeholder={type === 'image' ? "https://example.com/image.jpg" : type === 'video' ? "https://example.com/video.mp4" : "https://example.com/audio.mp3"} 
+              className="w-full p-3 rounded-xl border border-border-light bg-white dark:bg-surface-dark dark:border-border-dark text-xs font-mono text-left dir-ltr focus:border-primary outline-none transition-all" 
+              value={currentUrl || ''} 
+              onChange={(e) => setFormData({ ...formData, [fieldName]: e.target.value })}
+            />
+          </div>
+          {currentUrl && currentUrl.trim() !== '' && (
+            <div className="relative w-full h-32 rounded-xl overflow-hidden border border-border-light dark:border-border-dark flex items-center justify-center bg-slate-900 group shadow-inner">
+              {type === 'image' ? (
+                <img src={currentUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              ) : type === 'video' ? (
+                <div className="w-full h-full flex items-center justify-center bg-slate-900">
+                  <PlayCircle size={32} className="text-white opacity-50 group-hover:scale-110 group-hover:opacity-100 transition-all" />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <Music size={32} className="text-primary" />
+                  <span className="text-[10px] font-bold text-white uppercase truncate px-4 w-full text-center">{currentUrl.split('/').pop()}</span>
+                </div>
+              )}
+              <button 
+                type="button"
+                onClick={() => setFormData({ ...formData, [fieldName]: '' })}
+                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function Admin() {
   const { 
     news, media, matches, liveStream, users, appSettings, profile, clubs, polls, fanPosts, predictions,
     clubTitles, clubStats, historyEvents, stadiums, newsCategories,
-    products, orders,
+    products, orders, homeSections, undoStack,
+    songs, albums, playlists, books,
     setClubTitles, setClubStats, setHistoryEvents, setStadiums, setNewsCategories,
-    setProducts, setOrders
+    setProducts, setOrders, setHomeSections, pushToUndoStack, popFromUndoStack,
+    setSongs, setAlbums, setPlaylists, setBooks
   } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'overview' | 'news' | 'media' | 'matches' | 'live' | 'users' | 'settings' | 'clubs' | 'polls' | 'comments' | 'posts' | 'predictions' | 'fanzone' | 'history' | 'news-categories' | 'products' | 'orders'>('overview');
+
+  const [activeTab, setActiveTab] = useState<'overview' | 'news' | 'media' | 'matches' | 'live' | 'users' | 'settings' | 'clubs' | 'polls' | 'comments' | 'posts' | 'predictions' | 'fanzone' | 'history' | 'news-categories' | 'products' | 'orders' | 'layout' | 'music' | 'books'>('overview');
   const [showSidebar, setShowSidebar] = useState(false);
   const [historySubTab, setHistorySubTab] = useState<'stats' | 'titles' | 'timeline' | 'stadiums'>('stats');
+  const [musicSubTab, setMusicSubTab] = useState<'songs' | 'albums' | 'playlists'>('songs');
   const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'processing' | 'delivered'>('all');
   const [comments, setComments] = useState<any[]>([]);
   const [fanComments, setFanComments] = useState<any[]>([]);
@@ -69,131 +279,8 @@ export default function Admin() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, type: 'image' | 'video' = 'image') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    try {
-      const url = await uploadImage(file, activeTab);
-      if (type === 'video' && activeTab === 'media') {
-        // Try to capture a frame or use a default thumbnail
-        setFormData({ ...formData, [fieldName]: url, thumbnailUrl: 'https://images.unsplash.com/photo-1510563399035-7140409890a5' });
-      } else {
-        setFormData({ ...formData, [fieldName]: url });
-      }
-    } catch (err) {
-      console.error(err);
-      alert('فشل في رفع الملف');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const UploadField = ({ label, fieldName, currentUrl, type = 'image' }: { label: string, fieldName: string, currentUrl?: string, type?: 'image' | 'video' }) => (
-    <div className="space-y-2">
-      <label className="text-[10px] font-black text-slate-500 mb-1 block">{label}</label>
-      <div className="flex flex-col gap-2">
-        {currentUrl ? (
-          <div className="relative w-full h-32 rounded-xl overflow-hidden border border-border-light dark:border-border-dark group flex items-center justify-center bg-slate-900 shadow-inner">
-            {type === 'image' ? (
-              <img src={currentUrl} className="w-full h-full object-cover" />
-            ) : (
-              <video src={currentUrl} className="w-full h-full object-cover" />
-            )}
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <button 
-                onClick={() => setFormData({ ...formData, [fieldName]: '' })}
-                className="bg-red-500 text-white p-2 rounded-full shadow-lg hover:scale-110 transition-transform"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </div>
-        ) : (
-          <label className="flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-surface-dark border-2 border-dashed border-slate-200 dark:border-border-dark py-6 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all group">
-            <input 
-              type="file" 
-              accept={type === 'image' ? "image/*" : "video/*"} 
-              className="hidden" 
-              onChange={(e) => handleFileUpload(e, fieldName, type)}
-              disabled={uploading}
-            />
-            {uploading ? (
-              <Loader2 className="animate-spin text-primary" size={24} />
-            ) : (
-              <Plus size={24} className="text-slate-400 group-hover:text-primary transition-colors" />
-            )}
-            <div className="text-center">
-               <span className="text-[10px] font-black text-slate-500 block">
-                 {uploading ? 'جاري الرفع...' : 'اضغط للرفع'}
-               </span>
-               <span className="text-[8px] text-slate-400 font-bold uppercase">{type === 'image' ? 'صورة' : 'فيديو'}</span>
-            </div>
-          </label>
-        )}
-      </div>
-    </div>
-  );
-
-  const UploadOrUrlField = ({ label, fieldName, currentUrl, type = 'image' }: { label: string, fieldName: string, currentUrl?: string, type?: 'image' | 'video' }) => {
-    const isExternalUrl = currentUrl?.startsWith('http') && !currentUrl?.includes('firebasestorage');
-    const [mode, setMode] = useState<'upload' | 'url'>(isExternalUrl ? 'url' : 'upload');
-
-    return (
-      <div className="space-y-2 bg-slate-50/50 dark:bg-white/5 p-3 rounded-2xl border border-slate-100 dark:border-white/5">
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-tighter block">{label}</label>
-          <div className="flex gap-1 bg-white dark:bg-surface-dark p-1 rounded-lg border border-slate-200 dark:border-border-dark">
-            <button 
-              onClick={() => setMode('upload')}
-              className={`text-[8px] font-black px-2.5 py-1 rounded-md transition-all ${mode === 'upload' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-            >
-              UPLD
-            </button>
-            <button 
-              onClick={() => setMode('url')}
-              className={`text-[8px] font-black px-2.5 py-1 rounded-md transition-all ${mode === 'url' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-            >
-              URL
-            </button>
-          </div>
-        </div>
-        
-        {mode === 'upload' ? (
-          <UploadField label="" fieldName={fieldName} currentUrl={currentUrl} type={type} />
-        ) : (
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <input 
-                type="text" 
-                placeholder={type === 'image' ? "https://example.com/image.jpg" : "https://example.com/video.mp4"} 
-                className="flex-1 p-3 rounded-xl border border-border-light bg-white dark:bg-surface-dark dark:border-border-dark text-xs font-mono text-left dir-ltr focus:border-primary outline-none transition-all" 
-                value={currentUrl || ''} 
-                onChange={(e) => setFormData({ ...formData, [fieldName]: e.target.value })}
-              />
-            </div>
-            {currentUrl && (
-              <div className="relative w-full h-32 rounded-xl overflow-hidden border border-border-light dark:border-border-dark flex items-center justify-center bg-slate-900 group shadow-inner">
-                {type === 'image' ? (
-                  <img src={currentUrl} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-slate-900">
-                    <PlayCircle size={32} className="text-white opacity-50 group-hover:scale-110 group-hover:opacity-100 transition-all" />
-                  </div>
-                )}
-                <button 
-                  onClick={() => setFormData({ ...formData, [fieldName]: '' })}
-                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, type: 'image' | 'video' | 'audio' = 'image') => {
+    handleFileUploadFn(e, fieldName, activeTab, setUploading, setFormData, type);
   };
 
   useEffect(() => {
@@ -386,48 +473,122 @@ export default function Admin() {
           const payload = {
             label: formData.label || '',
             value: Number(formData.value || 0),
-            icon: formData.icon || 'star'
+            icon: formData.icon || 'star',
+            hidden: formData.hidden ?? false
           };
           if (isEditing && editingId) {
+            const oldData = clubStats.find(s => s.id === editingId);
+            if (oldData) pushToUndoStack({ collection: 'club_stats', action: 'update', data: { ...oldData } });
             await updateDoc(doc(db, 'club_stats', editingId), payload);
           } else {
-            await addDoc(collection(db, 'club_stats'), payload);
+            const res = await addDoc(collection(db, 'club_stats'), payload);
+            pushToUndoStack({ collection: 'club_stats', action: 'add', data: { id: res.id } });
           }
         } else if (historySubTab === 'titles') {
           const payload = {
             name: formData.name || '',
             count: Number(formData.count || 0),
             icon: formData.icon || 'trophy',
-            category: formData.category || 'football'
+            category: formData.category || 'football',
+            hidden: formData.hidden ?? false
           };
           if (isEditing && editingId) {
+            const oldData = clubTitles.find(t => t.id === editingId);
+            if (oldData) pushToUndoStack({ collection: 'club_titles', action: 'update', data: { ...oldData } });
             await updateDoc(doc(db, 'club_titles', editingId), payload);
           } else {
-            await addDoc(collection(db, 'club_titles'), payload);
+            const res = await addDoc(collection(db, 'club_titles'), payload);
+            pushToUndoStack({ collection: 'club_titles', action: 'add', data: { id: res.id } });
           }
         } else if (historySubTab === 'timeline') {
           const payload = {
             year: formData.year || '',
             title: formData.title || '',
-            desc: formData.desc || ''
+            desc: formData.desc || '',
+            hidden: formData.hidden ?? false
           };
           if (isEditing && editingId) {
+            const oldData = historyEvents.find(e => e.id === editingId);
+            if (oldData) pushToUndoStack({ collection: 'club_timeline', action: 'update', data: { ...oldData } });
             await updateDoc(doc(db, 'club_timeline', editingId), payload);
           } else {
-            await addDoc(collection(db, 'club_timeline'), payload);
+            const res = await addDoc(collection(db, 'club_timeline'), payload);
+            pushToUndoStack({ collection: 'club_timeline', action: 'add', data: { id: res.id } });
           }
         } else if (historySubTab === 'stadiums') {
           const payload = {
             name: formData.name || '',
             type: formData.type || '',
             desc: formData.desc || '',
-            imageUrl: formData.imageUrl || ''
+            imageUrl: formData.imageUrl || '',
+            hidden: formData.hidden ?? false
           };
           if (isEditing && editingId) {
+            const oldData = stadiums.find(s => s.id === editingId);
+            if (oldData) pushToUndoStack({ collection: 'club_stadiums', action: 'update', data: { ...oldData } });
             await updateDoc(doc(db, 'club_stadiums', editingId), payload);
           } else {
-            await addDoc(collection(db, 'club_stadiums'), payload);
+            const res = await addDoc(collection(db, 'club_stadiums'), payload);
+            pushToUndoStack({ collection: 'club_stadiums', action: 'add', data: { id: res.id } });
           }
+        }
+      } else if (activeTab === 'music') {
+        if (musicSubTab === 'songs') {
+          const payload = {
+            title: formData.title || '',
+            artist: formData.artist || '',
+            audioUrl: formData.audioUrl || '',
+            coverUrl: formData.coverUrl || '',
+            category: formData.category || 'chant',
+            duration: formData.duration || '03:30',
+            hidden: formData.hidden || false,
+            createdAt: new Date().toISOString()
+          };
+          if (isEditing && editingId) {
+            await updateDoc(doc(db, 'songs', editingId), payload);
+          } else {
+            await addDoc(collection(db, 'songs'), payload);
+          }
+        } else if (musicSubTab === 'albums') {
+          const payload = {
+            title: formData.title || '',
+            artist: formData.artist || '',
+            coverUrl: formData.coverUrl || '',
+            year: formData.year || new Date().getFullYear().toString(),
+            hidden: formData.hidden || false
+          };
+          if (isEditing && editingId) {
+            await updateDoc(doc(db, 'albums', editingId), payload);
+          } else {
+            await addDoc(collection(db, 'albums'), payload);
+          }
+        } else if (musicSubTab === 'playlists') {
+          const payload = {
+            title: formData.title || '',
+            coverUrl: formData.coverUrl || '',
+            songIds: formData.songIds || [],
+            hidden: formData.hidden || false
+          };
+          if (isEditing && editingId) {
+            await updateDoc(doc(db, 'playlists', editingId), payload);
+          } else {
+            await addDoc(collection(db, 'playlists'), payload);
+          }
+        }
+      } else if (activeTab === 'books') {
+        const payload = {
+          title: formData.title || '',
+          author: formData.author || '',
+          coverUrl: formData.coverUrl || '',
+          pdfUrl: formData.pdfUrl || '',
+          desc: formData.desc || '',
+          category: formData.category || 'كتاب',
+          hidden: formData.hidden || false
+        };
+        if (isEditing && editingId) {
+          await updateDoc(doc(db, 'books', editingId), payload);
+        } else {
+          await addDoc(collection(db, 'books'), payload);
         }
       }
 
@@ -472,11 +633,65 @@ export default function Admin() {
   const handleDelete = async (coll: string, id: string) => {
     if (window.confirm('هل أنت متأكد من الحذف؟')) {
       try {
-        await deleteDoc(doc(db, coll, id));
+        const docRef = doc(db, coll, id);
+        // Find item for undo
+        let item: any = null;
+        if (coll === 'club_stats') item = clubStats.find(i => i.id === id);
+        else if (coll === 'club_titles') item = clubTitles.find(i => i.id === id);
+        else if (coll === 'club_timeline') item = historyEvents.find(i => i.id === id);
+        else if (coll === 'club_stadiums') item = stadiums.find(i => i.id === id);
+        else if (coll === 'songs') item = songs.find(i => i.id === id);
+        else if (coll === 'albums') item = albums.find(i => i.id === id);
+        else if (coll === 'books') item = books.find(i => i.id === id);
+
+        if (item) pushToUndoStack({ collection: coll, action: 'delete', data: { ...item } });
+
+        await deleteDoc(docRef);
       } catch (err) {
         console.error(err);
         alert('فشل الحذف');
       }
+    }
+  };
+
+  const handleToggleVisibility = async (coll: string, item: any) => {
+    try {
+      const newHidden = !item.hidden;
+      pushToUndoStack({ collection: coll, action: 'update', data: { ...item } });
+      await updateDoc(doc(db, coll, item.id), { hidden: newHidden });
+    } catch (err) {
+      console.error(err);
+      alert('فشل تغيير الحالة');
+    }
+  };
+
+  const handleUndo = async () => {
+    const op = popFromUndoStack();
+    if (!op) {
+      alert('لا توجد عمليات للتراجع عنها');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (op.action === 'add') {
+        // Reverse of add is delete
+        await deleteDoc(doc(db, op.collection, op.data.id));
+      } else if (op.action === 'delete') {
+        // Reverse of delete is add (re-create with same ID)
+        const { id, ...data } = op.data;
+        await setDoc(doc(db, op.collection, id), data);
+      } else if (op.action === 'update') {
+        // Reverse of update is setting it back to original data
+        const { id, ...data } = op.data;
+        await updateDoc(doc(db, op.collection, id), data);
+      }
+      alert('تم التراجع بنجاح');
+    } catch (err) {
+      console.error(err);
+      alert('فشل التراجع');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -685,11 +900,12 @@ export default function Admin() {
              activeTab === 'clubs' ? 'إدارة الأندية' : 
              activeTab === 'orders' ? 'إدارة المشتريات' :
              activeTab === 'polls' ? 'إدارة الاستطلاعات' : 
+             activeTab === 'layout' ? 'تعديل الصفحة الرئيسية' :
              activeTab === 'history' ? 'تاريخ النادي' :
              activeTab === 'live' ? 'البث المباشر' :
              activeTab === 'comments' ? 'تعليقات البث المباشر' : 'لوحة التحكم'}
           </h1>
-          {['news', 'media', 'matches', 'clubs', 'polls', 'predictions', 'products', 'history', 'history-stadiums', 'history-timeline', 'history-titles', 'history-stats'].includes(activeTab) && (
+          {['news', 'media', 'matches', 'clubs', 'polls', 'predictions', 'products', 'history', 'music', 'books'].includes(activeTab) && (
             <button 
               onClick={openAddModal}
               className="flex items-center gap-1 bg-primary text-white px-3 py-1.5 rounded-lg font-bold shadow-sm shadow-primary/20 hover:scale-105 transition-all text-xs"
@@ -767,6 +983,159 @@ export default function Admin() {
             </div>
           )}
 
+          {activeTab === 'layout' && (
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-card-dark rounded-3xl p-6 border border-border-light dark:border-border-dark shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="font-black text-sm">ترتيب البلوكات</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Arrange Home Page Blocks</p>
+                  </div>
+                  <button 
+                    onClick={async () => {
+                      setLoading(true);
+                      try {
+                        await setDoc(doc(db, 'settings', 'homeLayout'), { sections: homeSections });
+                        alert('تم حفظ ترتيب الصفحة الرئيسية بنجاح');
+                      } catch (err) {
+                        console.error(err);
+                        alert('فشل في حفظ الترتيب');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    className="bg-primary text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg shadow-primary/20 flex items-center gap-2"
+                  >
+                    {loading ? <Loader2 className="animate-spin" size={14} /> : <Check size={14} />}
+                    حفظ التغييرات
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  {[...homeSections].sort((a,b) => a.order - b.order).map((section, index) => (
+                    <div key={section.id} className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-surface-dark border border-slate-100 dark:border-border-dark rounded-2xl group transition-all hover:bg-white dark:hover:bg-card-dark">
+                      <div className="flex flex-col gap-1">
+                        <button 
+                          disabled={index === 0}
+                          onClick={() => {
+                            const newSections = [...homeSections].sort((a,b) => a.order - b.order);
+                            const current = newSections[index];
+                            const prev = newSections[index - 1];
+                            const tempOrder = current.order;
+                            current.order = prev.order;
+                            prev.order = tempOrder;
+                            setHomeSections([...newSections]);
+                          }}
+                          className="text-slate-300 hover:text-primary disabled:opacity-0"
+                        >
+                          <span className="material-symbols-outlined !text-[18px]">expand_less</span>
+                        </button>
+                        <button 
+                          disabled={index === homeSections.length - 1}
+                          onClick={() => {
+                            const newSections = [...homeSections].sort((a,b) => a.order - b.order);
+                            const current = newSections[index];
+                            const next = newSections[index + 1];
+                            const tempOrder = current.order;
+                            current.order = next.order;
+                            next.order = tempOrder;
+                            setHomeSections([...newSections]);
+                          }}
+                          className="text-slate-300 hover:text-primary disabled:opacity-0"
+                        >
+                          <span className="material-symbols-outlined !text-[18px]">expand_more</span>
+                        </button>
+                      </div>
+                      
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                           <span className="text-xs font-black capitalize">{section.type}</span>
+                           {section.title && <span className="text-[10px] text-slate-400 font-bold">({section.title})</span>}
+                        </div>
+                        <p className="text-[9px] text-slate-500 font-bold">ID: {section.id}</p>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={section.active} 
+                            onChange={(e) => {
+                              const newSections = homeSections.map(s => s.id === section.id ? { ...s, active: e.target.checked } : s);
+                              setHomeSections(newSections);
+                            }}
+                            className="sr-only peer" 
+                          />
+                          <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                        </label>
+
+                        <button 
+                          onClick={() => {
+                            if (window.confirm('هل أنت متأكد من حذف هذا البلوك؟')) {
+                              setHomeSections(homeSections.filter(s => s.id !== section.id));
+                            }
+                          }}
+                          className="text-red-400 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-slate-100 dark:border-border-dark">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">إضافة بلوك جديد</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500">نوع البلوك</label>
+                      <select 
+                        id="new-section-type"
+                        className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-xs font-bold"
+                      >
+                        <option value="news">أخبار</option>
+                        <option value="matches">مباريات</option>
+                        <option value="media">ميديا</option>
+                        <option value="polls">استطلاعات</option>
+                        <option value="history">تاريخ النادي</option>
+                        <option value="hero">المباراة القادمة / الحية</option>
+                        <option value="live">بث مباشر متاح</option>
+                        <option value="custom">مخصص (Fan Zone)</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500">العنوان (اختياري)</label>
+                      <input 
+                        id="new-section-title"
+                        type="text" 
+                        placeholder="أدخل عنواناً..."
+                        className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-xs font-bold"
+                      />
+                    </div>
+                    <button 
+                      onClick={() => {
+                        const type = (document.getElementById('new-section-type') as HTMLSelectElement).value as any;
+                        const title = (document.getElementById('new-section-title') as HTMLInputElement).value;
+                        const newSection = {
+                          id: uuidv4(),
+                          type,
+                          title: title || undefined,
+                          active: true,
+                          order: homeSections.length
+                        };
+                        setHomeSections([...homeSections, newSection]);
+                        (document.getElementById('new-section-title') as HTMLInputElement).value = '';
+                      }}
+                      className="col-span-2 bg-primary/10 text-primary py-3 rounded-xl text-[10px] font-black border border-primary/20 hover:bg-primary hover:text-white transition-all mt-2"
+                    >
+                      تأكيد الإضافة للقائمة
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'overview' && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -835,7 +1204,13 @@ export default function Admin() {
                 <div className="grid grid-cols-5 gap-2">
                   {users.slice(0, 5).map((u, i) => (
                     <div key={i} className="flex flex-col items-center gap-1">
-                      <img src={u.avatar} className="w-10 h-10 rounded-full border border-slate-100" />
+                      {u.avatar && u.avatar.trim() !== '' ? (
+                        <img src={u.avatar} className="w-10 h-10 rounded-full border border-slate-100" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
+                          <UsersIcon size={16} className="text-slate-400" />
+                        </div>
+                      )}
                       <span className="text-[8px] font-bold truncate w-full text-center">{u.name.split(' ')[0]}</span>
                     </div>
                   ))}
@@ -914,7 +1289,13 @@ export default function Admin() {
               <div className="grid grid-cols-1 gap-3">
                 {products.map(product => (
                   <div key={product.id} className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-border-light dark:border-border-dark flex items-center gap-4">
-                    <img src={product.imageUrl} className="w-16 h-16 rounded-xl object-cover" />
+                    {product.imageUrl && product.imageUrl.trim() !== '' ? (
+                      <img src={product.imageUrl} className="w-16 h-16 rounded-xl object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-slate-100 flex items-center justify-center">
+                        <ShoppingCart size={24} className="text-slate-300" />
+                      </div>
+                    )}
                     <div className="flex-1 text-right">
                        <h4 className="text-xs font-black">{product.name}</h4>
                        <p className="text-[10px] text-primary font-bold tabular-nums mt-0.5">{product.price} ج.م</p>
@@ -949,7 +1330,13 @@ export default function Admin() {
                      </div>
                      <div className="flex gap-4 items-start">
                         <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-50 dark:bg-surface-dark border border-border-light dark:border-border-dark">
-                           <img src={order.productImage || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=200'} alt="" className="w-full h-full object-cover" />
+                           {order.productImage && order.productImage.trim() !== '' ? (
+                             <img src={order.productImage} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                           ) : (
+                             <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                               <ShoppingCart size={20} className="text-slate-300" />
+                             </div>
+                           )}
                         </div>
                         <div className="flex-1 space-y-1">
                            <div className="flex justify-between items-start">
@@ -1000,7 +1387,13 @@ export default function Admin() {
           {activeTab === 'news' && news.map((item) => (
             <div key={item.id} className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-3 flex flex-col gap-2">
               <div className="flex items-center gap-3">
-                <img src={item.image} alt="" className="w-12 h-12 rounded-lg object-cover" />
+                    {item.image && item.image.trim() !== '' ? (
+                      <img src={item.image} alt="" className="w-12 h-12 rounded-lg object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center">
+                        <Newspaper size={20} className="text-slate-300" />
+                      </div>
+                    )}
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                      <h3 className="font-bold text-sm line-clamp-1 leading-tight">{item.title}</h3>
@@ -1020,7 +1413,13 @@ export default function Admin() {
             <div key={item.id} className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-3 flex flex-col gap-2">
               <div className="flex items-center gap-3">
                 <div className="relative w-16 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                  <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+                  {item.thumbnailUrl && item.thumbnailUrl.trim() !== '' ? (
+                    <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                      <PlayCircle size={24} className="text-slate-300" />
+                    </div>
+                  )}
                   {item.type === 'video' && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                        <PlayCircle size={14} className="text-white" />
@@ -1101,7 +1500,13 @@ export default function Admin() {
                 <div key={post.id} className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-3 flex flex-col gap-3 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <img src={post.userAvatar} className="w-8 h-8 rounded-full" />
+                <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 bg-slate-100 flex items-center justify-center">
+                  {post.userAvatar && post.userAvatar.trim() !== '' ? (
+                    <img src={post.userAvatar} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <UsersIcon size={14} className="text-slate-400" />
+                  )}
+                </div>
                       <div>
                         <p className="text-xs font-black">{post.userName}</p>
                         <p className="text-[9px] text-slate-400 font-bold">{post.createdAt ? new Date(post.createdAt).toLocaleString('ar-EG') : 'منذ فترة'}</p>
@@ -1112,8 +1517,8 @@ export default function Admin() {
                     </button>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed">{post.content}</p>
-                  {post.image && (
-                    <img src={post.image} className="w-full h-32 object-cover rounded-lg border border-border-light dark:border-border-dark" />
+                  {post.image && post.image.trim() !== '' && (
+                    <img src={post.image} className="w-full h-32 object-cover rounded-lg border border-border-light dark:border-border-dark" referrerPolicy="no-referrer" />
                   )}
                   <div className="flex items-center gap-2 pt-2 border-t border-slate-50 dark:border-border-dark">
                     <span className="text-[10px] font-black text-slate-500">إعجابات: {post.likes || 0}</span>
@@ -1198,7 +1603,13 @@ export default function Admin() {
             <div key={u.uid} className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <img src={u.avatar} className="w-12 h-12 rounded-full border-2 border-slate-100 dark:border-border-dark" />
+                  {u.avatar && u.avatar.trim() !== '' ? (
+                    <img src={u.avatar} className="w-12 h-12 rounded-full border-2 border-slate-100 dark:border-border-dark" referrerPolicy="no-referrer" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-card-dark border-2 border-slate-100 dark:border-border-dark flex items-center justify-center">
+                      <UsersIcon size={20} className="text-slate-400" />
+                    </div>
+                  )}
                   {u.role === 'admin' && (
                     <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-[8px] font-black px-1 rounded border border-white">ADMIN</div>
                   )}
@@ -1277,7 +1688,9 @@ export default function Admin() {
                   className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-mono focus:border-primary outline-none transition-colors"
                 />
                 <div className="mt-4 p-6 bg-slate-50 dark:bg-surface-dark rounded-2xl flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-border-dark">
-                   <img src={formData.appLogo ?? appSettings.appLogo} className="h-20 object-contain drop-shadow-lg mb-2" />
+                   { (formData.appLogo || appSettings.appLogo) && (
+                     <img src={formData.appLogo ?? appSettings.appLogo} className="h-20 object-contain drop-shadow-lg mb-2" referrerPolicy="no-referrer" />
+                   )}
                    <span className="text-[10px] text-slate-400 font-bold">معاينة الشعار</span>
                 </div>
               </div>
@@ -1295,11 +1708,17 @@ export default function Admin() {
           {activeTab === 'clubs' && (
             <div className="flex flex-col gap-3">
               {clubs.map((club) => (
-                <div key={club.id} className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <img src={club.logo} alt="" className="w-10 h-10 rounded-lg object-contain bg-slate-50 dark:bg-surface-dark p-1" />
-                    <span className="font-bold text-sm">{club.name}</span>
-                  </div>
+                  <div key={club.id} className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {club.logo && club.logo.trim() !== '' ? (
+                        <img src={club.logo} alt="" className="w-10 h-10 rounded-lg object-contain bg-slate-50 dark:bg-surface-dark p-1" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-surface-dark flex items-center justify-center p-1">
+                           <Trophy size={20} className="text-slate-300" />
+                        </div>
+                      )}
+                      <span className="font-bold text-sm">{club.name}</span>
+                    </div>
                   <div className="flex items-center gap-1">
                     <button 
                       onClick={() => {
@@ -1382,14 +1801,24 @@ export default function Admin() {
             </div>
           )}
 
-          {activeTab === 'history' && (
+           {activeTab === 'history' && (
             <div className="flex flex-col gap-6">
               {/* History Header */}
               <div className="bg-gradient-to-r from-primary to-primary-dark p-8 rounded-[40px] text-white shadow-2xl shadow-primary/20 p-8 border border-white/10 group overflow-hidden relative">
                 <div className="relative z-10">
-                   <div className="flex items-center gap-3 mb-2 opacity-80">
-                      <HistoryIcon size={18} />
-                      <span className="text-[10px] font-black uppercase tracking-widest">History Management</span>
+                   <div className="flex items-center justify-between mb-2">
+                     <div className="flex items-center gap-3 opacity-80">
+                        <HistoryIcon size={18} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">History Management</span>
+                     </div>
+                     <button 
+                       onClick={handleUndo}
+                       disabled={undoStack.length === 0}
+                       className="flex items-center gap-2 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:hover:bg-white/10 p-2 px-3 rounded-full backdrop-blur-md border border-white/10 transition-all text-[10px] font-black uppercase"
+                     >
+                       <Undo size={14} />
+                       Undo ({undoStack.length})
+                     </button>
                    </div>
                    <h2 className="text-3xl font-black mb-1 tracking-tighter">إدارة البيانات التاريخية</h2>
                    <p className="text-sm text-white/70 max-w-md font-bold">
@@ -1414,17 +1843,23 @@ export default function Admin() {
 
               <div className="flex flex-col gap-3">
                 {historySubTab === 'stats' && clubStats.map((item) => (
-                  <div key={item.id} className="bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between">
+                  <div key={item.id} className={`bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between ${item.hidden ? 'opacity-50 grayscale' : ''}`}>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-surface-dark flex items-center justify-center text-primary">
                         <Star size={14} />
                       </div>
                       <div>
-                        <p className="text-xs font-black">{item.label}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-black">{item.label}</p>
+                          {item.hidden && <span className="bg-slate-100 dark:bg-surface-dark text-[8px] font-black px-1.5 py-0.5 rounded text-slate-500">مخفي</span>}
+                        </div>
                         <p className="text-[10px] text-slate-400 font-bold">{item.value}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
+                      <button onClick={() => handleToggleVisibility('club_stats', item)} className="p-2 text-slate-400 hover:text-primary transition-all">
+                        {item.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                       <button onClick={() => { setFormData({...item}); setIsEditing(true); setEditingId(item.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
                       <button onClick={() => handleDelete('club_stats', item.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
                     </div>
@@ -1432,17 +1867,23 @@ export default function Admin() {
                 ))}
 
                 {historySubTab === 'titles' && clubTitles.map((item) => (
-                  <div key={item.id} className="bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between">
+                  <div key={item.id} className={`bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between ${item.hidden ? 'opacity-50 grayscale' : ''}`}>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-surface-dark flex items-center justify-center text-primary">
                         <Trophy size={14} />
                       </div>
                       <div>
-                        <p className="text-xs font-black">{item.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-black">{item.name}</p>
+                          {item.hidden && <span className="bg-slate-100 dark:bg-surface-dark text-[8px] font-black px-1.5 py-0.5 rounded text-slate-500">مخفي</span>}
+                        </div>
                         <p className="text-[10px] text-slate-400 font-bold">{item.count} بطل • {item.category === 'football' ? 'قدم' : 'سلة'}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
+                      <button onClick={() => handleToggleVisibility('club_titles', item)} className="p-2 text-slate-400 hover:text-primary transition-all">
+                        {item.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                       <button onClick={() => { setFormData({...item}); setIsEditing(true); setEditingId(item.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
                       <button onClick={() => handleDelete('club_titles', item.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
                     </div>
@@ -1450,17 +1891,23 @@ export default function Admin() {
                 ))}
 
                 {historySubTab === 'timeline' && historyEvents.map((item) => (
-                  <div key={item.id} className="bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between">
+                  <div key={item.id} className={`bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between ${item.hidden ? 'opacity-50 grayscale' : ''}`}>
                     <div className="flex items-center gap-3 overflow-hidden">
                       <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-surface-dark flex items-center justify-center text-primary flex-shrink-0">
                         <HistoryIcon size={14} />
                       </div>
                       <div className="overflow-hidden">
-                        <p className="text-xs font-black truncate">{item.year}: {item.title}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-black truncate">{item.year}: {item.title}</p>
+                          {item.hidden && <span className="bg-slate-100 dark:bg-surface-dark text-[8px] font-black px-1.5 py-0.5 rounded text-slate-500">مخفي</span>}
+                        </div>
                         <p className="text-[10px] text-slate-400 font-bold truncate">{item.desc}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
+                      <button onClick={() => handleToggleVisibility('club_timeline', item)} className="p-2 text-slate-400 hover:text-primary transition-all">
+                        {item.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                       <button onClick={() => { setFormData({...item}); setIsEditing(true); setEditingId(item.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
                       <button onClick={() => handleDelete('club_timeline', item.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
                     </div>
@@ -1468,15 +1915,27 @@ export default function Admin() {
                 ))}
 
                 {historySubTab === 'stadiums' && stadiums.map((item) => (
-                  <div key={item.id} className="bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between">
+                  <div key={item.id} className={`bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between ${item.hidden ? 'opacity-50 grayscale' : ''}`}>
                     <div className="flex items-center gap-3">
-                      <img src={item.imageUrl} className="w-10 h-10 rounded-lg object-cover" />
+                      {item.imageUrl && item.imageUrl.trim() !== '' ? (
+                        <img src={item.imageUrl} className="w-10 h-10 rounded-lg object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                           <Activity size={20} className="text-slate-300" />
+                        </div>
+                      )}
                       <div>
-                        <p className="text-xs font-black">{item.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-black">{item.name}</p>
+                          {item.hidden && <span className="bg-slate-100 dark:bg-surface-dark text-[8px] font-black px-1.5 py-0.5 rounded text-slate-500">مخفي</span>}
+                        </div>
                         <p className="text-[10px] text-slate-400 font-bold">{item.type}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
+                      <button onClick={() => handleToggleVisibility('club_stadiums', item)} className="p-2 text-slate-400 hover:text-primary transition-all">
+                        {item.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                       <button onClick={() => { setFormData({...item}); setIsEditing(true); setEditingId(item.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
                       <button onClick={() => handleDelete('club_stadiums', item.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
                     </div>
@@ -1551,6 +2010,107 @@ export default function Admin() {
                </button>
              </div>
           )}
+
+          {activeTab === 'music' && (
+             <div className="flex flex-col gap-6">
+                <div className="flex bg-slate-100 dark:bg-surface-dark p-1 rounded-xl w-fit">
+                   <button onClick={() => setMusicSubTab('songs')} className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${musicSubTab === 'songs' ? 'bg-white dark:bg-card-dark text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>الأغاني</button>
+                   <button onClick={() => setMusicSubTab('albums')} className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${musicSubTab === 'albums' ? 'bg-white dark:bg-card-dark text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>الألبومات</button>
+                   <button onClick={() => setMusicSubTab('playlists')} className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${musicSubTab === 'playlists' ? 'bg-white dark:bg-card-dark text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>القوائم</button>
+                </div>
+                
+                <div className="flex flex-col gap-3">
+                   {musicSubTab === 'songs' && songs.map(song => (
+                     <div key={song.id} className="bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            {song.coverUrl && song.coverUrl.trim() !== '' ? (
+                              <img src={song.coverUrl} className="w-12 h-12 rounded-xl object-cover" referrerPolicy="no-referrer" />
+                            ) : (
+                              <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-surface-dark flex items-center justify-center">
+                                 <Music size={20} className="text-slate-300" />
+                              </div>
+                            )}
+                           <div>
+                              <p className="text-xs font-black">{song.title}</p>
+                              <p className="text-[10px] text-slate-400 font-bold">{song.artist} • {song.category}</p>
+                           </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                           <button onClick={() => { setFormData({...song}); setIsEditing(true); setEditingId(song.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all"><Edit2 size={16} /></button>
+                           <button onClick={() => handleDelete('songs', song.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"><Trash2 size={16} /></button>
+                        </div>
+                     </div>
+                   ))}
+                   {musicSubTab === 'albums' && albums.map(album => (
+                     <div key={album.id} className="bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            {album.coverUrl && album.coverUrl.trim() !== '' ? (
+                              <img src={album.coverUrl} className="w-12 h-12 rounded-xl object-cover" referrerPolicy="no-referrer" />
+                            ) : (
+                              <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-surface-dark flex items-center justify-center">
+                                 <Disc size={20} className="text-slate-300" />
+                              </div>
+                            )}
+                           <div>
+                              <p className="text-xs font-black">{album.title}</p>
+                              <p className="text-[10px] text-slate-400 font-bold">{album.artist} • {album.year}</p>
+                           </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                           <button onClick={() => { setFormData({...album}); setIsEditing(true); setEditingId(album.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all"><Edit2 size={16} /></button>
+                           <button onClick={() => handleDelete('albums', album.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"><Trash2 size={16} /></button>
+                        </div>
+                     </div>
+                   ))}
+                   {musicSubTab === 'playlists' && playlists.map(playlist => (
+                     <div key={playlist.id} className="bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            {playlist.coverUrl && playlist.coverUrl.trim() !== '' ? (
+                              <img src={playlist.coverUrl} className="w-12 h-12 rounded-xl object-cover" referrerPolicy="no-referrer" />
+                            ) : (
+                              <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-surface-dark flex items-center justify-center">
+                                 <ListMusic size={20} className="text-slate-300" />
+                              </div>
+                            )}
+                           <div>
+                              <p className="text-xs font-black">{playlist.title}</p>
+                              <p className="text-[10px] text-slate-400 font-bold">{playlist.songIds?.length || 0} أغنية</p>
+                           </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                           <button onClick={() => { setFormData({...playlist}); setIsEditing(true); setEditingId(playlist.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all"><Edit2 size={16} /></button>
+                           <button onClick={() => handleDelete('playlists', playlist.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"><Trash2 size={16} /></button>
+                        </div>
+                     </div>
+                   ))}
+                </div>
+             </div>
+           )}
+
+           {activeTab === 'books' && (
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {books.map(book => (
+                  <div key={book.id} className="bg-white dark:bg-card-dark p-4 rounded-2xl border border-border-light dark:border-border-dark flex gap-4">
+                    <div className="relative w-20 h-28 bg-slate-100 rounded-xl overflow-hidden shadow-md flex items-center justify-center">
+                      {book.coverUrl && book.coverUrl.trim() !== '' ? (
+                        <img src={book.coverUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <BookOpen size={32} className="text-slate-300" />
+                      )}
+                    </div>
+                     <div className="flex-1 min-w-0">
+                        <h4 className="font-black text-xs mb-1 truncate">{book.title}</h4>
+                        <p className="text-[10px] text-slate-400 font-bold mb-2">{book.author}</p>
+                        <div className="flex gap-2">
+                           <button onClick={() => { setFormData({...book}); setIsEditing(true); setEditingId(book.id); setShowModal(true); }} className="flex-1 bg-slate-50 dark:bg-surface-dark py-2 rounded-lg text-[10px] font-black text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all">تعديل</button>
+                           <button onClick={() => handleDelete('books', book.id)} className="px-3 bg-slate-50 dark:bg-surface-dark py-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"><Trash2 size={14} /></button>
+                        </div>
+                     </div>
+                  </div>
+                ))}
+                {books.length === 0 && <div className="col-span-full py-10 text-center bg-white dark:bg-card-dark rounded-xl border border-dashed border-slate-200 text-slate-400 font-bold text-sm">لا توجد كتب مضافة</div>}
+             </div>
+           )}
         </div>
       </main>
 
@@ -1607,7 +2167,7 @@ export default function Admin() {
                       <label className="text-[10px] font-black text-slate-500 mb-1 block">الوصف</label>
                       <textarea className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold min-h-[100px]" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} />
                     </div>
-                    <UploadOrUrlField label="صورة المنتج" fieldName="imageUrl" currentUrl={formData.imageUrl} />
+                    <UploadOrUrlField label="صورة المنتج" fieldName="imageUrl" currentUrl={formData.imageUrl} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                  </>
                )}
 
@@ -1674,9 +2234,122 @@ export default function Admin() {
                           <label className="text-[10px] font-black text-slate-500 mb-1 block">الوصف</label>
                           <textarea className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm min-h-[100px]" value={formData.desc || ''} onChange={(e) => setFormData({...formData, desc: e.target.value})} />
                         </div>
-                        <UploadOrUrlField label="صورة الملعب" fieldName="imageUrl" currentUrl={formData.imageUrl} />
+                        <UploadOrUrlField label="صورة الملعب" fieldName="imageUrl" currentUrl={formData.imageUrl} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                      </>
                    )}
+                   <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark mt-2">
+                     <input 
+                       type="checkbox" 
+                       id="hide-history-item" 
+                       className="w-4 h-4 accent-primary" 
+                       checked={formData.hidden || false} 
+                       onChange={(e) => setFormData({...formData, hidden: e.target.checked})} 
+                     />
+                     <label htmlFor="hide-history-item" className="text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer">إخفاء هذا العنصر من الموقع الرسمي</label>
+                   </div>
+                 </>
+               )}
+
+               {activeTab === 'music' && (
+                 <>
+                   {musicSubTab === 'songs' ? (
+                     <>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">عنوان الأغنية/الأهزوجة</label>
+                          <input type="text" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">الفنان / المؤدي</label>
+                          <input type="text" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.artist || ''} onChange={(e) => setFormData({...formData, artist: e.target.value})} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">التصنيف</label>
+                          <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.category || 'chant'} onChange={(e) => setFormData({...formData, category: e.target.value})}>
+                             <option value="chant">أهزوجة مدرج</option>
+                             <option value="anthem">النشيد الرسمي</option>
+                             <option value="song">أغنية خاصة</option>
+                          </select>
+                        </div>
+                        <UploadOrUrlField label="رابط الملف الصوتي (MP3)" fieldName="audioUrl" currentUrl={formData.audioUrl} type="audio" formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                        <UploadOrUrlField label="صورة الغلاف" fieldName="coverUrl" currentUrl={formData.coverUrl} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                     </>
+                   ) : musicSubTab === 'albums' ? (
+                     <>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">عنوان الألبوم</label>
+                          <input type="text" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">الفنان</label>
+                          <input type="text" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.artist || ''} onChange={(e) => setFormData({...formData, artist: e.target.value})} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">سنة الإصدار</label>
+                          <input type="text" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.year || ''} onChange={(e) => setFormData({...formData, year: e.target.value})} />
+                        </div>
+                        <UploadOrUrlField label="صورة الغلاف" fieldName="coverUrl" currentUrl={formData.coverUrl} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                     </>
+                   ) : (
+                     <>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">عنوان قائمة التشغيل</label>
+                          <input type="text" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                        </div>
+                        <UploadOrUrlField label="صورة الغلاف" fieldName="coverUrl" currentUrl={formData.coverUrl} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-500 block text-right">اختر الأغاني</label>
+                           <div className="max-h-[200px] overflow-y-auto border border-border-light dark:border-border-dark rounded-xl p-2 space-y-1">
+                              {songs.map(song => (
+                                <label key={song.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-card-dark rounded-lg cursor-pointer">
+                                   <input 
+                                    type="checkbox" 
+                                    className="w-4 h-4 accent-primary"
+                                    checked={formData.songIds?.includes(song.id)} 
+                                    onChange={(e) => {
+                                      const ids = formData.songIds || [];
+                                      if (e.target.checked) setFormData({...formData, songIds: [...ids, song.id]});
+                                      else setFormData({...formData, songIds: ids.filter((id: string) => id !== song.id)});
+                                    }}
+                                   />
+                                   <div className="flex items-center gap-2">
+                                      {song.coverUrl && song.coverUrl.trim() !== '' ? (
+                                        <img src={song.coverUrl} className="w-6 h-6 rounded object-cover" />
+                                      ) : (
+                                        <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center">
+                                          <Music size={10} className="text-slate-400" />
+                                        </div>
+                                      )}
+                                      <span className="text-[10px] font-bold">{song.title}</span>
+                                   </div>
+                                </label>
+                              ))}
+                              {songs.length === 0 && <p className="text-[10px] text-slate-400 text-center py-4">لا توجد أغاني لاختيارها</p>}
+                           </div>
+                        </div>
+                     </>
+                   )}
+                 </>
+               )}
+
+               {activeTab === 'books' && (
+                 <>
+                    <div>
+                      <label className="text-[10px] font-black text-slate-500 mb-1 block">عنوان الكتاب</label>
+                      <input type="text" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-slate-500 mb-1 block">الكاتب / المصدر</label>
+                      <input type="text" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.author || ''} onChange={(e) => setFormData({...formData, author: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-slate-500 mb-1 block">رابط الـ PDF (رابط مباشر أو Google Drive Preview)</label>
+                      <input type="text" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm text-left dir-ltr" value={formData.pdfUrl || ''} onChange={(e) => setFormData({...formData, pdfUrl: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-slate-500 mb-1 block">وصف قصير</label>
+                      <textarea className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm min-h-[80px]" value={formData.desc || ''} onChange={(e) => setFormData({...formData, desc: e.target.value})} />
+                    </div>
+                    <UploadOrUrlField label="صورة الغلاف" fieldName="coverUrl" currentUrl={formData.coverUrl} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                  </>
                )}
 
@@ -1704,7 +2377,7 @@ export default function Admin() {
                       <input type="text" placeholder="مثلاً: الموقع الرسمي" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.author || ''} onChange={(e) => setFormData({...formData, author: e.target.value})} />
                     </div>
                    </div>
-                    <UploadOrUrlField label="صورة الخبر" fieldName="image" currentUrl={formData.image} />
+                    <UploadOrUrlField label="صورة الخبر" fieldName="image" currentUrl={formData.image} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">رابط RSS (لجلب الخبر تلقائياً)</label>
                      <input type="text" placeholder="https://..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.rssUrl || ''} onChange={(e) => setFormData({...formData, rssUrl: e.target.value})} />
@@ -1715,7 +2388,13 @@ export default function Admin() {
                {activeTab === 'users' && (
                  <>
                    <div className="flex flex-col items-center mb-4">
-                     <img src={formData.avatar} className="w-20 h-20 rounded-full border-2 border-primary mb-2 shadow-lg" alt="avatar" />
+                     {formData.avatar && formData.avatar.trim() !== '' ? (
+                       <img src={formData.avatar} className="w-20 h-20 rounded-full border-2 border-primary mb-2 shadow-lg" alt="avatar" referrerPolicy="no-referrer" />
+                     ) : (
+                       <div className="w-20 h-20 rounded-full bg-slate-100 border-2 border-slate-200 mb-2 flex items-center justify-center">
+                         <UsersIcon size={32} className="text-slate-300" />
+                       </div>
+                     )}
                      <p className="text-[10px] font-bold text-slate-400 capitalize">{formData.tier || 'new'} Member</p>
                    </div>
                    <div>
@@ -1814,16 +2493,16 @@ export default function Admin() {
                    )}
 
                    {formData.type === 'video' && formData.source === 'upload' && (
-                    <UploadOrUrlField label="ميديا الفيديو" fieldName="url" currentUrl={formData.url} type="video" />
+                    <UploadOrUrlField label="ميديا الفيديو" fieldName="url" currentUrl={formData.url} type="video" formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                    )}
 
                    {formData.type === 'photo' && (
-                    <UploadOrUrlField label="ميديا الصورة" fieldName="url" currentUrl={formData.url} type="image" />
+                    <UploadOrUrlField label="ميديا الصورة" fieldName="url" currentUrl={formData.url} type="image" formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                    )}
 
                    {formData.type === 'video' && (
                      <>
-                        <UploadOrUrlField label="صورة الغلاف (Thumbnail)" fieldName="thumbnailUrl" currentUrl={formData.thumbnailUrl} />
+                        <UploadOrUrlField label="صورة الغلاف (Thumbnail)" fieldName="thumbnailUrl" currentUrl={formData.thumbnailUrl} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                         <div>
                           <label className="text-[10px] font-black text-slate-500 mb-1 block">المدة (مثلاً 05:20)</label>
                           <input type="text" placeholder="00:00" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.duration || ''} onChange={(e) => setFormData({...formData, duration: e.target.value})} />
@@ -1847,10 +2526,10 @@ export default function Admin() {
                    </div>
                    <div className="grid grid-cols-2 gap-2">
                      <div>
-                       <UploadField label="لوجو صاحب الأرض" fieldName="homeLogo" currentUrl={formData.homeLogo} />
+                       <UploadField label="لوجو صاحب الأرض" fieldName="homeLogo" currentUrl={formData.homeLogo} uploading={uploading} handleFileUpload={handleFileUpload} setFormData={setFormData} />
                      </div>
                      <div>
-                       <UploadField label="لوجو الخصم" fieldName="awayLogo" currentUrl={formData.awayLogo} />
+                       <UploadField label="لوجو الخصم" fieldName="awayLogo" currentUrl={formData.awayLogo} uploading={uploading} handleFileUpload={handleFileUpload} setFormData={setFormData} />
                      </div>
                    </div>
                    <div className="grid grid-cols-2 gap-2">
@@ -1929,7 +2608,7 @@ export default function Admin() {
                       <input type="text" placeholder="مثلاً: نادي الاتحاد" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} />
                     </div>
                     <div>
-                     <UploadField label="شعار النادي" fieldName="logo" currentUrl={formData.logo} />
+                     <UploadField label="شعار النادي" fieldName="logo" currentUrl={formData.logo} uploading={uploading} handleFileUpload={handleFileUpload} setFormData={setFormData} />
 
                     </div>
                   </>
