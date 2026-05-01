@@ -107,14 +107,10 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                 <span className="text-sm font-bold">البث المباشر</span>
               </Link>
 
-              <Link to="/fan-zone" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable border-b border-slate-100 dark:border-border-dark pb-6 mb-4">
+              <Link to="/fan-zone" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
                 <span className="material-symbols-outlined !text-[20px] text-accent">stadium</span>
                 <span className="text-sm font-black">منطقة الجماهير</span>
               </Link>
-
-              <div className="pt-2 pb-1 px-4">
-                 <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest">استكشف المزيد</p>
-              </div>
 
               <Link to="/library" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
                 <span className="material-symbols-outlined !text-[20px]">library_music</span>
@@ -131,10 +127,14 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                 <span className="text-sm font-bold">تاريخ النادي</span>
               </Link>
 
-              <Link to="/store" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable uppercase">
+              <Link to="/store" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable uppercase border-b border-slate-100 dark:border-border-dark pb-6 mb-4">
                 <span className="material-symbols-outlined !text-[20px]">shopping_bag</span>
                 <span className="text-sm font-bold">متجر الجماهير</span>
               </Link>
+
+              <div className="pt-2 pb-1 px-4">
+                 <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest">استكشف المزيد</p>
+              </div>
 
               <Link to="/profile" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
                 <span className="material-symbols-outlined !text-[20px]">person</span>
