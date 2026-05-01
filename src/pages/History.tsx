@@ -75,6 +75,24 @@ export default function History() {
   return (
     <div className="flex-1 w-full max-w-md mx-auto bg-background-light dark:bg-background-dark min-h-screen pb-32">
       <main className="px-4 py-6 space-y-8 text-right">
+        {/* Founding Year Hero */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-12 relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent rounded-[40px] -z-10"></div>
+          <div className="text-[120px] font-black text-primary/10 dark:text-primary/5 leading-none absolute inset-0 flex items-center justify-center pointer-events-none select-none">1906</div>
+          <motion.h1 
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            className="text-6xl sm:text-8xl font-black bg-gradient-to-br from-primary via-primary-dark to-primary-light bg-clip-text text-transparent drop-shadow-sm mb-2"
+          >
+            1906
+          </motion.h1>
+          <p className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mr-1">تاريخ التأسيس</p>
+        </motion.div>
+
         {/* Stats Row */}
         <div className="grid grid-cols-2 gap-4">
           {clubStats.map((stat, idx) => (

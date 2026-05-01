@@ -4,7 +4,7 @@ import { ar } from 'date-fns/locale';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
-import { ChevronRight, Calendar, Trophy, MapPin, Edit2, Play, Users, Send, Target, X } from 'lucide-react';
+import { ChevronRight, Calendar, Trophy, MapPin, Edit2, Play, Users, Send, Target, X, FileText } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, query, where, getDocs, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import ScoreSelector from '../components/ScoreSelector';
@@ -241,8 +241,8 @@ export default function Matches() {
                         </div>
 
                         <div className="flex justify-center items-center gap-4 sm:gap-8 my-2">
-                          <div className="flex flex-col items-center gap-2 sm:gap-4 w-20 sm:w-28">
-                            <div className="w-14 h-14 sm:w-20 sm:h-20 bg-white/10 backdrop-blur-xl rounded-[20px] sm:rounded-[28px] p-2.5 sm:p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float">
+                          <div className="flex flex-col items-center gap-2 sm:gap-4 w-20 sm:w-32">
+                            <div className="w-18 h-18 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-xl rounded-[24px] sm:rounded-[32px] p-2.5 sm:p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float">
                               <img src={section.newestMatch.homeLogo} alt={section.newestMatch.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
                             </div>
                             <span className="text-white font-black text-[9px] sm:text-[10px] text-center uppercase tracking-widest line-clamp-2">{section.newestMatch.homeTeam}</span>
@@ -271,8 +271,8 @@ export default function Matches() {
                             )}
                           </div>
 
-                          <div className="flex flex-col items-center gap-2 sm:gap-4 w-20 sm:w-28">
-                            <div className="w-14 h-14 sm:w-20 sm:h-20 bg-white/10 backdrop-blur-xl rounded-[20px] sm:rounded-[28px] p-2.5 sm:p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float [animation-delay:0.5s]">
+                          <div className="flex flex-col items-center gap-2 sm:gap-4 w-20 sm:w-32">
+                            <div className="w-18 h-18 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-xl rounded-[24px] sm:rounded-[32px] p-2.5 sm:p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float [animation-delay:0.5s]">
                               <img src={section.newestMatch.awayLogo} alt={section.newestMatch.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
                             </div>
                             <span className="text-white font-black text-[9px] sm:text-[10px] text-center uppercase tracking-widest line-clamp-2">{section.newestMatch.awayTeam}</span>
@@ -335,6 +335,12 @@ export default function Matches() {
                               {match.stadium}
                             </div>
                           )}
+                          {match.sport === 'basketball' && (
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg text-[8px] font-black uppercase tracking-tighter ring-1 ring-orange-500/30">
+                              <FileText size={10} />
+                              تغطية شاملة
+                            </div>
+                          )}
                         </div>
                         <div className={`text-[9px] font-black px-2 py-1 rounded-lg ${
                           match.status === 'live' ? 'bg-red-500 text-white animate-pulse' : 
@@ -346,8 +352,8 @@ export default function Matches() {
                       </div>
 
                       <div className="flex justify-center items-center gap-4 sm:gap-8">
-                        <div className="flex flex-col items-center gap-2 sm:gap-3 w-20 sm:w-28 group/team">
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 sm:p-3 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center transition-transform group-hover/team:scale-110">
+                        <div className="flex flex-col items-center gap-2 sm:gap-3 w-20 sm:w-32 group/team">
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 sm:p-3 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center transition-transform group-hover/team:scale-110">
                             <img src={match.homeLogo} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-md" />
                           </div>
                           <span className="text-[10px] sm:text-xs font-black text-slate-800 dark:text-white uppercase text-center line-clamp-1">{match.homeTeam}</span>
@@ -370,8 +376,8 @@ export default function Matches() {
                           )}
                         </div>
 
-                        <div className="flex flex-col items-center gap-2 sm:gap-3 w-20 sm:w-28 group/team">
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 sm:p-3 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center transition-transform group-hover/team:scale-110 [animation-delay:0.5s]">
+                        <div className="flex flex-col items-center gap-2 sm:gap-3 w-20 sm:w-32 group/team">
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 sm:p-3 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center transition-transform group-hover/team:scale-110 [animation-delay:0.5s]">
                             <img src={match.awayLogo} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-md" />
                           </div>
                           <span className="text-[10px] sm:text-xs font-black text-slate-800 dark:text-white uppercase text-center line-clamp-1">{match.awayTeam}</span>
@@ -528,40 +534,73 @@ export default function Matches() {
                  </div>
                )}
 
-               {(() => {
-                 const match = matches.find(m => m.id === predictionMatchId);
-                 if (!match) return null;
-                 return (
-                   <div className="flex flex-col gap-8">
-                     <div className="flex items-center justify-between px-4">
-                        <div className="flex flex-col items-center gap-3">
-                           <div className="w-16 h-16 bg-slate-50 dark:bg-surface-dark rounded-2xl p-3 flex items-center justify-center border border-border-light dark:border-border-dark">
-                             <img src={match.homeLogo} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
-                           </div>
-                           <span className="text-[10px] font-black uppercase text-center w-20 line-clamp-1">{match.homeTeam}</span>
-                            <ScoreSelector 
-                               value={parseInt(homePrediction) || 0}
-                               onChange={(val) => setHomePrediction(String(val))}
-                               min={0}
-                               max={10}
-                            />
-                        </div>
+                {(() => {
+                  const match = matches.find(m => m.id === predictionMatchId);
+                  if (!match) return null;
+                  const isBasketball = match.sport === 'basketball';
+                  
+                  return (
+                    <div className="flex flex-col gap-8">
+                      {isBasketball ? (
+                        <div className="flex flex-col gap-6">
+                           <div className="text-center font-black text-[10px] text-slate-400 uppercase tracking-widest">اختر الفريق الفائز</div>
+                           <div className="flex gap-4">
+                              <motion.button 
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => { setHomePrediction('1'); setAwayPrediction('0'); }}
+                                className={`flex-1 flex flex-col items-center gap-4 p-5 rounded-[28px] border-2 transition-all duration-300 ${homePrediction === '1' ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10' : 'border-border-light dark:border-border-dark opacity-40 grayscale hover:opacity-100 hover:grayscale-0'}`}
+                              >
+                                <div className="w-14 h-14 bg-white dark:bg-surface-dark rounded-2xl p-2.5 flex items-center justify-center border border-border-light dark:border-border-dark shadow-sm">
+                                  <img src={match.homeLogo} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
+                                </div>
+                                <span className="text-[9px] font-black uppercase text-center line-clamp-1 h-3">{match.homeTeam}</span>
+                                <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black ${homePrediction === '1' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>فوز</div>
+                              </motion.button>
 
-                        <div className="text-2xl font-black text-slate-300">VS</div>
-
-                        <div className="flex flex-col items-center gap-3">
-                           <div className="w-16 h-16 bg-slate-50 dark:bg-surface-dark rounded-2xl p-3 flex items-center justify-center border border-border-light dark:border-border-dark">
-                             <img src={match.awayLogo} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
+                              <motion.button 
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => { setHomePrediction('0'); setAwayPrediction('1'); }}
+                                className={`flex-1 flex flex-col items-center gap-4 p-5 rounded-[28px] border-2 transition-all duration-300 ${awayPrediction === '1' ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10' : 'border-border-light dark:border-border-dark opacity-40 grayscale hover:opacity-100 hover:grayscale-0'}`}
+                              >
+                                <div className="w-14 h-14 bg-white dark:bg-surface-dark rounded-2xl p-2.5 flex items-center justify-center border border-border-light dark:border-border-dark shadow-sm">
+                                  <img src={match.awayLogo} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
+                                </div>
+                                <span className="text-[9px] font-black uppercase text-center line-clamp-1 h-3">{match.awayTeam}</span>
+                                <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black ${awayPrediction === '1' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>فوز</div>
+                              </motion.button>
                            </div>
-                           <span className="text-[10px] font-black uppercase text-center w-20 line-clamp-1">{match.awayTeam}</span>
-                            <ScoreSelector 
-                               value={parseInt(awayPrediction) || 0}
-                               onChange={(val) => setAwayPrediction(String(val))}
-                               min={0}
-                               max={10}
-                            />
                         </div>
-                     </div>
+                      ) : (
+                        <div className="flex items-center justify-between px-4">
+                           <div className="flex flex-col items-center gap-3">
+                              <div className="w-16 h-16 bg-slate-50 dark:bg-surface-dark rounded-2xl p-3 flex items-center justify-center border border-border-light dark:border-border-dark">
+                                <img src={match.homeLogo} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
+                              </div>
+                              <span className="text-[10px] font-black uppercase text-center w-20 line-clamp-1">{match.homeTeam}</span>
+                               <ScoreSelector 
+                                  value={parseInt(homePrediction) || 0}
+                                  onChange={(val) => setHomePrediction(String(val))}
+                                  min={0}
+                                  max={10}
+                               />
+                           </div>
+
+                           <div className="text-2xl font-black text-slate-300">VS</div>
+
+                           <div className="flex flex-col items-center gap-3">
+                              <div className="w-16 h-16 bg-slate-50 dark:bg-surface-dark rounded-2xl p-3 flex items-center justify-center border border-border-light dark:border-border-dark">
+                                <img src={match.awayLogo} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
+                              </div>
+                              <span className="text-[10px] font-black uppercase text-center w-20 line-clamp-1">{match.awayTeam}</span>
+                               <ScoreSelector 
+                                  value={parseInt(awayPrediction) || 0}
+                                  onChange={(val) => setAwayPrediction(String(val))}
+                                  min={0}
+                                  max={10}
+                               />
+                           </div>
+                        </div>
+                      )}
 
                      <button 
                        onClick={handleSavePrediction}
@@ -617,7 +656,10 @@ export default function Matches() {
                     matchPredictions.map((pred) => {
                       const match = matches.find(m => m.id === pred.matchId);
                       const isFinished = match?.status === 'finished';
-                      const isCorrect = isFinished && Number(match.homeScore) === Number(pred.homeScore) && Number(match.awayScore) === Number(pred.awayScore);
+                      const isBasketball = match?.sport === 'basketball';
+                      const isCorrect = isBasketball 
+                        ? (isFinished && ((Number(match.homeScore) > Number(match.awayScore) && Number(pred.homeScore) > Number(pred.awayScore)) || (Number(match.awayScore) > Number(match.homeScore) && Number(pred.awayScore) > Number(pred.homeScore))))
+                        : (isFinished && Number(match.homeScore) === Number(pred.homeScore) && Number(match.awayScore) === Number(pred.awayScore));
                       
                       return (
                         <div key={pred.id} className={`p-4 rounded-2xl border ${isCorrect ? 'border-green-500 bg-green-50/20 dark:bg-green-900/10' : 'border-border-light dark:border-border-dark bg-slate-50 dark:bg-surface-dark'} flex items-center justify-between transition-all group`}>
@@ -644,13 +686,21 @@ export default function Matches() {
                           </div>
                           
                           <div className="flex items-center gap-2">
-                             <div className="flex flex-col items-center">
-                               <span className={`w-8 h-8 flex items-center justify-center border rounded-lg font-black text-sm ${isCorrect ? 'bg-white dark:bg-green-900/40 border-green-200 dark:border-green-800 text-green-600 dark:text-green-400' : 'bg-white dark:bg-card-dark border-border-light dark:border-border-dark text-slate-800 dark:text-white'}`}>{pred.homeScore}</span>
-                             </div>
-                             <span className={`text-sm font-black ${isCorrect ? 'text-green-400' : 'text-slate-300'}`}>-</span>
-                             <div className="flex flex-col items-center">
-                               <span className={`w-8 h-8 flex items-center justify-center border rounded-lg font-black text-sm ${isCorrect ? 'bg-white dark:bg-green-900/40 border-green-200 dark:border-green-800 text-green-600 dark:text-green-400' : 'bg-white dark:bg-card-dark border-border-light dark:border-border-dark text-slate-800 dark:text-white'}`}>{pred.awayScore}</span>
-                             </div>
+                             {isBasketball ? (
+                               <div className={`px-3 py-1.5 rounded-xl font-black text-[9px] uppercase shadow-sm ${isCorrect ? 'bg-green-500 text-white' : 'bg-primary text-white'}`}>
+                                 فوز {pred.homeScore > pred.awayScore ? match?.homeTeam : match?.awayTeam}
+                               </div>
+                             ) : (
+                               <>
+                                 <div className="flex flex-col items-center">
+                                   <span className={`w-8 h-8 flex items-center justify-center border rounded-lg font-black text-sm ${isCorrect ? 'bg-white dark:bg-green-900/40 border-green-200 dark:border-green-800 text-green-600 dark:text-green-400' : 'bg-white dark:bg-card-dark border-border-light dark:border-border-dark text-slate-800 dark:text-white'}`}>{pred.homeScore}</span>
+                                 </div>
+                                 <span className={`text-sm font-black ${isCorrect ? 'text-green-400' : 'text-slate-300'}`}>-</span>
+                                 <div className="flex flex-col items-center">
+                                   <span className={`w-8 h-8 flex items-center justify-center border rounded-lg font-black text-sm ${isCorrect ? 'bg-white dark:bg-green-900/40 border-green-200 dark:border-green-800 text-green-600 dark:text-green-400' : 'bg-white dark:bg-card-dark border-border-light dark:border-border-dark text-slate-800 dark:text-white'}`}>{pred.awayScore}</span>
+                                 </div>
+                               </>
+                             )}
                           </div>
                         </div>
                       );

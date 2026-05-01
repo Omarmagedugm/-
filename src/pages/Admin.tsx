@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { v4 as uuidv4 } from 'uuid';
+import { toDate, formatInTimeZone } from 'date-fns-tz';
 import { db, auth, uploadImage } from '../lib/firebase';
 import { 
   collection, 
@@ -263,9 +264,7 @@ const UploadOrUrlField = ({
 };
 
 // Triggering deployment change
-const ADMIN_VERSION = '1.2.1';
-
-import { toDate, formatInTimeZone } from 'date-fns-tz';
+const ADMIN_VERSION = '1.2.2';
 
 export default function Admin() {
   const { 
@@ -382,7 +381,7 @@ export default function Admin() {
         const payload = {
           title: formData.title || 'فيديو جديد',
           type: formData.type || 'video',
-          source: formData.source || (formData.url?.includes('youtube.com') || formData.url?.includes('youtu.be') ? 'youtube' : 'upload'),
+          source: formData.source || (formData.url?.includes('youtube.com') || formData.url?.includes('youtu.be') ? 'youtube' : formData.url?.includes('facebook.com') ? 'facebook' : 'upload'),
           url: formData.url || '',
           videoUrl: formData.type === 'video' ? (formData.url || '') : '',
           thumbnailUrl: formData.thumbnailUrl || (formData.type === 'video' ? 'https://images.unsplash.com/photo-1510563399035-7140409890a5' : (formData.url || 'https://images.unsplash.com/photo-1510563399035-7140409890a5')),
@@ -447,7 +446,8 @@ export default function Admin() {
           description: formData.description || '',
           image: formData.image || 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e',
           active: formData.active ?? true,
-          useAutoWeather: formData.useAutoWeather ?? true
+          useAutoWeather: formData.useAutoWeather ?? true,
+          weatherBg: formData.weatherBg || ''
         };
         
         await setDoc(doc(db, 'city_info', 'alexandria'), payload);
@@ -2859,6 +2859,7 @@ export default function Admin() {
                       <textarea className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm min-h-[100px]" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} />
                     </div>
                     <UploadOrUrlField label="صورة الغلاف للمدينة" fieldName="image" currentUrl={formData.image} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                    <UploadOrUrlField label="خلفية بطاقة الطقس" fieldName="weatherBg" currentUrl={formData.weatherBg} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark">
                         <input type="checkbox" id="cityActive" checked={formData.active ?? true} onChange={(e) => setFormData({...formData, active: e.target.checked})} />

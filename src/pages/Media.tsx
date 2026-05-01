@@ -34,12 +34,14 @@ export default function Media() {
       return `https://www.youtube.com/embed/${id}?autoplay=1`;
     } else if (url.includes('youtube.com/embed/')) {
       return url.includes('?') ? `${url}&autoplay=1` : `${url}?autoplay=1`;
+    } else if (url.includes('facebook.com/')) {
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=0&autoplay=1`;
     }
     return null;
   };
 
-  const isYoutube = (url: string) => {
-    return url.includes('youtube.com') || url.includes('youtu.be');
+  const isEmbeddable = (url: string) => {
+    return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('facebook.com');
   };
   
   const displayMedia = activeTab === 'all' ? media : activeTab === 'photo' ? photos : videos;
@@ -300,20 +302,14 @@ export default function Media() {
             <div className="relative w-full max-w-4xl aspect-video bg-black rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-white/10">
               <div className="absolute top-6 right-6 z-50 flex gap-2">
                 <button 
-                  onClick={() => handleDownload(selectedVideo.url, selectedVideo.title)}
-                  className="w-12 h-12 bg-black/40 hover:bg-primary backdrop-blur-xl text-white rounded-2xl flex items-center justify-center transition-all border border-white/10"
-                >
-                  <Download size={20} />
-                </button>
-                <button 
                   onClick={() => setSelectedVideo(null)}
-                  className="w-12 h-12 bg-black/40 hover:bg-red-500 backdrop-blur-xl text-white rounded-2xl flex items-center justify-center transition-all border border-white/10"
+                  className="w-12 h-12 bg-black/40 hover:bg-red-500 backdrop-blur-xl text-white rounded-2xl flex items-center justify-center transition-all border border-white/10 shadow-2xl"
                 >
                   <X size={24} />
                 </button>
               </div>
 
-              {isYoutube(selectedVideo.url) || selectedVideo.source === 'embed' ? (
+              {isEmbeddable(selectedVideo.url) || selectedVideo.source === 'embed' ? (
                 <iframe 
                   src={getEmbedUrl(selectedVideo.url, selectedVideo.source) || ''} 
                   className="w-full h-full"

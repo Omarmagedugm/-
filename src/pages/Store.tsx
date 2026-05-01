@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useAppStore, Product } from '../store';
 import { useNavigate } from 'react-router-dom';
-import { db, auth } from '../lib/firebase';
+import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, query, onSnapshot, orderBy } from 'firebase/firestore';
 
 export default function Store() {
@@ -40,7 +40,7 @@ export default function Store() {
     const q = query(collection(db, 'products'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
-    });
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'products'));
     return () => unsubscribe();
   }, []);
 

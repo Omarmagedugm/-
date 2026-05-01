@@ -68,6 +68,7 @@ export interface CityInfo {
   sunrise: string;
   description: string;
   image: string;
+  weatherBg?: string;
   active: boolean;
 }
 

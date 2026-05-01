@@ -62,12 +62,12 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                 <X size={18} />
               </button>
               <Link to="/profile" onClick={onClose} className="flex items-center gap-4 relative z-10 pt-4 cursor-pointer hover:opacity-80 transition-opacity">
-                <div className="h-16 w-16 rounded-2xl bg-white/20 p-0.5 ring-1 ring-white/30 shadow-inner overflow-hidden">
-                  <img src={profile.avatar} alt="Profile" className="w-full h-full object-cover rounded-[14px]" referrerPolicy="no-referrer" />
+                <div className="h-16 w-16 rounded-2xl bg-white/20 p-2 ring-1 ring-white/30 shadow-inner overflow-hidden flex items-center justify-center">
+                  <img src={isAnonymous ? appSettings.appLogo : profile.avatar} alt="Profile" className="w-full h-full object-contain rounded-[14px]" referrerPolicy="no-referrer" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black">{isAnonymous ? "زائر" : profile.name}</h3>
-                  <p className="text-white/70 text-[10px] font-bold">{isAnonymous ? "زائر اتحاداوي" : "عضو ماسي • سيد البلد"}</p>
+                  <h3 className="text-lg font-black">{isAnonymous ? "زائر اتحاداوي" : profile.name}</h3>
+                  <p className="text-white/70 text-[10px] font-bold">{isAnonymous ? "سيد البلد" : "عضو ماسي • سيد البلد"}</p>
                 </div>
               </Link>
             </div>

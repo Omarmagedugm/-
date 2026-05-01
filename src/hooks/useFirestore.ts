@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, doc, limit, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, limit, updateDoc, where } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAppStore } from '../store';
 
@@ -82,7 +82,13 @@ export function useFirestoreSync() {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data && data.sections) {
-          const mergedSections = [...data.sections];
+          // Deduplicate based on ID to prevent repeating items
+          const uniqueSectionsMap = new Map();
+          data.sections.forEach((s: any) => {
+            if (s && s.id) uniqueSectionsMap.set(s.id, s);
+          });
+          
+          const mergedSections = Array.from(uniqueSectionsMap.values());
           const initialSections = [
             { id: 'hero', type: 'hero', active: true, order: 0 },
             { id: 'matches', type: 'matches', active: true, order: 1 },
@@ -91,7 +97,7 @@ export function useFirestoreSync() {
             { id: 'media', type: 'media', active: true, order: 3 },
           ];
           initialSections.forEach(ds => {
-            if (!mergedSections.find((s: any) => s.id === ds.id)) {
+            if (!uniqueSectionsMap.has(ds.id)) {
               mergedSections.push(ds);
             }
           });
@@ -128,10 +134,26 @@ export function useFirestoreSync() {
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'products'));
 
     // Sync Orders
-    const unsubOrders = onSnapshot(query(collection(db, 'orders'), orderBy('createdAt', 'desc')), (snapshot) => {
-      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
-      useAppStore.getState().setOrders(items);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'orders'));
+    let unsubOrders = () => {};
+    if (auth.currentUser && (profile.uid === auth.currentUser.uid || profile.role === 'admin')) {
+      const isActuallyAdmin = profile.role === 'admin';
+      try {
+        const ordersQuery = isActuallyAdmin 
+          ? query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
+          : query(collection(db, 'orders'), where('userId', '==', auth.currentUser.uid), orderBy('createdAt', 'desc'));
+          
+        unsubOrders = onSnapshot(ordersQuery, (snapshot) => {
+          const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+          useAppStore.getState().setOrders(items);
+        }, (error) => {
+          if (error.code !== 'permission-denied') {
+            console.error('Orders Sync Error:', error);
+          }
+        });
+      } catch (e) {
+        console.error('Orders Query Setup Error:', e);
+      }
+    }
 
     // Sync Songs
     const unsubSongs = onSnapshot(collection(db, 'songs'), (snapshot) => {
@@ -190,15 +212,15 @@ export function useFirestoreSync() {
       }, (error) => handleFirestoreError(error, OperationType.GET, `users/${currentUser.uid}`));
     }
 
-    // Sync Users (Only if admin)
+    // Sync Users (Always for everyone to keep profile pics in sync)
     let unsubUsers = () => {};
-    if (profile.role === 'admin' && auth.currentUser) {
+    if (auth.currentUser) {
       unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
         const users = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() })) as any;
         setUsers(users);
       }, (error) => {
         if (error.code !== 'permission-denied') {
-          handleFirestoreError(error, OperationType.LIST, 'users');
+          console.warn('Users sync error:', error.message);
         }
       });
     }

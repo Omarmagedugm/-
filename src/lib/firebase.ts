@@ -27,8 +27,12 @@ interface FirestoreErrorInfo {
 }
 
 export function handleFirestoreError(error: any, operationType: OperationType, path: string | null) {
+  const errCode = error?.code || '';
+  const isRead = operationType === OperationType.LIST || operationType === OperationType.GET;
+  const isUnavailable = errCode === 'unavailable' || errCode === 'deadline-exceeded';
+
   const errInfo: FirestoreErrorInfo = {
-    error: error?.message || error?.code || String(error),
+    error: error?.message || errCode || String(error),
     authInfo: {
       userId: getAuth().currentUser?.uid,
       email: getAuth().currentUser?.email,
@@ -38,6 +42,12 @@ export function handleFirestoreError(error: any, operationType: OperationType, p
     operationType,
     path
   };
+
+  if (isRead && isUnavailable) {
+    console.warn(`Firestore [${path}] temporarily unavailable. Operating in offline mode.`, errInfo);
+    return; // Don't throw for transient read errors to keep UI alive
+  }
+
   console.error(`Firestore Error [${path}]: `, JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));
 }

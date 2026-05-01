@@ -17,6 +17,7 @@ import {
   Search, 
   Settings,
   CloudSun,
+  Cloud,
   MapPin,
   Sunrise,
   Sunset,
@@ -47,22 +48,27 @@ export default function Home() {
     const citySection = homeSections.find(s => s.type === 'city' || s.id === 'city');
     if (citySection?.active && (!cityInfo || cityInfo.active !== false)) {
       fetch('https://api.open-meteo.com/v1/forecast?latitude=31.2001&longitude=29.9187&current_weather=true&daily=sunrise,sunset&timezone=Africa%2FCairo&forecast_days=1')
-        .then(r => r.json())
+        .then(async r => {
+          if (!r.ok) {
+            throw new Error(`Weather API responded with status: ${r.status}`);
+          }
+          return r.json();
+        })
         .then(data => {
           if (!data || !data.current_weather || !data.daily) return;
           
           const weatherCodeToText = (code: number) => {
-             if (code === 0) return 'صافي';
-             if (code === 1) return 'غالباً صافي';
-             if (code === 2) return 'غائم جزئياً';
-             if (code === 3) return 'غائم';
-             if (code === 45 || code === 48) return 'ضباب';
-             if (code >= 51 && code <= 55) return 'رذاذ';
-             if (code >= 61 && code <= 65) return 'ممطر';
-             if (code >= 71 && code <= 75) return 'ثلوج';
-             if (code >= 80 && code <= 82) return 'زخات مطر';
-             if (code >= 95) return 'عواصف رعدية';
-             return 'غير محدد';
+             if (code === 0) return 'sunny';
+             if (code === 1) return 'mostly_sunny';
+             if (code === 2) return 'partly_cloudy';
+             if (code === 3) return 'cloudy';
+             if (code === 45 || code === 48) return 'foggy';
+             if (code >= 51 && code <= 55) return 'drizzle';
+             if (code >= 61 && code <= 65) return 'rainy';
+             if (code >= 71 && code <= 75) return 'snowy';
+             if (code >= 80 && code <= 82) return 'showers';
+             if (code >= 95) return 'thunderstorm';
+             return 'cloudy';
           };
 
           const formatTime = (timeStr: string) => {
@@ -82,7 +88,9 @@ export default function Home() {
              sunset: formatTime(data.daily.sunset[0])
           });
         })
-        .catch(err => console.error('Failed to fetch weather', err));
+        .catch(err => {
+          console.warn('Weather fetch suppressed:', err.message);
+        });
     }
   }, [homeSections, cityInfo?.active]);
 
@@ -168,56 +176,55 @@ export default function Home() {
                       >
                         <Dribbble size={14} className="sm:w-4 sm:h-4" />
                       </button>
-                   </div>
+                    </div>
                   </div>
-                  
-                  <div className="flex justify-center items-center gap-4 sm:gap-8 py-4">
-                    <div className="flex flex-col items-center gap-2 sm:gap-4 w-20 sm:w-28 group/team">
-                      <div className="relative flex h-14 w-14 sm:h-20 sm:w-20 items-center justify-center rounded-[20px] sm:rounded-[28px] bg-white/10 p-2 sm:p-3 ring-1 ring-white/20 backdrop-blur-xl shadow-premium animate-float group-hover/team:scale-110 transition-transform duration-500">
+                  <div className="flex justify-center items-center gap-3 sm:gap-10 py-6 sm:py-8">
+                    <div className="flex flex-col items-center gap-3 sm:gap-5 w-28 sm:w-44 group/team shrink-0">
+                      <div className={`relative flex items-center justify-center rounded-[28px] sm:rounded-[44px] bg-white/10 p-3 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium animate-float group-hover/team:scale-110 transition-transform duration-500 ${heroMatch.status === 'upcoming' ? 'h-24 w-24 sm:h-36 sm:w-36' : 'h-20 w-20 sm:h-28 sm:w-28'}`}>
                         <img alt={heroMatch.homeTeam} className="w-full h-full object-contain filter drop-shadow-2xl" src={heroMatch.homeLogo} referrerPolicy="no-referrer" />
                       </div>
-                      <span className="text-center text-[9px] sm:text-[10px] font-black text-white uppercase tracking-wider line-clamp-2">{heroMatch.homeTeam}</span>
+                      <span className="text-center text-[11px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">{heroMatch.homeTeam}</span>
                     </div>
                     
-                    <div className="flex flex-col items-center flex-shrink-0">
-                      <div className={`font-black text-white tracking-widest tabular-nums filter ${String(heroMatch.homeScore).length > 2 || String(heroMatch.awayScore).length > 2 ? 'text-2xl sm:text-4xl' : 'text-3xl sm:text-5xl'} ${selectedSport === 'basketball' ? 'drop-shadow-[0_5px_15px_rgba(234,88,12,0.3)]' : 'drop-shadow-[0_5px_15px_rgba(46,204,113,0.3)]'}`}>
+                    <div className="flex flex-col items-center flex-1 min-w-[70px] sm:min-w-[120px]">
+                      <div className={`font-black text-white tracking-widest tabular-nums filter ${String(heroMatch.homeScore).length > 2 || String(heroMatch.awayScore).length > 2 ? 'text-2xl sm:text-4xl' : 'text-3xl sm:text-6xl'} ${selectedSport === 'basketball' ? 'drop-shadow-[0_5px_15px_rgba(234,88,12,0.3)]' : 'drop-shadow-[0_5px_15px_rgba(46,204,113,0.3)]'}`}>
                         {heroMatch.status === 'upcoming' ? (
-                          <div className="text-xl sm:text-2xl opacity-60">VS</div>
+                          <div className="text-xl sm:text-3xl opacity-60">VS</div>
                         ) : (
-                          <div className="flex items-center justify-center gap-1 sm:gap-3">
+                          <div className="flex items-center justify-center gap-2 sm:gap-4">
                             <span>{heroMatch.homeScore}</span>
                             <span className={selectedSport === 'basketball' ? 'text-orange-400' : 'text-accent'}>:</span>
                             <span>{heroMatch.awayScore}</span>
                           </div>
                         )}
                       </div>
-                      <div className="mt-3 sm:mt-4 flex flex-col items-center gap-1.5 sm:gap-2">
+                      <div className="mt-2 sm:mt-5 flex flex-col items-center gap-1.5 sm:gap-3">
                         {heroMatch.status === 'live' ? (
                           <>
-                            <div className="flex items-center gap-1 sm:gap-2 rounded-full bg-red-600 px-2 sm:px-3 py-1 text-[9px] sm:text-[10px] font-black text-white shadow-glow">
-                              <div className="relative h-1.5 w-1.5 sm:h-2 sm:w-2">
+                            <div className="flex items-center gap-1.5 sm:gap-2.5 rounded-full bg-red-600 px-3 py-1.5 text-[9px] sm:text-[11px] font-black text-white shadow-glow">
+                              <div className="relative h-2 w-2 sm:h-2.5 sm:w-2.5">
                                 <div className="animate-ping absolute h-full w-full rounded-full bg-white opacity-75"></div>
-                                <div className="relative rounded-full h-1.5 w-1.5 sm:h-2 sm:w-2 bg-white"></div>
+                                <div className="relative rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-white"></div>
                               </div>
                               بث مباشر
                             </div>
-                            <div className="px-2 sm:px-3 py-1 bg-white/10 rounded-full text-[9px] sm:text-[10px] font-black text-white backdrop-blur-md">
-                              الدقيقة {calculateCurrentMinute(heroMatch)}
+                            <div className="px-3 py-1 bg-white/10 rounded-full text-[9px] sm:text-[11px] font-black text-white backdrop-blur-md border border-white/10">
+                              {calculateCurrentMinute(heroMatch)}'
                             </div>
                           </>
                         ) : (
-                          <div className="flex items-center gap-2 rounded-full bg-black/30 backdrop-blur-md px-2 sm:px-3 py-1 text-[9px] sm:text-[10px] font-black text-white ring-1 ring-white/10 uppercase tracking-tighter text-center leading-tight">
-                            {heroMatch.status === 'finished' ? 'انتهت المباراة' : 'المباراة القادمة'}
+                          <div className="flex items-center gap-2 rounded-full bg-black/30 backdrop-blur-md px-3 sm:px-4 py-1 sm:py-1.5 text-[9px] sm:text-[11px] font-black text-white ring-1 ring-white/10 uppercase tracking-tighter text-center">
+                            {heroMatch.status === 'finished' ? 'انتهت' : 'قريباً'}
                           </div>
                         )}
                       </div>
                     </div>
                     
-                    <div className="flex flex-col items-center gap-2 sm:gap-4 w-20 sm:w-28 group/team">
-                      <div className="relative flex h-14 w-14 sm:h-20 sm:w-20 items-center justify-center rounded-[20px] sm:rounded-[28px] bg-white/10 p-2 sm:p-3 ring-1 ring-white/20 backdrop-blur-xl shadow-premium animate-float [animation-delay:0.5s] group-hover/team:scale-110 transition-transform duration-500">
+                    <div className="flex flex-col items-center gap-3 sm:gap-5 w-28 sm:w-44 group/team shrink-0">
+                      <div className={`relative flex items-center justify-center rounded-[28px] sm:rounded-[44px] bg-white/10 p-3 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium animate-float [animation-delay:0.5s] group-hover/team:scale-110 transition-transform duration-500 ${heroMatch.status === 'upcoming' ? 'h-24 w-24 sm:h-36 sm:w-36' : 'h-20 w-20 sm:h-28 sm:w-28'}`}>
                         <img alt={heroMatch.awayTeam} className="w-full h-full object-contain filter drop-shadow-2xl" src={heroMatch.awayLogo} referrerPolicy="no-referrer" />
                       </div>
-                      <span className="text-center text-[9px] sm:text-[10px] font-black text-white uppercase tracking-wider line-clamp-2">{heroMatch.awayTeam}</span>
+                      <span className="text-center text-[11px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">{heroMatch.awayTeam}</span>
                     </div>
                   </div>
                   
@@ -411,13 +418,13 @@ export default function Home() {
             
             <div className="flex flex-col gap-4">
               {upcomingMatches.map((match) => (
-                <Link key={match.id} to="/matches" className="flex items-center justify-between glass-card p-4 rounded-[28px] shadow-premium hover:border-primary/30 transition-all duration-300">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center -space-x-3 rtl:space-x-reverse">
-                      <div className="h-12 w-12 rounded-2xl bg-white dark:bg-background-dark p-2 shadow-premium ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center z-10">
+                <Link key={match.id} to="/matches" className="flex items-center justify-between glass-card p-4 sm:p-5 rounded-[28px] sm:rounded-[32px] shadow-premium hover:border-primary/30 transition-all duration-300">
+                  <div className="flex items-center gap-4 sm:gap-6">
+                    <div className="flex items-center -space-x-6 rtl:space-x-reverse">
+                      <div className="h-20 w-20 rounded-2xl bg-white dark:bg-background-dark p-3 shadow-premium ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center z-10 transition-transform hover:scale-110">
                         <img src={match.homeLogo} alt="Home" className="h-full w-full object-contain" referrerPolicy="no-referrer" />
                       </div>
-                      <div className="h-12 w-12 rounded-2xl bg-white dark:bg-background-dark p-2 shadow-premium ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center z-0 scale-90 opacity-80">
+                      <div className="h-20 w-20 rounded-2xl bg-white dark:bg-background-dark p-3 shadow-premium ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center z-0 scale-90 opacity-90 transition-transform hover:scale-110">
                         <img src={match.awayLogo} alt="Away" className="h-full w-full object-contain" referrerPolicy="no-referrer" />
                       </div>
                     </div>
@@ -507,10 +514,22 @@ export default function Home() {
         const displayCity = {
            cityName: cityInfo?.cityName || 'الإسكندرية',
            temperature: (useAuto && autoWeather?.temp) ? autoWeather.temp : (cityInfo?.temperature || '25'),
-           condition: (useAuto && autoWeather?.condition) ? autoWeather.condition : (cityInfo?.condition || 'صافي'),
+           condition: (useAuto && autoWeather?.condition) ? (
+             autoWeather.condition === 'sunny' ? 'صافي' :
+             autoWeather.condition === 'mostly_sunny' ? 'غالباً صافي' :
+             autoWeather.condition === 'partly_cloudy' ? 'غائم جزئياً' :
+             autoWeather.condition === 'cloudy' ? 'غائم' :
+             autoWeather.condition === 'foggy' ? 'ضباب' :
+             autoWeather.condition === 'drizzle' ? 'رذاذ' :
+             autoWeather.condition === 'rainy' ? 'ممطر' :
+             autoWeather.condition === 'snowy' ? 'ثلوج' :
+             autoWeather.condition === 'showers' ? 'زخات مطر' :
+             autoWeather.condition === 'thunderstorm' ? 'عواصف رعدية' : 'غائم'
+           ) : (cityInfo?.condition || 'صافي'),
            sunrise: (useAuto && autoWeather?.sunrise) ? autoWeather.sunrise : (cityInfo?.sunrise || '06:30 AM'),
            sunset: (useAuto && autoWeather?.sunset) ? autoWeather.sunset : (cityInfo?.sunset || '07:15 PM'),
            image: cityInfo?.image || 'https://images.unsplash.com/photo-1572214350916-571eac7bfced?q=80&w=1000&auto=format&fit=crop',
+           weatherBg: cityInfo?.weatherBg || '',
            description: cityInfo?.description || 'مدينة الإسكندرية، عروس البحر الأبيض المتوسط وعاصمة الرياضة والثقافة.'
         };
 
@@ -523,14 +542,32 @@ export default function Home() {
         let textColor = '';
         let subtextColor = '';
 
-        if (tempInt >= 35) {
-           cardBg = 'from-red-600 via-orange-500 to-red-700 border-red-400/30';
+        const cond = (useAuto && autoWeather?.condition) ? autoWeather.condition : '';
+
+        if (tempInt >= 35 || cond === 'sunny' || cond === 'mostly_sunny') {
+           cardBg = 'from-sky-400 via-blue-400 to-sky-500 border-sky-300/30';
            iconBg = 'bg-yellow-300 shadow-yellow-300/20';
-           iconColor = 'text-red-900';
-           tempColor = 'text-yellow-300';
+           iconColor = 'text-sky-900';
+           tempColor = 'text-white font-black drop-shadow-sm';
            textColor = 'text-white';
-           subtextColor = 'text-orange-100';
+           subtextColor = 'text-sky-50';
            IconElement = Sun;
+        } else if (cond === 'rainy' || cond === 'showers' || cond === 'drizzle' || displayCity.condition.includes('مطر') || displayCity.condition.includes('زخات')) {
+           cardBg = 'from-blue-700 via-blue-600 to-indigo-900 border-blue-400/30';
+           iconBg = 'bg-white shadow-blue-300/20';
+           iconColor = 'text-blue-600';
+           tempColor = 'text-white';
+           textColor = 'text-white';
+           subtextColor = 'text-blue-100';
+           IconElement = CloudRain;
+        } else if (cond === 'cloudy' || cond === 'partly_cloudy' || cond === 'foggy' || displayCity.condition.includes('غائم') || displayCity.condition.includes('صافي جزئياً')) {
+           cardBg = 'from-slate-600 via-slate-500 to-slate-700 border-slate-400/30';
+           iconBg = 'bg-white/20 backdrop-blur-md shadow-white/10';
+           iconColor = 'text-white';
+           tempColor = 'text-slate-100';
+           textColor = 'text-white';
+           subtextColor = 'text-slate-200';
+           IconElement = CloudSun;
         } else if (tempInt >= 25) {
            cardBg = 'from-yellow-500 via-amber-500 to-orange-600 border-yellow-400/30';
            iconBg = 'bg-white shadow-white/20';
@@ -559,20 +596,143 @@ export default function Home() {
 
         return (
           <motion.section key={section.id} variants={itemVariants}>
-            <div className={`relative overflow-hidden rounded-[40px] shadow-2xl group bg-gradient-to-br transition-colors duration-1000 ${cardBg}`}>
-               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
+            <div className={`relative overflow-hidden rounded-[40px] shadow-2xl group transition-colors duration-1000 ${displayCity.weatherBg ? '' : `bg-gradient-to-br ${cardBg}`}`}>
+               {/* Background Image if set */}
+               {displayCity.weatherBg && (
+                 <div className="absolute inset-0 z-0">
+                   <img 
+                     src={displayCity.weatherBg} 
+                     className="w-full h-full object-cover opacity-80" 
+                     alt="Weather Background" 
+                     referrerPolicy="no-referrer"
+                   />
+                   <div className={`absolute inset-0 bg-gradient-to-br mix-blend-multiply opacity-60 ${cardBg}`}></div>
+                 </div>
+               )}
+
+               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay z-10"></div>
                
-               <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/20 rounded-full blur-[80px]"></div>
-               <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-black/10 rounded-full blur-[80px]"></div>
+               <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/20 rounded-full blur-[80px] z-10"></div>
+               <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-black/10 rounded-full blur-[80px] z-10"></div>
                
-               {/* Weather Effects */}
-               {tempInt >= 35 && <div className="absolute top-0 right-10 opacity-20"><div className="w-32 h-32 bg-yellow-300 rounded-full blur-[40px] animate-pulse"></div></div>}
-               {(displayCity.condition.includes('مطر') || displayCity.condition.includes('رذاذ')) && <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/rain.png')] opacity-40 mix-blend-overlay"></div>}
-               {(displayCity.condition.includes('غائم') || displayCity.condition.includes('ضباب')) && <div className="absolute inset-0 opacity-10 bg-center bg-[url('https://www.transparenttextures.com/patterns/rice-paper.png')] mix-blend-overlay flex justify-around items-start pt-10"><CloudSun size={80} className="text-white animate-pulse" /><CloudSun size={60} className="text-white mt-10 animate-pulse delay-75" /></div>}
-               {tempInt < 15 && <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/snow.png')] opacity-40 mix-blend-overlay text-white text-9xl text-center pt-10">❄️</div>}
-               {displayCity.condition.includes('رياح') && <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay"></div>}
+                {/* Realistic Weather Effects */}
+                <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+                  {/* Sunny / Clear Sky Effects */}
+                  {(tempInt >= 35 || cond === 'sunny' || cond === 'mostly_sunny' || displayCity.condition.includes('صافي')) && (
+                    <div className="absolute inset-0 overflow-hidden">
+                      {/* Realistic Sun Flare */}
+                      <motion.div 
+                        animate={{ 
+                          scale: [1, 1.2, 1],
+                          opacity: [0.2, 0.4, 0.2]
+                        }}
+                        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute -top-20 -right-20 w-96 h-96 bg-gradient-radial from-yellow-300/40 via-orange-400/10 to-transparent blur-3xl z-0"
+                      />
+                      
+                      {/* Realistic Floating Clouds Layer 1 */}
+                      <motion.div 
+                        animate={{ x: [-200, 400] }}
+                        transition={{ duration: 100, repeat: Infinity, ease: "linear" }}
+                        className="absolute top-0 left-0 w-full h-full opacity-30 mix-blend-overlay z-10"
+                        style={{ 
+                          backgroundImage: 'url("https://www.transparenttextures.com/patterns/clouds-alt.png")',
+                          backgroundSize: '800px auto'
+                        }}
+                      />
+                      
+                      {/* Realistic Floating Clouds Layer 2 */}
+                      <motion.div 
+                        animate={{ x: [400, -200] }}
+                        transition={{ duration: 150, repeat: Infinity, ease: "linear" }}
+                        className="absolute top-0 left-0 w-full h-full opacity-20 mix-blend-soft-light z-10 rotate-180"
+                        style={{ 
+                          backgroundImage: 'url("https://www.transparenttextures.com/patterns/clouds-alt.png")',
+                          backgroundSize: '1000px auto'
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Realistic Rain Effects */}
+                  {(cond === 'rainy' || cond === 'showers' || cond === 'drizzle' || displayCity.condition.includes('مطر') || displayCity.condition.includes('زخات')) && (
+                    <div className="absolute inset-0">
+                      {/* Mist Layer */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 to-transparent backdrop-blur-[0.5px]"></div>
+                      
+                      {/* Rain Drops */}
+                      {[...Array(30)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ y: -100, x: Math.random() * 100 + '%' }}
+                          animate={{ y: 800, x: `calc(${Math.random() * 100}% + 50px)` }}
+                          transition={{
+                            duration: 0.5 + Math.random() * 0.3,
+                            repeat: Infinity,
+                            ease: "linear",
+                            delay: Math.random() * 2
+                          }}
+                          className="absolute w-[1px] h-10 bg-gradient-to-b from-transparent via-white/40 to-white/10"
+                          style={{ 
+                            left: `${Math.random() * 100}%`,
+                            transform: 'rotate(15deg)'
+                          }}
+                        />
+                      ))}
+
+                      {/* Splash Effect Overlay */}
+                      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/rain.png')] opacity-20 mix-blend-screen animate-pulse"></div>
+                    </div>
+                  )}
+
+                  {/* Realistic Cloudy Effects */}
+                  {(cond === 'cloudy' || cond === 'partly_cloudy' || cond === 'foggy' || displayCity.condition.includes('غائم')) && (
+                    <div className="absolute inset-0">
+                      {/* Multiple Cloud Layers */}
+                      <motion.div 
+                        animate={{ x: [-10, 10, -10] }}
+                        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/clouds-alt.png')] opacity-30 mix-blend-overlay scale-150"
+                      />
+                      <motion.div 
+                        animate={{ x: [20, -20, 20] }}
+                        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/clouds-alt.png')] opacity-20 mix-blend-soft-light scale-110 rotate-180"
+                      />
+                      {/* Fog/Mist Overlay */}
+                      <div className="absolute inset-0 bg-white/5 backdrop-blur-[1px]"></div>
+                    </div>
+                  )}
+
+                  {/* Snow Effects */}
+                  {(cond === 'snowy' || tempInt < 15) && (
+                    <div className="absolute inset-0">
+                      {[...Array(20)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ y: -50, x: Math.random() * 100 + '%' }}
+                          animate={{ 
+                            y: 800, 
+                            x: `calc(${Math.random() * 100}% + ${Math.random() * 100 - 50}px)`,
+                            rotate: 360
+                          }}
+                          transition={{
+                            duration: 3 + Math.random() * 5,
+                            repeat: Infinity,
+                            ease: "linear",
+                            delay: Math.random() * 5
+                          }}
+                          className="absolute text-white/40 text-xl"
+                          style={{ left: `${Math.random() * 100}%` }}
+                        >
+                          ❄️
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                
-               <div className="relative p-6 px-8 flex items-center justify-between min-h-[120px]">
+               <div className="relative p-6 px-8 flex items-center justify-between min-h-[120px] z-20">
                   <div className="flex items-center gap-4">
                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-colors duration-1000 ${iconBg} ${iconColor}`}>
                         <IconElement size={28} className="animate-pulse" />
