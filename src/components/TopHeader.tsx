@@ -11,7 +11,7 @@ export default function TopHeader() {
   const { profile } = useAppStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const hideHeaderPaths = ['/splash', '/auth'];
+  const hideHeaderPaths = ['/splash', '/auth', '/history'];
   if (hideHeaderPaths.includes(location.pathname)) return null;
 
   const isHome = location.pathname === '/';

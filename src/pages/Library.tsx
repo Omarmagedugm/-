@@ -32,13 +32,15 @@ export default function Library() {
     setBooks, 
     albums, 
     setAlbums, 
+    media,
+    setMedia,
     currentSong, 
     setCurrentSong, 
     setIsPlaying, 
     isPlaying,
     setActivePlaylist 
   } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'music' | 'books'>('music');
+  const [activeTab, setActiveTab] = useState<'music' | 'books' | 'media'>('music');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [filterType, setFilterType] = useState<string>('all');

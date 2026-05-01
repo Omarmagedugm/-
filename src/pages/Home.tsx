@@ -27,7 +27,7 @@ export default function Home() {
   };
   
   const recentNews = news.slice(0, 5);
-  const recentMedia = media.slice(0, 4);
+  const recentMedia = media.slice(0, 5);
   const liveMatch = matches.find(m => m.status === 'live');
   const heroMatch = liveMatch || matches.find(m => m.status === 'upcoming') || matches[0];
   const upcomingMatches = matches.filter(m => m.status === 'upcoming').slice(0, 3);
@@ -360,6 +360,14 @@ export default function Home() {
                   </Link>
                </div>
             </div>
+          </motion.section>
+        );
+
+      case 'widget':
+        if (!section.htmlCode) return null;
+        return (
+          <motion.section key={section.id} variants={itemVariants} className="overflow-hidden rounded-2xl">
+            <div dangerouslySetInnerHTML={{ __html: section.htmlCode }} />
           </motion.section>
         );
 

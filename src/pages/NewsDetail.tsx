@@ -99,7 +99,7 @@ export default function NewsDetail() {
                    <span className="material-symbols-outlined !text-[16px]">person</span>
                 </div>
                 <div>
-                   <p className="text-xs font-black text-slate-800 dark:text-white">{article.author}</p>
+                   <p className="text-xs font-black text-slate-800 dark:text-white">{article.editorName || article.author}</p>
                    <p className="text-[10px] text-slate-500 font-bold">محرر رياضي</p>
                 </div>
              </div>

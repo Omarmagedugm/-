@@ -4,10 +4,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 export interface HomeSection {
   id: string;
-  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom';
+  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget';
   title?: string;
   active: boolean;
   order: number;
+  htmlCode?: string;
 }
 
 export interface NewsItem {
@@ -16,9 +17,10 @@ export interface NewsItem {
   content: string;
   image: string;
   date: string;
-  type: 'rss' | 'manual';
+  type: 'manual' | 'rss';
   category?: string;
   author?: string;
+  editorName?: string;
   rssUrl?: string;
   rssSource?: string;
 }
@@ -207,7 +209,7 @@ export interface StoreOrder {
   productImage?: string;
   quantity: number;
   totalPrice: number;
-  status: 'pending' | 'ready' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'ready' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'sold';
   createdAt: string;
 }
 
@@ -407,7 +409,7 @@ export const useAppStore = create<AppState>()(
       fanPosts: [],
       users: [],
       appSettings: {
-        appName: 'إتحاد فان',
+        appName: 'قناة الاتحاد السكندري',
         appLogo: 'https://upload.wikimedia.org/wikipedia/ar/thumb/0/0e/Al_Ittihad_Alexandria_Club_Logo.svg/512px-Al_Ittihad_Alexandria_Club_Logo.svg.png'
       },
       liveStream: defaultLiveStream,

@@ -71,16 +71,11 @@ function AuthRedirector() {
   const location = useLocation();
 
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged((user) => {
-      const publicPaths = ['/auth', '/splash'];
-      const isPublicPath = publicPaths.includes(location.pathname);
-      
-      if (!user && !isPublicPath) {
-        navigate('/auth');
-      }
-    });
-
-    return () => unsub();
+    // Guest browsing allowed, no automatic redirection except for splash
+    if (location.pathname === '/splash') {
+      const timer = setTimeout(() => navigate('/'), 2000);
+      return () => clearTimeout(timer);
+    }
   }, [navigate, location.pathname]);
 
   return null;

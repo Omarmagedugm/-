@@ -8,7 +8,7 @@ export default function BottomNav() {
   const navItems = [
     { path: '/', icon: 'home', label: 'الرئيسية' },
     { path: '/news', icon: 'newspaper', label: 'الأخبار' },
-    { path: '/fan-zone', icon: 'forum', label: 'فان زون' },
+    { path: '/fan-zone', icon: 'stadium', label: 'فان زون' },
     { path: '/matches', icon: 'sports_soccer', label: 'المباريات' },
     { path: '/profile', icon: 'person', label: 'ملفي' },
   ];

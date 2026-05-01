@@ -328,7 +328,8 @@ export default function Admin() {
           image: formData.image || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018',
           category: formData.category || 'أخبار النادي',
           date: isEditing ? (formData.date || new Date().toISOString()) : new Date().toISOString(),
-          author: 'المشرف',
+          author: formData.author || 'الموقع الرسمي',
+          editorName: formData.editorName || '',
           type: formData.rssUrl ? 'rss' : 'manual',
           rssUrl: formData.rssUrl || ''
         };
@@ -2526,10 +2527,10 @@ export default function Admin() {
                    </div>
                    <div className="grid grid-cols-2 gap-2">
                      <div>
-                       <UploadField label="لوجو صاحب الأرض" fieldName="homeLogo" currentUrl={formData.homeLogo} uploading={uploading} handleFileUpload={handleFileUpload} setFormData={setFormData} />
+                       <UploadOrUrlField label="لوجو صاحب الأرض" fieldName="homeLogo" currentUrl={formData.homeLogo} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                      </div>
                      <div>
-                       <UploadField label="لوجو الخصم" fieldName="awayLogo" currentUrl={formData.awayLogo} uploading={uploading} handleFileUpload={handleFileUpload} setFormData={setFormData} />
+                       <UploadOrUrlField label="لوجو الخصم" fieldName="awayLogo" currentUrl={formData.awayLogo} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                      </div>
                    </div>
                    <div className="grid grid-cols-2 gap-2">

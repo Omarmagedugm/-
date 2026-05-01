@@ -1,14 +1,14 @@
 {
-  "name": "ItthiFan",
-  "short_name": "ItthiFan",
+  "name": "قناة الاتحاد السكندري",
+  "short_name": "قناة الاتحاد",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#09090b",
-  "theme_color": "#0ca45f",
+  "background_color": "#083d25",
+  "theme_color": "#083d25",
   "icons": [
     {
-      "src": "https://upload.wikimedia.org/wikipedia/ar/thumb/0/0e/Al_Ittihad_Alexandria_Club_Logo.svg/512px-Al_Ittihad_Alexandria_Club_Logo.svg.png",
-      "sizes": "512x512",
+      "src": "https://lh3.googleusercontent.com/aida-public/AB6AXuCTDqivbMM3woUHfm0Fj4XuGiRWg8PmTtJowqlI8y7wBGhivrSolvAevgIObczC46rYMW6R6rinL9TqfGH1jrcMPK_8UIBS5BNDQg0fezc-pNyKiveAtRnkgFsEMr_lnd5wgl09eqc3YvCzVPpSfTaRKgih0nX_npjdEHKMI9lEkL58AadbCt-awTzFiNejQF0zvn8p3d78izoaUNtvNdS10x7MqOJcbrgLR4Higfk6zZoqZq7qIHKPdlp9_CEeeUK43Mhb0Pi1q3g",
+      "sizes": "192x192",
       "type": "image/png"
     }
   ]
