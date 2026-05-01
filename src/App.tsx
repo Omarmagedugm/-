@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 import ScrollToTop from './components/ScrollToTop';
 import { useAppStore } from './store';
 import { useFirestoreSync } from './hooks/useFirestore';
@@ -21,7 +22,6 @@ import Library from './pages/Library';
 import BottomNav from './components/BottomNav';
 import TopHeader from './components/TopHeader';
 import MusicPlayer from './components/MusicPlayer';
-import { Toaster } from 'react-hot-toast';
 
 export default function App() {
   const { theme } = useAppStore();
@@ -36,11 +36,22 @@ export default function App() {
     }
   }, [theme]);
 
-  // Request notifications
   useEffect(() => {
-    requestNotificationPermission();
-  }, []);
+    const handleFcmMessage = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { title, body } = customEvent.detail;
+      toast.success(
+        <div className="flex flex-col gap-1 cursor-pointer">
+          <div className="font-bold text-sm">{title}</div>
+          {body && <div className="text-xs opacity-90">{body}</div>}
+        </div>,
+        { duration: 6000 }
+      );
+    };
 
+    window.addEventListener('fcm-message', handleFcmMessage);
+    return () => window.removeEventListener('fcm-message', handleFcmMessage);
+  }, []);
 
   // Auth Redirection Logic
   return (

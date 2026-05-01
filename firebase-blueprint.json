@@ -163,6 +163,18 @@
         "appLogo": { "type": "string" },
         "primaryColor": { "type": "string" }
       }
+    },
+    "FCMToken": {
+      "title": "FCM Token",
+      "description": "Firebase Cloud Messaging token for push notifications",
+      "type": "object",
+      "properties": {
+        "token": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "platform": { "type": "string" },
+        "userAgent": { "type": "string" }
+      }
     }
   },
   "firestore": {
@@ -176,6 +188,7 @@
     "media": { "schema": "Media", "description": "Collection of media items" },
     "live_comments": { "schema": "LiveComment", "description": "Live match comments" },
     "city_info": { "schema": "CityInfo", "description": "Alexandria city and weather info" },
-    "settings": { "schema": "AppSetting", "description": "Global settings" }
+    "settings": { "schema": "AppSetting", "description": "Global settings" },
+    "fcm_tokens": { "schema": "FCMToken", "description": "Collection of FCM tokens" }
   }
 }

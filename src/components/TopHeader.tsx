@@ -169,9 +169,21 @@ export default function TopHeader() {
                    <h3 className="text-lg font-black text-slate-800 dark:text-white uppercase leading-none">الإشعارات</h3>
                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Notifications</p>
                  </div>
-                 <button onClick={() => setShowNotifications(false)} className="h-10 w-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 transition-colors">
-                   <X size={20} />
-                 </button>
+                 <div className="flex items-center gap-2">
+                   {('Notification' in window) && Notification.permission !== 'granted' && Notification.permission !== 'denied' && (
+                     <button
+                       onClick={() => {
+                         import('../lib/firebase').then(({ requestNotificationPermission }) => requestNotificationPermission());
+                       }}
+                       className="bg-primary/10 text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-xl font-bold text-xs transition-all duration-300"
+                     >
+                       تفعيل الإشعارات
+                     </button>
+                   )}
+                   <button onClick={() => setShowNotifications(false)} className="h-10 w-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 transition-colors">
+                     <X size={20} />
+                   </button>
+                 </div>
               </div>
 
               <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
