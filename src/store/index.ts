@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export interface HomeSection {
   id: string;
-  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget';
+  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget' | 'city';
   title?: string;
   active: boolean;
   order: number;
@@ -32,9 +32,11 @@ export interface MediaItem {
   source?: 'upload' | 'youtube';
   url: string;
   thumbnailUrl: string;
+  videoUrl?: string;
   date: string;
   duration?: string;
   views?: string;
+  likes?: string[];
 }
 
 export interface MatchItem {
@@ -53,6 +55,19 @@ export interface MatchItem {
   isTimerRunning?: boolean;
   timerStartTime?: string | null;
   timerBaseMinute?: number;
+  sport: 'football' | 'basketball';
+}
+
+export interface CityInfo {
+  id: string;
+  cityName: string;
+  temperature: string;
+  condition: string;
+  sunset: string;
+  sunrise: string;
+  description: string;
+  image: string;
+  active: boolean;
 }
 
 export interface ClubItem {
@@ -78,6 +93,7 @@ export interface PredictionItem {
   userId: string;
   userName: string;
   userEmail?: string;
+  userAvatar?: string;
   homeScore: number;
   awayScore: number;
   createdAt: string;
@@ -244,6 +260,8 @@ interface AppState {
   appSettings: {
     appName: string;
     appLogo: string;
+    logoType?: 'image' | 'text';
+    logoText?: string;
   };
   liveStream: LiveStream;
   theme: 'dark' | 'light';
@@ -260,6 +278,7 @@ interface AppState {
   albums: Album[];
   playlists: Playlist[];
   books: Book[];
+  cityInfo: CityInfo | null;
   currentSong: Song | null;
   isPlaying: boolean;
   activePlaylist: Song[];
@@ -299,6 +318,7 @@ interface AppState {
   setAlbums: (albums: Album[]) => void;
   setPlaylists: (playlists: Playlist[]) => void;
   setBooks: (books: Book[]) => void;
+  setCityInfo: (info: CityInfo | null) => void;
   setCurrentSong: (song: Song | null) => void;
   setIsPlaying: (playing: boolean) => void;
   setActivePlaylist: (songs: Song[]) => void;
@@ -358,6 +378,7 @@ const defaultMatches: MatchItem[] = [
     date: new Date().toISOString(),
     status: 'live',
     competition: 'الدوري المصري الممتاز',
+    sport: 'football',
   },
   {
     id: uuidv4(),
@@ -370,6 +391,7 @@ const defaultMatches: MatchItem[] = [
     date: new Date(Date.now() + 7 * 86400000).toISOString(),
     status: 'upcoming',
     competition: 'الدوري المصري الممتاز',
+    sport: 'football',
   }
 ];
 
@@ -410,7 +432,9 @@ export const useAppStore = create<AppState>()(
       users: [],
       appSettings: {
         appName: 'قناة الاتحاد السكندري',
-        appLogo: 'https://upload.wikimedia.org/wikipedia/ar/thumb/0/0e/Al_Ittihad_Alexandria_Club_Logo.svg/512px-Al_Ittihad_Alexandria_Club_Logo.svg.png'
+        appLogo: 'https://upload.wikimedia.org/wikipedia/ar/thumb/0/0e/Al_Ittihad_Alexandria_Club_Logo.svg/512px-Al_Ittihad_Alexandria_Club_Logo.svg.png',
+        logoType: 'image',
+        logoText: 'الاتحاد السكندري'
       },
       liveStream: defaultLiveStream,
       theme: 'dark',
@@ -460,6 +484,7 @@ export const useAppStore = create<AppState>()(
       homeSections: [
         { id: 'hero', type: 'hero', active: true, order: 0 },
         { id: 'matches', type: 'matches', active: true, order: 1 },
+        { id: 'city', type: 'city', active: true, order: 1.5, title: 'عروس البحر المتوسط' },
         { id: 'news', type: 'news', active: true, order: 2 },
         { id: 'media', type: 'media', active: true, order: 3 },
         { id: 'polls', type: 'polls', active: true, order: 4 },
@@ -469,6 +494,7 @@ export const useAppStore = create<AppState>()(
       albums: [],
       playlists: [],
       books: [],
+      cityInfo: null,
       currentSong: null,
       isPlaying: false,
       activePlaylist: [],
@@ -518,6 +544,7 @@ export const useAppStore = create<AppState>()(
       setAlbums: (albums) => set({ albums }),
       setPlaylists: (playlists) => set({ playlists }),
       setBooks: (books) => set({ books }),
+      setCityInfo: (cityInfo) => set({ cityInfo }),
       setCurrentSong: (currentSong) => set({ currentSong }),
       setIsPlaying: (isPlaying) => set({ isPlaying }),
       setActivePlaylist: (activePlaylist) => set({ activePlaylist }),

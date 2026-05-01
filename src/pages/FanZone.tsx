@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { 
   Trophy, 
@@ -35,6 +36,7 @@ import { db, auth, handleFirestoreError, OperationType, uploadImage } from '../l
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import Sidebar from '../components/Sidebar';
+import ScoreSelector from '../components/ScoreSelector';
 import { 
   doc, 
   updateDoc, 
@@ -59,7 +61,14 @@ export default function FanZone() {
   const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com';
   const isAdmin = profile.role === 'admin' || isOmar || isDev;
 
-  const [activeTab, setActiveTab] = useState<'all' | 'matchday' | 'polls' | 'chat' | 'predictions'>('all');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<'all' | 'matchday' | 'polls' | 'chat' | 'predictions'>((location.state as any)?.activeTab || 'all');
+
+  useEffect(() => {
+    if ((location.state as any)?.activeTab) {
+      setActiveTab((location.state as any).activeTab);
+    }
+  }, [location.state]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedPrediction, setSelectedPrediction] = useState<{ matchId: string; home: number; away: number } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -500,6 +509,8 @@ export default function FanZone() {
         matchId: selectedPrediction.matchId,
         userId: auth.currentUser.uid,
         userName: profile.name || 'مشجع',
+        userEmail: auth.currentUser.email || '',
+        userAvatar: profile.avatar || '',
         homeScore: selectedPrediction.home,
         awayScore: selectedPrediction.away,
         createdAt: serverTimestamp()
@@ -514,7 +525,7 @@ export default function FanZone() {
   };
 
   return (
-    <div className="flex-1 pb-24 flex flex-col bg-background-light dark:bg-background-dark min-h-screen text-slate-800 dark:text-white">
+    <div className="flex-1 pb-32 flex flex-col bg-background-light dark:bg-background-dark min-h-screen text-slate-800 dark:text-white">
       <main className="p-4 space-y-8">
         {/* Post Creation Box Upgrade */}
         {auth.currentUser && (
@@ -702,7 +713,7 @@ export default function FanZone() {
                     <div className="flex items-center justify-between mb-8 relative z-10">
                       <div className="flex items-center gap-3">
                         <div className="px-3 py-1 bg-white/10 backdrop-blur-md text-[9px] font-black rounded-xl uppercase tracking-widest ring-1 ring-white/20">
-                          Official Poll
+                          استطلاع رسمي
                         </div>
                         <div className="flex items-center gap-1 text-[9px] font-black text-white/50">
                            <Clock size={10} /> {format(new Date(), 'HH:mm')}
@@ -1181,120 +1192,377 @@ export default function FanZone() {
             >
               <div className="flex flex-col px-1">
                 <h2 className="text-lg font-black text-slate-800 dark:text-white leading-none uppercase">توقعات الجمهور</h2>
+                {/* Recent Winners Section */}
+                {(() => {
+                  const finishedMatches = matches?.filter(m => m.status === 'finished').sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) || [];
+                  const latestFinished = finishedMatches[0];
+                  if (!latestFinished) return null;
+                  
+                  const winners = predictions?.filter(p => 
+                    p.matchId === latestFinished.id && 
+                    Number(p.homeScore) === Number(latestFinished.homeScore) && 
+                    Number(p.awayScore) === Number(latestFinished.awayScore)
+                  ) || [];
+
+                  if (winners.length === 0) return null;
+
+                  return (
+                    <motion.div 
+                      key="winners-banner"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="mt-6 bg-gradient-to-br from-green-600/10 to-emerald-600/10 border border-green-500/20 rounded-[32px] p-6 shadow-sm overflow-hidden relative"
+                    >
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 blur-3xl rounded-full -mr-10 -mt-10 animate-pulse" />
+                      <div className="flex items-center gap-3 mb-6 relative z-10">
+                        <div className="w-10 h-10 bg-green-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/20">
+                          <Trophy size={18} />
+                        </div>
+                        <div>
+                          <h3 className="font-black text-sm text-slate-800 dark:text-white leading-tight">فائزو التوقعات</h3>
+                          <p className="text-[9px] font-bold text-green-600 uppercase tracking-widest mt-1">المتوقعون الصحيحون لمباراة {latestFinished.awayTeam}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 relative z-10">
+                        {winners.slice(0, 6).map((winner, idx) => (
+                          <motion.div 
+                            key={winner.id}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                            className="bg-white/90 dark:bg-card-dark/80 backdrop-blur-md border border-green-500/10 rounded-xl p-2.5 flex items-center gap-3"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center text-[10px] font-black text-green-600">
+                              #{idx + 1}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-black text-slate-700 dark:text-slate-300 truncate">{winner.userName}</p>
+                              <div className="flex items-center gap-1">
+                                <Check size={8} className="text-green-500" />
+                                <span className="text-[8px] font-black text-green-600">{winner.homeScore}-{winner.awayScore}</span>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  );
+                })()}
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Fan Predictions Wall</span>
               </div>
 
               {/* Prediction Input Form (if applicable) */}
-              {nextMatch && matches.some(m => m.id === nextMatch.id && m.status === 'upcoming') && !predictions.some(p => p.matchId === nextMatch.id && p.userId === auth.currentUser?.uid) && (
-                <div className="glass-card rounded-[40px] p-8 border border-primary/20 shadow-premium relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full"></div>
-                  <div className="flex flex-col items-center gap-6 relative z-10">
-                    <div className="flex items-center justify-center gap-8 w-full">
-                       <div className="flex flex-col items-center gap-2">
-                         <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
-                           <img src={nextMatch.homeLogo} className="w-8 h-8 object-contain" alt="home" referrerPolicy="no-referrer" />
-                         </div>
-                         <span className="text-[10px] font-black uppercase text-center">{nextMatch.homeTeam}</span>
-                       </div>
-                       <div className="flex items-center gap-3">
-                         <input 
-                           type="number"
-                           className="w-14 h-14 rounded-2xl bg-white dark:bg-surface-dark border-2 border-primary/10 transition-all focus:border-primary text-center text-xl font-black outline-none"
-                           placeholder="0"
-                           value={selectedPrediction?.home ?? ''}
-                           onChange={(e) => setSelectedPrediction({ matchId: nextMatch.id, home: parseInt(e.target.value) || 0, away: selectedPrediction?.away || 0 })}
-                         />
-                         <span className="text-slate-300 font-black">VS</span>
-                         <input 
-                           type="number"
-                           className="w-14 h-14 rounded-2xl bg-white dark:bg-surface-dark border-2 border-primary/10 transition-all focus:border-primary text-center text-xl font-black outline-none"
-                           placeholder="0"
-                           value={selectedPrediction?.away ?? ''}
-                           onChange={(e) => setSelectedPrediction({ matchId: nextMatch.id, home: selectedPrediction?.home || 0, away: parseInt(e.target.value) || 0 })}
-                         />
-                       </div>
-                       <div className="flex flex-col items-center gap-2">
-                         <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
-                           <img src={nextMatch.awayLogo} className="w-8 h-8 object-contain" alt="away" referrerPolicy="no-referrer" />
-                         </div>
-                         <span className="text-[10px] font-black uppercase text-center">{nextMatch.awayTeam}</span>
-                       </div>
-                    </div>
-                    <button 
-                      onClick={handlePredict}
-                      disabled={isSubmitting}
-                      className="w-full bg-primary text-white py-4 rounded-2xl font-black text-sm shadow-premium flex items-center justify-center gap-2"
-                    >
-                      {isSubmitting ? 'جاري الحفظ...' : 'تثبيت التوقع'}
-                      <Target size={16} />
-                    </button>
+              {(() => {
+                const availableMatches = matches?.filter(m => 
+                  (m.status === 'upcoming' || m.isMatchDay) && 
+                  !predictions.some(p => p.matchId === m.id && p.userId === auth.currentUser?.uid)
+                ).sort((a, b) => {
+                  // Prioritize matchday
+                  if (a.isMatchDay && !b.isMatchDay) return -1;
+                  if (!a.isMatchDay && b.isMatchDay) return 1;
+                  return new Date(a.date).getTime() - new Date(b.date).getTime();
+                }) || [];
+
+                if (availableMatches.length === 0) return null;
+
+                return (
+                  <div className="space-y-4">
+                    {availableMatches.map(match => (
+                      <div key={match.id} className="glass-card rounded-[40px] p-8 border border-primary/20 shadow-premium relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full"></div>
+                        <div className="flex flex-col items-center gap-6 relative z-10">
+                          <div className="flex items-center justify-between w-full mb-2">
+                             <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full">مباراة متاحة للتوقع</span>
+                             <span className="text-[10px] font-bold text-slate-400">{format(new Date(match.date), 'EEEE d MMMM', { locale: ar })}</span>
+                          </div>
+                          
+                          <div className="flex items-center justify-center gap-8 w-full">
+                             <div className="flex flex-col items-center gap-2 w-24">
+                               <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 relative group-hover:border-primary/50 transition-colors">
+                                 <img src={match.homeLogo} className="w-8 h-8 object-contain" alt="home" referrerPolicy="no-referrer" />
+                                 {predictions.filter(p => p.matchId === match.id).length > 0 && (
+                                   <div className="absolute -top-2 -right-2 bg-primary text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
+                                     {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.homeScore) > Number(p.awayScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
+                                   </div>
+                                 )}
+                               </div>
+                               <span className="text-[10px] font-black uppercase text-center line-clamp-1">{match.homeTeam}</span>
+                               <button 
+                                 onClick={() => setSelectedPrediction({ matchId: match.id, home: 1, away: 0 })}
+                                 className={`px-3 py-1 rounded-full text-[8px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home > selectedPrediction.away ? 'bg-primary text-white scale-110 shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-primary/20'}`}
+                               >
+                                 توقع الفوز
+                               </button>
+                             </div>
+                             <div className="flex items-center gap-3">
+                               <ScoreSelector 
+                                 value={selectedPrediction?.matchId === match.id ? selectedPrediction.home : 0}
+                                 onChange={(val) => setSelectedPrediction({ 
+                                   matchId: match.id, 
+                                   home: val, 
+                                   away: selectedPrediction?.matchId === match.id ? selectedPrediction.away : 0 
+                                 })}
+                                 min={0}
+                                 max={10}
+                               />
+                               <div className="flex flex-col items-center gap-1 mt-10">
+                                 <div className="relative">
+                                    <span className="text-slate-300 font-black">VS</span>
+                                    {predictions.filter(p => p.matchId === match.id).length > 0 && (
+                                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-slate-400 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full">
+                                        {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.homeScore) === Number(p.awayScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
+                                      </div>
+                                    )}
+                                 </div>
+                                 <button 
+                                   onClick={() => setSelectedPrediction({ matchId: match.id, home: 1, away: 1 })}
+                                   className={`px-2 py-0.5 rounded-full text-[7px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home === selectedPrediction.away && selectedPrediction.home > 0 ? 'bg-slate-400 text-white scale-110' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}
+                                 >
+                                   تعادل
+                                 </button>
+                               </div>
+                               <ScoreSelector 
+                                 value={selectedPrediction?.matchId === match.id ? selectedPrediction.away : 0}
+                                 onChange={(val) => setSelectedPrediction({ 
+                                   matchId: match.id, 
+                                   home: selectedPrediction?.matchId === match.id ? selectedPrediction.home : 0, 
+                                   away: val 
+                                 })}
+                                 min={0}
+                                 max={10}
+                               />
+                             </div>
+                             <div className="flex flex-col items-center gap-2 w-24">
+                               <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 relative group-hover:border-accent/50 transition-colors">
+                                 <img src={match.awayLogo} className="w-8 h-8 object-contain" alt="away" referrerPolicy="no-referrer" />
+                                 {predictions.filter(p => p.matchId === match.id).length > 0 && (
+                                   <div className="absolute -top-2 -left-2 bg-accent text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
+                                     {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.awayScore) > Number(p.homeScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
+                                   </div>
+                                 )}
+                               </div>
+                               <span className="text-[10px] font-black uppercase text-center line-clamp-1">{match.awayTeam}</span>
+                               <button 
+                                 onClick={() => setSelectedPrediction({ matchId: match.id, home: 0, away: 1 })}
+                                 className={`px-3 py-1 rounded-full text-[8px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.away > selectedPrediction.home ? 'bg-accent text-white scale-110 shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-accent/20'}`}
+                               >
+                                 توقع الفوز
+                               </button>
+                             </div>
+                          </div>
+                          <button 
+                            onClick={handlePredict}
+                            disabled={isSubmitting || selectedPrediction?.matchId !== match.id}
+                            className="w-full bg-primary text-white py-4 rounded-2xl font-black text-sm shadow-premium flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+                            {isSubmitting && selectedPrediction?.matchId === match.id ? 'جاري الحفظ...' : 'تثبيت التوقع'}
+                            <Target size={16} />
+                          </button>
+
+                          {/* Prediction Stats */}
+                          {(() => {
+                            const matchPredicts = predictions.filter(p => p.matchId === match.id);
+                            if (matchPredicts.length === 0) return null;
+
+                            const homeWins = matchPredicts.filter(p => Number(p.homeScore) > Number(p.awayScore)).length;
+                            const draws = matchPredicts.filter(p => Number(p.homeScore) === Number(p.awayScore)).length;
+                            const awayWins = matchPredicts.filter(p => Number(p.awayScore) > Number(p.homeScore)).length;
+                            const total = matchPredicts.length;
+
+                            const homePct = Math.round((homeWins / total) * 100);
+                            const drawPct = Math.round((draws / total) * 100);
+                            const awayPct = Math.round((awayWins / total) * 100);
+
+                            return (
+                              <div className="w-full space-y-3 mt-4">
+                                <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                                  <span>توقعات المجتمع</span>
+                                  <span>{total} توقع</span>
+                                </div>
+                                <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex shadow-inner">
+                                  <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${homePct}%` }}
+                                    className="h-full bg-primary relative group flex items-center justify-center"
+                                  >
+                                    {homePct > 15 && <span className="text-[7px] text-white font-black">{homePct}%</span>}
+                                  </motion.div>
+                                  <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${drawPct}%` }}
+                                    className="h-full bg-slate-400 relative group flex items-center justify-center"
+                                  >
+                                    {drawPct > 15 && <span className="text-[7px] text-white font-black">{drawPct}%</span>}
+                                  </motion.div>
+                                  <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${awayPct}%` }}
+                                    className="h-full bg-accent relative group flex items-center justify-center"
+                                  >
+                                    {awayPct > 15 && <span className="text-[7px] text-white font-black">{awayPct}%</span>}
+                                  </motion.div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 text-[8px] font-black px-1">
+                                  <div className="flex flex-col items-center gap-1 p-1 rounded-lg bg-primary/5">
+                                    <span className="text-primary uppercase">فوز {match.homeTeam}</span>
+                                    <span className="text-slate-900 dark:text-white text-[10px]">{homeWins} مشجع ({homePct}%)</span>
+                                  </div>
+                                  <div className="flex flex-col items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
+                                    <span className="text-slate-400 uppercase tracking-tighter">تعادل</span>
+                                    <span className="text-slate-900 dark:text-white text-[10px]">{draws} مشجع ({drawPct}%)</span>
+                                  </div>
+                                  <div className="flex flex-col items-center gap-1 p-1 rounded-lg bg-accent/5">
+                                    <span className="text-accent uppercase">فوز {match.awayTeam}</span>
+                                    <span className="text-slate-900 dark:text-white text-[10px]">{awayWins} مشجع ({awayPct}%)</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Predictions List */}              {/* Predictions List - Leaderboard Style */}
+              <div className="flex flex-col gap-6 mt-8">
+                <div className="flex items-center justify-between px-2">
+                  <div className="flex flex-col">
+                    <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase italic tracking-tight flex items-center gap-2">
+                      <Trophy size={18} className="text-primary" />
+                      ترتيب المتوقعين
+                    </h3>
+                    <p className="text-[10px] font-bold text-slate-400">الجمهور وترتيبهم حسب النقاط (٣ للنتيجة - ١ للفائز)</p>
+                  </div>
+                  <div className="bg-primary/10 dark:bg-primary/20 px-3 py-1.5 rounded-xl flex items-center gap-2 text-primary">
+                    <Users size={16} />
+                    <span className="text-[10px] font-black">{predictions.length}</span>
                   </div>
                 </div>
-              )}
 
-              {/* Predictions List */}
-              <div className="flex flex-col gap-4">
-                 {predictions.length > 0 ? (
-                   [...predictions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((pred) => {
-                     const match = matches.find(m => m.id === pred.matchId);
-                     const isFinished = match?.status === 'finished';
-                     const isCorrect = isFinished && Number(match.homeScore) === Number(pred.homeScore) && Number(match.awayScore) === Number(pred.awayScore);
-                     
-                     return (
-                       <div key={pred.id} className={`p-5 rounded-[32px] glass-card border transition-all ${isCorrect ? 'border-green-500/50 bg-green-50/20 dark:bg-green-900/10' : 'border-border-light dark:border-border-dark'}`}>
-                         <div className="flex items-center justify-between mb-4">
-                           <div className="flex flex-col">
-                             <div className="flex items-center gap-2">
-                               <span className={`text-xs font-black uppercase ${isCorrect ? 'text-green-600 dark:text-green-400' : 'text-slate-800 dark:text-white'}`}>{pred.userName}</span>
-                               {isFinished && (
-                                  <div className={`text-[8px] font-black px-2 py-0.5 rounded flex items-center gap-1 ${isCorrect ? 'bg-green-500 text-white shadow-glow' : 'bg-red-100 text-red-600'}`}>
-                                    {isCorrect ? (
-                                      <>
-                                        <Trophy size={10} />
-                                        توقع صحيح
-                                      </>
-                                    ) : (
-                                      <>
-                                        <X size={10} />
-                                        توقع خاطئ
-                                      </>
-                                    )}
-                                  </div>
-                               )}
-                             </div>
-                             <span className="text-[9px] font-bold text-slate-400 uppercase">
-                               {pred.createdAt && (typeof pred.createdAt === 'string' ? format(new Date(pred.createdAt), 'dd MMM HH:mm', { locale: ar }) : 'الآن')}
-                             </span>
-                           </div>
-                           {match && (
-                             <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-surface-dark rounded-xl text-[9px] font-black text-slate-500">
-                               <img src={match.homeLogo} className="w-4 h-4 object-contain" alt="" referrerPolicy="no-referrer" />
-                               <span>VS</span>
-                               <img src={match.awayLogo} className="w-4 h-4 object-contain" alt="" referrerPolicy="no-referrer" />
-                             </div>
-                           )}
-                         </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {predictions.length > 0 ? (
+                    (() => {
+                      // Calculate total points per user
+                      const userPointsMap: Record<string, { userId: string; userName: string; userAvatar?: string; totalPoints: number; correctScores: number; totalPredictions: number }> = {};
+                      
+                      predictions.forEach(pred => {
+                        const match = matches.find(m => m.id === pred.matchId);
+                        let points = 0;
+                        let isCorrectScore = false;
+                        
+                        if (match && match.status === 'finished') {
+                          isCorrectScore = Number(match.homeScore) === Number(pred.homeScore) && Number(match.awayScore) === Number(pred.awayScore);
+                          const actualOutcome = Number(match.homeScore) > Number(match.awayScore) ? 'home' : Number(match.homeScore) < Number(match.awayScore) ? 'away' : 'draw';
+                          const predictedOutcome = Number(pred.homeScore) > Number(pred.awayScore) ? 'home' : Number(pred.homeScore) < Number(pred.awayScore) ? 'away' : 'draw';
+                          
+                          if (isCorrectScore) points = 3;
+                          else if (actualOutcome === predictedOutcome) points = 1;
+                        }
 
-                         <div className="bg-slate-50 dark:bg-surface-dark/50 p-4 rounded-[24px] flex items-center justify-center gap-6 shadow-inner ring-1 ring-black/5">
-                            <div className="flex flex-col items-center gap-1">
-                               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{match?.homeTeam || 'HOME'}</span>
-                               <span className={`text-2xl font-black tabular-nums ${isCorrect ? 'text-green-600 dark:text-green-400' : 'text-slate-800 dark:text-white'}`}>{pred.homeScore}</span>
+                        if (!userPointsMap[pred.userId]) {
+                          userPointsMap[pred.userId] = { 
+                            userId: pred.userId, 
+                            userName: pred.userName, 
+                            userAvatar: pred.userAvatar,
+                            totalPoints: 0, 
+                            correctScores: 0,
+                            totalPredictions: 0 
+                          };
+                        }
+                        
+                        userPointsMap[pred.userId].totalPoints += points;
+                        if (isCorrectScore) userPointsMap[pred.userId].correctScores += 1;
+                        userPointsMap[pred.userId].totalPredictions += 1;
+                      });
+
+                      const leaderboard = Object.values(userPointsMap)
+                        .sort((a, b) => b.totalPoints - a.totalPoints || b.correctScores - a.correctScores || b.totalPredictions - a.totalPredictions);
+
+                      return leaderboard.slice(0, 10).map((user, idx) => (
+                        <motion.div 
+                          key={user.userId}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className={`relative p-4 rounded-[28px] overflow-hidden border transition-all ${idx === 0 ? 'border-primary/30 bg-primary/5' : 'border-slate-100 dark:border-border-dark bg-white dark:bg-card-dark'}`}
+                        >
+                          <div className={`absolute top-0 right-0 w-12 h-10 flex flex-col items-center justify-center rounded-bl-2xl shadow-sm ${idx === 0 ? 'bg-primary text-white' : idx === 1 ? 'bg-slate-400 text-white' : idx === 2 ? 'bg-accent text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                            <span className="text-[10px] font-black">#{idx + 1}</span>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <img src={user.userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.userName)}&background=random`} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-slate-800 shadow-sm" alt="user" />
+                              {idx === 0 && (
+                                <div className="absolute -top-1 -left-1 text-yellow-500 bg-white dark:bg-slate-800 rounded-full p-0.5">
+                                  <Trophy size={14} fill="currentColor" />
+                                </div>
+                              )}
                             </div>
-                            <div className="text-lg font-black text-slate-200">-</div>
-                            <div className="flex flex-col items-center gap-1">
-                               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{match?.awayTeam || 'AWAY'}</span>
-                               <span className={`text-2xl font-black tabular-nums ${isCorrect ? 'text-green-600 dark:text-green-400' : 'text-slate-800 dark:text-white'}`}>{pred.awayScore}</span>
+                            <div className="flex flex-col flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-slate-800 dark:text-white leading-none">{user.userName}</span>
+                                {idx < 3 && <span className="text-[7px] font-black px-1.5 py-0.5 bg-primary/10 text-primary rounded-full uppercase">نخبة</span>}
+                              </div>
+                              <div className="flex items-center gap-3 mt-1.5">
+                                <div className="flex flex-col">
+                                   <span className="text-[7px] font-black text-slate-400 uppercase tracking-tighter">النقاط</span>
+                                   <span className="text-xs font-black text-primary">{user.totalPoints}</span>
+                                </div>
+                                <div className="w-px h-6 bg-slate-100 dark:bg-slate-800" />
+                                <div className="flex flex-col">
+                                   <span className="text-[7px] font-black text-slate-400 uppercase tracking-tighter">أصاب الهدف</span>
+                                   <span className="text-xs font-black text-slate-800 dark:text-white">{user.correctScores}</span>
+                                </div>
+                                <div className="w-px h-6 bg-slate-100 dark:bg-slate-800" />
+                                <div className="flex flex-col">
+                                   <span className="text-[7px] font-black text-slate-400 uppercase tracking-tighter">التوقعات</span>
+                                   <span className="text-xs font-black text-slate-800 dark:text-white">{user.totalPredictions}</span>
+                                </div>
+                              </div>
                             </div>
-                         </div>
-                       </div>
-                     );
-                   })
-                 ) : (
-                   <div className="py-20 text-center glass-card rounded-[40px] border-dashed border-2 border-slate-200 dark:border-border-dark text-slate-400">
-                      <Target size={48} className="mx-auto mb-4 opacity-10" />
-                      <p className="font-black text-sm">لا توجد توقعات حالياً</p>
+                          </div>
+                        </motion.div>
+                      ));
+                    })()
+                  ) : (
+                    <div className="col-span-full py-16 text-center bg-slate-50 dark:bg-surface-dark rounded-[40px] border-2 border-dashed border-slate-200 dark:border-border-dark">
+                       <Target size={48} className="mx-auto mb-4 text-slate-300 opacity-20" />
+                       <p className="font-black text-sm text-slate-400">لا توجد توقعات حالياً</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Individual Predictions Feed (Scrollable) */}
+                <div className="mt-4 px-2">
+                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">آخر التوقعات المسجلة</h4>
+                   <div className="space-y-3">
+                      {predictions.length > 0 ? (
+                        [...predictions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5).map((pred) => {
+                          const match = matches.find(m => m.id === pred.matchId);
+                          if (!match) return null;
+                          return (
+                            <div key={pred.id} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50/50 dark:bg-surface-dark/30 border border-slate-100 dark:border-white/5">
+                              <div className="flex items-center gap-3">
+                                <img src={pred.userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(pred.userName)}&background=random`} className="w-8 h-8 rounded-xl object-cover" alt="user" />
+                                <div className="flex flex-col">
+                                  <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">{pred.userName}</span>
+                                  <span className="text-[8px] font-bold text-slate-400">{match.homeTeam} {pred.homeScore}-{pred.awayScore} {match.awayTeam}</span>
+                                </div>
+                              </div>
+                              <span className="text-[8px] font-black text-slate-300">
+                                {pred.createdAt && (typeof pred.createdAt === 'string' ? format(new Date(pred.createdAt), 'HH:mm', { locale: ar }) : 'الآن')}
+                              </span>
+                            </div>
+                          );
+                        })
+                      ) : null}
                    </div>
-                 )}
+                </div>
               </div>
             </motion.div>
           )}
@@ -1407,7 +1675,7 @@ export default function FanZone() {
                       </div>
 
                       <div className="flex flex-col items-center gap-2 flex-1">
-                        <div className="text-3xl font-black tracking-tighter tabular-nums drop-shadow-lg">
+                        <div className={`font-black tracking-tighter tabular-nums drop-shadow-lg ${String(nextMatch.homeScore).length > 2 || String(nextMatch.awayScore).length > 2 ? 'text-xl' : 'text-3xl'}`}>
                           {nextMatch.status === 'upcoming' ? '-- : --' : `${nextMatch.homeScore} - ${nextMatch.awayScore}`}
                         </div>
                         {nextMatch.status === 'live' && (

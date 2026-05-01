@@ -73,23 +73,7 @@ export default function History() {
   const basketballTitles = clubTitles.filter(t => t.category === 'basketball');
 
   return (
-    <div className="flex-1 w-full max-w-md mx-auto bg-background-light dark:bg-background-dark min-h-screen pb-24">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 py-4">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="h-10 w-10 flex items-center justify-center rounded-2xl glass-card text-slate-600 dark:text-slate-300">
-            <ChevronRight size={20} className="rotate-180" />
-          </button>
-          <div className="text-right">
-            <div className="flex items-center gap-2 justify-end">
-              <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg mb-1 inline-block">EST. 1906</span>
-              <h1 className="text-lg font-black text-primary-dark dark:text-white uppercase leading-none">تاريخ زعيم الثغر</h1>
-            </div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 inline-block">Club History & Heritage</span>
-          </div>
-        </div>
-      </header>
-
+    <div className="flex-1 w-full max-w-md mx-auto bg-background-light dark:bg-background-dark min-h-screen pb-32">
       <main className="px-4 py-6 space-y-8 text-right">
         {/* Stats Row */}
         <div className="grid grid-cols-2 gap-4">

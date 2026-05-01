@@ -53,7 +53,24 @@
         "awayScore": { "type": "string" },
         "date": { "type": "string" },
         "competition": { "type": "string" },
-        "status": { "type": "string", "enum": ["upcoming", "live", "finished"] }
+        "status": { "type": "string", "enum": ["upcoming", "live", "finished"] },
+        "sport": { "type": "string", "enum": ["football", "basketball"] }
+      }
+    },
+    "CityInfo": {
+      "title": "City Info",
+      "description": "Information about a city (weather, sunset, etc)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "cityName": { "type": "string" },
+        "temperature": { "type": "string" },
+        "condition": { "type": "string" },
+        "sunset": { "type": "string" },
+        "sunrise": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "active": { "type": "boolean" }
       }
     },
     "Club": {
@@ -158,6 +175,7 @@
     "fan_posts": { "schema": "FanPost", "description": "Community posts" },
     "media": { "schema": "Media", "description": "Collection of media items" },
     "live_comments": { "schema": "LiveComment", "description": "Live match comments" },
+    "city_info": { "schema": "CityInfo", "description": "Alexandria city and weather info" },
     "settings": { "schema": "AppSetting", "description": "Global settings" }
   }
 }

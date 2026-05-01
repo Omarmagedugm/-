@@ -1,14 +1,19 @@
 {
   "name": "قناة الاتحاد السكندري",
-  "short_name": "قناة الاتحاد",
+  "short_name": "الاتحاد",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#083d25",
-  "theme_color": "#083d25",
+  "background_color": "#04120E",
+  "theme_color": "#0ca45f",
   "icons": [
     {
-      "src": "https://lh3.googleusercontent.com/aida-public/AB6AXuCTDqivbMM3woUHfm0Fj4XuGiRWg8PmTtJowqlI8y7wBGhivrSolvAevgIObczC46rYMW6R6rinL9TqfGH1jrcMPK_8UIBS5BNDQg0fezc-pNyKiveAtRnkgFsEMr_lnd5wgl09eqc3YvCzVPpSfTaRKgih0nX_npjdEHKMI9lEkL58AadbCt-awTzFiNejQF0zvn8p3d78izoaUNtvNdS10x7MqOJcbrgLR4Higfk6zZoqZq7qIHKPdlp9_CEeeUK43Mhb0Pi1q3g",
+      "src": "/splash/icon.png",
       "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/splash/icon.png",
+      "sizes": "512x512",
       "type": "image/png"
     }
   ]

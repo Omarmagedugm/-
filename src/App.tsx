@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import ScrollToTop from './components/ScrollToTop';
 import { useAppStore } from './store';
 import { useFirestoreSync } from './hooks/useFirestore';
 import { auth } from './lib/firebase';
@@ -21,6 +22,7 @@ import Library from './pages/Library';
 import BottomNav from './components/BottomNav';
 import TopHeader from './components/TopHeader';
 import MusicPlayer from './components/MusicPlayer';
+import { Toaster } from 'react-hot-toast';
 
 export default function App() {
   const { theme } = useAppStore();
@@ -38,7 +40,15 @@ export default function App() {
   // Auth Redirection Logic
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthRedirector />
+      <Toaster 
+        position="top-center" 
+        toastOptions={{
+          duration: 4000,
+          className: 'bg-white dark:bg-card-dark text-slate-800 dark:text-white font-bold font-display shadow-2xl rounded-2xl border border-border-light dark:border-border-dark',
+        }}
+      />
       <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display antialiased overflow-x-hidden transition-colors duration-200">
         <TopHeader />
         <Routes>

@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore, UserProfile } from '../store';
 import React, { useState, useEffect } from 'react';
-import { Camera, X, Check, Lock, ShieldCheck, Mail, Loader2, Save, Upload } from 'lucide-react';
+import { Camera, X, Check, Lock, ShieldCheck, Mail, Loader2, Save, Upload, Edit2 } from 'lucide-react';
 import { db, auth, uploadImage } from '../lib/firebase';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { updatePassword, updateProfile as updateAuthProfile } from 'firebase/auth';
@@ -189,7 +189,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden pb-24 w-full max-w-lg mx-auto bg-background-light dark:bg-background-dark min-h-screen">
+    <div className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden pb-32 w-full max-w-lg mx-auto bg-background-light dark:bg-background-dark min-h-screen">
       <div className="flex flex-col flex-1">
         {/* Messages */}
         <AnimatePresence>
@@ -251,6 +251,14 @@ export default function Profile() {
               <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
               <span className="text-xs font-black text-primary px-3 py-1 rounded-full bg-primary/10">عضو منذ {profile.joinDate || '٢٠٢٤'}</span>
             </div>
+            
+            <button 
+              onClick={() => setShowEditModal(true)}
+              className="mt-4 bg-slate-100 dark:bg-surface-dark text-slate-700 dark:text-slate-300 px-6 py-2 rounded-xl font-bold text-xs flex items-center gap-2 pressable transition-colors hover:bg-slate-200 dark:hover:bg-border-dark"
+            >
+              <Edit2 size={14} />
+              تعديل الملف الشخصي
+            </button>
           </div>
         </motion.div>
 
@@ -353,10 +361,6 @@ export default function Profile() {
               </>
             )}
 
-            {/* Change Password */}
-          </div>
-
-            <div className="h-px w-full bg-slate-100 dark:border-t dark:border-border-dark"></div>
             {/* Change Email */}
             <button 
               onClick={() => setShowEmailModal(true)}
@@ -375,6 +379,7 @@ export default function Profile() {
             </button>
 
             <div className="h-px w-full bg-slate-100 dark:border-t dark:border-border-dark"></div>
+            
             {/* Change Password */}
             <button 
               onClick={() => setShowPasswordModal(true)}
@@ -391,6 +396,8 @@ export default function Profile() {
               </div>
               <span className="material-symbols-outlined text-slate-400 !text-[20px]">chevron_left</span>
             </button>
+            
+          </div>
 
           <h3 className="mb-3 mt-8 px-2 text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
             <span className="w-1 h-4 rounded-full bg-slate-400"></span>
@@ -442,7 +449,7 @@ export default function Profile() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-sm bg-white dark:bg-card-dark rounded-3xl p-6 shadow-2xl overflow-hidden"
+              className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto custom-scrollbar bg-white dark:bg-card-dark rounded-3xl p-6 shadow-2xl"
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-black">تعديل الملف الشخصي</h3>
@@ -581,7 +588,7 @@ export default function Profile() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-sm bg-white dark:bg-card-dark rounded-3xl p-6 shadow-2xl overflow-hidden"
+              className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto custom-scrollbar bg-white dark:bg-card-dark rounded-3xl p-6 shadow-2xl"
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-black">تغيير كلمة المرور</h3>
@@ -641,7 +648,7 @@ export default function Profile() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-sm bg-white dark:bg-card-dark rounded-3xl p-6 shadow-2xl overflow-hidden"
+              className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto custom-scrollbar bg-white dark:bg-card-dark rounded-3xl p-6 shadow-2xl"
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-black">تغيير البريد الإلكتروني</h3>

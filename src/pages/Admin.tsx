@@ -50,9 +50,19 @@ import {
   Music,
   BookOpen,
   Disc,
-  ListMusic
+  ListMusic,
+  ChevronDown,
+  CloudSun,
+  MapPin,
+  Sunrise,
+  Sunset,
+  Thermometer,
+  Phone,
+  AtSign,
+  Bell
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
+import ScoreSelector from '../components/ScoreSelector';
 
 const handleFileUploadFn = async (
   e: React.ChangeEvent<HTMLInputElement>, 
@@ -252,21 +262,48 @@ const UploadOrUrlField = ({
   );
 };
 
+// Triggering deployment change
+const ADMIN_VERSION = '1.2.1';
+
 export default function Admin() {
   const { 
     news, media, matches, liveStream, users, appSettings, profile, clubs, polls, fanPosts, predictions,
     clubTitles, clubStats, historyEvents, stadiums, newsCategories,
     products, orders, homeSections, undoStack,
-    songs, albums, playlists, books,
+    songs, albums, playlists, books, cityInfo,
     setClubTitles, setClubStats, setHistoryEvents, setStadiums, setNewsCategories,
     setProducts, setOrders, setHomeSections, pushToUndoStack, popFromUndoStack,
-    setSongs, setAlbums, setPlaylists, setBooks
+    setSongs, setAlbums, setPlaylists, setBooks, setCityInfo
   } = useAppStore();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'news' | 'media' | 'matches' | 'live' | 'users' | 'settings' | 'clubs' | 'polls' | 'comments' | 'posts' | 'predictions' | 'fanzone' | 'history' | 'news-categories' | 'products' | 'orders' | 'layout' | 'music' | 'books'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'news' | 'media' | 'matches' | 'live' | 'users' | 'settings' | 'clubs' | 'polls' | 'comments' | 'posts' | 'predictions' | 'fanzone' | 'history' | 'news-categories' | 'products' | 'orders' | 'layout' | 'music' | 'books' | 'city' | 'notifications'>('overview');
   const [showSidebar, setShowSidebar] = useState(false);
   const [historySubTab, setHistorySubTab] = useState<'stats' | 'titles' | 'timeline' | 'stadiums'>('stats');
   const [musicSubTab, setMusicSubTab] = useState<'songs' | 'albums' | 'playlists'>('songs');
+
+  const [notificationForm, setNotificationForm] = useState({ title: '', body: '', target: 'all' });
+  const [isSending, setIsSending] = useState(false);
+
+  const handleSendNotification = async () => {
+    if (!notificationForm.title.trim() || !notificationForm.body.trim()) return alert('يرجى ملء جميع الحقول');
+    setIsSending(true);
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        title: notificationForm.title,
+        body: notificationForm.body,
+        target: notificationForm.target,
+        readBy: [],
+        createdAt: new Date().toISOString()
+      });
+      alert('تم إرسال الإشعار بنجاح');
+      setNotificationForm({ title: '', body: '', target: 'all' });
+    } catch (e) {
+      console.error(e);
+      alert('حدث خطأ أثناء الإرسال');
+    } finally {
+      setIsSending(false);
+    }
+  };
   const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'processing' | 'delivered'>('all');
   const [comments, setComments] = useState<any[]>([]);
   const [fanComments, setFanComments] = useState<any[]>([]);
@@ -345,10 +382,12 @@ export default function Admin() {
           type: formData.type || 'video',
           source: formData.source || (formData.url?.includes('youtube.com') || formData.url?.includes('youtu.be') ? 'youtube' : 'upload'),
           url: formData.url || '',
+          videoUrl: formData.type === 'video' ? (formData.url || '') : '',
           thumbnailUrl: formData.thumbnailUrl || (formData.type === 'video' ? 'https://images.unsplash.com/photo-1510563399035-7140409890a5' : (formData.url || 'https://images.unsplash.com/photo-1510563399035-7140409890a5')),
           date: isEditing ? (formData.date || new Date().toISOString()) : new Date().toISOString(),
           duration: formData.duration || '',
-          views: formData.views || '0'
+          views: formData.views || '0',
+          likes: isEditing ? (formData.likes || []) : []
         };
 
         const cleanPayload = Object.fromEntries(
@@ -387,7 +426,8 @@ export default function Admin() {
           timerStartTime: (formData.status === 'live' && formData.isTimerRunning) ? new Date().toISOString() : (formData.timerStartTime || null),
           timerBaseMinute: Number(formData.timerBaseMinute || 0),
           isTimerRunning: formData.isTimerRunning || false,
-          isMatchDay: formData.isMatchDay || false
+          isMatchDay: formData.isMatchDay || false,
+          sport: formData.sport || 'football'
         };
 
         if (isEditing && editingId) {
@@ -395,6 +435,20 @@ export default function Admin() {
         } else {
           await addDoc(collection(db, 'matches'), payload);
         }
+      } else if (activeTab === 'city') {
+        const payload = {
+          cityName: formData.cityName || 'الإسكندرية',
+          temperature: formData.temperature || '--',
+          condition: formData.condition || 'صافي',
+          sunset: formData.sunset || '--:--',
+          sunrise: formData.sunrise || '--:--',
+          description: formData.description || '',
+          image: formData.image || 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e',
+          active: formData.active ?? true,
+          useAutoWeather: formData.useAutoWeather ?? true
+        };
+        
+        await setDoc(doc(db, 'city_info', 'alexandria'), payload);
       } else if (activeTab === 'settings') {
         await setDoc(doc(db, 'settings', 'global'), {
           appName: formData.appName || appSettings.appName,
@@ -617,17 +671,6 @@ export default function Admin() {
       return onSnapshot(q, (snapshot) => {
         setFanComments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       });
-    } else if (activeTab === 'history') {
-      const unsub1 = onSnapshot(query(collection(db, 'club_stats')), (s) => setClubStats(s.docs.map(d => ({ id: d.id, ...d.data() } as any))));
-      const unsub2 = onSnapshot(query(collection(db, 'club_titles')), (s) => setClubTitles(s.docs.map(d => ({ id: d.id, ...d.data() } as any))));
-      const unsub3 = onSnapshot(query(collection(db, 'club_timeline'), orderBy('year', 'asc')), (s) => setHistoryEvents(s.docs.map(d => ({ id: d.id, ...d.data() } as any))));
-      const unsub4 = onSnapshot(query(collection(db, 'club_stadiums')), (s) => setStadiums(s.docs.map(d => ({ id: d.id, ...d.data() } as any))));
-      const unsub5 = onSnapshot(doc(db, 'settings', 'newsCategories'), (s) => {
-        if (s.exists()) setNewsCategories(s.data().list);
-      });
-      const unsub6 = onSnapshot(query(collection(db, 'products')), (s) => setProducts(s.docs.map(d => ({ id: d.id, ...d.data() } as any))));
-      const unsub7 = onSnapshot(query(collection(db, 'orders'), orderBy('createdAt', 'desc')), (s) => setOrders(s.docs.map(d => ({ id: d.id, ...d.data() } as any))));
-      return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6(); unsub7(); };
     }
   }, [activeTab]);
 
@@ -846,7 +889,7 @@ export default function Admin() {
   };
 
   return (
-    <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-24 min-h-screen bg-slate-50 dark:bg-background-dark relative">
+    <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-32 min-h-screen bg-slate-50 dark:bg-background-dark relative">
       {/* Sidebar Overlay */}
       {showSidebar && (
         <div 
@@ -896,6 +939,7 @@ export default function Admin() {
              activeTab === 'matches' ? 'إدارة المباريات' : 
              activeTab === 'posts' ? 'منشورات الجماهير' :
              activeTab === 'predictions' ? 'إدارة توقعات المباريات' :
+             activeTab === 'notifications' ? 'إرسال الإشعارات' :
              activeTab === 'users' ? 'إدارة الأعضاء' : 
              activeTab === 'settings' ? 'إعدادات التطبيق' : 
              activeTab === 'clubs' ? 'إدارة الأندية' : 
@@ -903,6 +947,7 @@ export default function Admin() {
              activeTab === 'polls' ? 'إدارة الاستطلاعات' : 
              activeTab === 'layout' ? 'تعديل الصفحة الرئيسية' :
              activeTab === 'history' ? 'تاريخ النادي' :
+             activeTab === 'city' ? 'طقس الإسكندرية' :
              activeTab === 'live' ? 'البث المباشر' :
              activeTab === 'comments' ? 'تعليقات البث المباشر' : 'لوحة التحكم'}
           </h1>
@@ -984,6 +1029,100 @@ export default function Admin() {
             </div>
           )}
 
+          {activeTab === 'city' && (
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-card-dark rounded-3xl p-6 border border-border-light dark:border-border-dark shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                      <CloudSun size={24} />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-sm">بيانات مدينة الإسكندرية</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Alexandria City Info</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      if (cityInfo) setFormData({ ...cityInfo });
+                      else setFormData({});
+                      setIsEditing(true);
+                      setShowModal(true);
+                    }}
+                    className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg shadow-primary/20 flex items-center gap-2 transition-all pressable"
+                  >
+                    <Edit2 size={14} />
+                    تعديل البيانات
+                  </button>
+                </div>
+
+                {cityInfo ? (
+                  <div className="space-y-6">
+                    <div className="relative h-48 rounded-3xl overflow-hidden border border-border-light dark:border-border-dark">
+                      <img src={cityInfo.image} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6">
+                        <div className="flex items-end justify-between">
+                          <div>
+                            <h2 className="text-2xl font-black text-white leading-none">{cityInfo.cityName}</h2>
+                            <p className="text-white/70 text-[10px] font-bold mt-1 flex items-center gap-1">
+                              <MapPin size={10} /> مصر، الإسكندرية
+                            </p>
+                          </div>
+                          <div className="text-right">
+                             <div className="flex items-center gap-2 text-white">
+                               <Thermometer size={20} className="text-primary" />
+                               <span className="text-3xl font-black">{cityInfo.temperature}°</span>
+                             </div>
+                             <p className="text-white/80 text-[10px] font-black uppercase tracking-widest">{cityInfo.condition}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-slate-50 dark:bg-surface-dark p-4 rounded-2xl border border-slate-100 dark:border-border-dark flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+                          <Sunrise size={20} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">الشروق</p>
+                          <p className="text-sm font-black tabular-nums">{cityInfo.sunrise}</p>
+                        </div>
+                      </div>
+                      <div className="bg-slate-50 dark:bg-surface-dark p-4 rounded-2xl border border-slate-100 dark:border-border-dark flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500">
+                          <Sunset size={20} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">الغروب</p>
+                          <p className="text-sm font-black tabular-nums">{cityInfo.sunset}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-surface-dark p-4 rounded-2xl border border-slate-100 dark:border-border-dark">
+                       <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">نبذة عن المدينة</h4>
+                       <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-bold">{cityInfo.description}</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                      <div className={`w-3 h-3 rounded-full ${cityInfo.active ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <span className="text-xs font-black uppercase tracking-tighter">
+                        الحالة: {cityInfo.active ? 'نشط على الموقع' : 'مخفي'}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3 border-2 border-dashed border-slate-100 rounded-3xl">
+                     <CloudSun size={48} className="opacity-20" />
+                     <p className="text-xs font-bold">لا توجد بيانات مسجلة لمدينة الإسكندرية</p>
+                     <button onClick={openAddModal} className="text-primary text-xs font-black border-b border-primary/30">إضافة البيانات الآن</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {activeTab === 'layout' && (
             <div className="space-y-6">
               <div className="bg-white dark:bg-card-dark rounded-3xl p-6 border border-border-light dark:border-border-dark shadow-sm">
@@ -996,7 +1135,10 @@ export default function Admin() {
                     onClick={async () => {
                       setLoading(true);
                       try {
-                        await setDoc(doc(db, 'settings', 'homeLayout'), { sections: homeSections });
+                        const cleanSections = homeSections.map(section => 
+                          Object.fromEntries(Object.entries(section).filter(([_, v]) => v !== undefined))
+                        );
+                        await setDoc(doc(db, 'settings', 'homeLayout'), { sections: cleanSections });
                         alert('تم حفظ ترتيب الصفحة الرئيسية بنجاح');
                       } catch (err) {
                         console.error(err);
@@ -1093,6 +1235,13 @@ export default function Admin() {
                       <select 
                         id="new-section-type"
                         className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-xs font-bold"
+                        onChange={(e) => {
+                          const widgetCode = document.getElementById('new-section-widget-code');
+                          if (widgetCode) {
+                            if (e.target.value === 'widget') widgetCode.style.display = 'block';
+                            else widgetCode.style.display = 'none';
+                          }
+                        }}
                       >
                         <option value="news">أخبار</option>
                         <option value="matches">مباريات</option>
@@ -1102,6 +1251,8 @@ export default function Admin() {
                         <option value="hero">المباراة القادمة / الحية</option>
                         <option value="live">بث مباشر متاح</option>
                         <option value="custom">مخصص (Fan Zone)</option>
+                        <option value="widget">برمجية HTML مخصصة</option>
+                        <option value="city">طقس وتاريخ الإسكندرية</option>
                       </select>
                     </div>
                     <div className="space-y-2">
@@ -1113,19 +1264,30 @@ export default function Admin() {
                         className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-xs font-bold"
                       />
                     </div>
+                    <div id="new-section-widget-code" className="col-span-2 space-y-2" style={{ display: 'none' }}>
+                      <label className="text-[10px] font-black text-slate-500">كود الـ Widget (HTML)</label>
+                      <textarea 
+                        id="new-section-html"
+                        placeholder="<div class='my-widget'>...</div>"
+                        className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-[10px] font-mono dir-ltr min-h-[100px]"
+                      />
+                    </div>
                     <button 
                       onClick={() => {
                         const type = (document.getElementById('new-section-type') as HTMLSelectElement).value as any;
                         const title = (document.getElementById('new-section-title') as HTMLInputElement).value;
+                        const htmlCode = (document.getElementById('new-section-html') as HTMLTextAreaElement).value;
                         const newSection = {
                           id: uuidv4(),
                           type,
                           title: title || undefined,
                           active: true,
-                          order: homeSections.length
+                          order: homeSections.length,
+                          htmlCode: type === 'widget' ? htmlCode : undefined
                         };
                         setHomeSections([...homeSections, newSection]);
                         (document.getElementById('new-section-title') as HTMLInputElement).value = '';
+                        (document.getElementById('new-section-html') as HTMLTextAreaElement).value = '';
                       }}
                       className="col-span-2 bg-primary/10 text-primary py-3 rounded-xl text-[10px] font-black border border-primary/20 hover:bg-primary hover:text-white transition-all mt-2"
                     >
@@ -1238,11 +1400,23 @@ export default function Admin() {
                     <span className="text-xs font-bold">{cat}</span>
                     <button 
                       onClick={() => {
-                        const newList = newsCategories.filter((_, idx) => idx !== i);
-                        setFormData({ categories: newList });
-                        handleAdd();
+                        const newList = [...newsCategories];
+                        const updatedName = prompt('تعديل اسم القسم:', cat);
+                        if (updatedName && updatedName.trim() !== '') {
+                          newList[i] = updatedName.trim();
+                          setDoc(doc(db, 'settings', 'newsCategories'), { list: newList });
+                        }
                       }}
-                      className="text-red-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                      className="text-blue-400 hover:text-blue-600 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Edit2 size={12} />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const newList = newsCategories.filter((_, idx) => idx !== i);
+                        setDoc(doc(db, 'settings', 'newsCategories'), { list: newList });
+                      }}
+                      className="text-red-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 ml-1"
                     >
                       <Trash2 size={12} />
                     </button>
@@ -1260,10 +1434,9 @@ export default function Admin() {
                 <button 
                   onClick={() => {
                     const input = document.getElementById('new-category') as HTMLInputElement;
-                    if (input.value) {
-                      const newList = [...newsCategories, input.value];
-                      setFormData({ categories: newList });
-                      handleAdd();
+                    if (input.value.trim()) {
+                      const newList = [...newsCategories, input.value.trim()];
+                      setDoc(doc(db, 'settings', 'newsCategories'), { list: newList });
                       input.value = '';
                     }
                   }}
@@ -1313,23 +1486,38 @@ export default function Admin() {
           )}
 
           {activeTab === 'orders' && (
-            <div className="flex flex-col gap-4">
-               <div className="grid grid-cols-1 gap-3">
+            <div className="flex flex-col gap-6">
+               <div className="flex items-center justify-between px-2">
+                 <div className="flex flex-col text-right">
+                   <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase italic tracking-tight">سجل المشتريات</h3>
+                 </div>
+                 <div className="bg-primary/10 dark:bg-primary/20 px-4 py-2 rounded-2xl border border-primary/20 text-primary flex items-center gap-2">
+                   <ShoppingCart size={18} />
+                   <span className="text-sm font-black tabular-nums">{orders.length}</span>
+                 </div>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  {orders.map(order => (
-                   <div key={order.id} className="bg-white dark:bg-card-dark p-4 rounded-3xl border border-border-light dark:border-border-dark text-right space-y-3">
-                     <div className="flex items-center justify-between border-b border-slate-50 dark:border-border-dark pb-3">
+                   <div key={order.id} className="relative bg-white dark:bg-card-dark p-6 rounded-[32px] border border-border-light dark:border-border-dark shadow-premium hover:shadow-2xl transition-all overflow-hidden group text-right">
+                     <div className="flex items-center justify-between border-b border-slate-50 dark:border-border-dark pb-3 mb-4">
                         <span className={`text-[9px] font-black px-2 py-1 rounded-lg ${
                           order.status === 'pending' ? 'bg-orange-100 text-orange-600' :
-                          order.status === 'ready' ? 'bg-blue-100 text-blue-600' : 
-                          order.status === 'delivered' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-600'
+                          order.status === 'processing' ? 'bg-blue-100 text-blue-600' : 
+                          order.status === 'ready' ? 'bg-purple-100 text-purple-600' : 
+                          order.status === 'sold' ? 'bg-green-100 text-green-600' : 
+                          order.status === 'delivered' ? 'bg-slate-100 text-slate-600' : 'bg-slate-100 text-slate-600'
                         }`}>
                           {order.status === 'pending' ? 'تحت التحضير' : 
+                           order.status === 'processing' ? 'جاري التنفيذ' :
                            order.status === 'ready' ? 'جاهز' : 
-                           order.status === 'delivered' ? 'تم التسليم' : 'جاري التنفيذ'}
+                           order.status === 'sold' ? 'تم البيع' : 
+                           order.status === 'delivered' ? 'تم الاستلام' : 'جاري التنفيذ'}
                         </span>
                         <span className="text-[10px] font-bold text-slate-400 tabular-nums">{new Date(order.createdAt).toLocaleString('ar-EG')}</span>
                      </div>
-                     <div className="flex gap-4 items-start">
+
+                     <div className="flex gap-4 items-start mb-4">
                         <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-50 dark:bg-surface-dark border border-border-light dark:border-border-dark">
                            {order.productImage && order.productImage.trim() !== '' ? (
                              <img src={order.productImage} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -1339,42 +1527,74 @@ export default function Admin() {
                              </div>
                            )}
                         </div>
-                        <div className="flex-1 space-y-1">
+                        <div className="flex-1 space-y-2">
                            <div className="flex justify-between items-start">
-                              <div className="space-y-0.5">
-                                 <p className="text-xs font-black text-slate-800 dark:text-white">{order.productName}</p>
+                              <p className="text-xs font-black text-slate-800 dark:text-white">{order.productName}</p>
+                              <div className="text-left">
                                  <p className="text-[10px] text-primary font-bold tabular-nums">الإجمالي: {order.totalPrice} ج.م</p>
                                  <p className="text-[9px] text-slate-500 font-bold">الكمية: {order.quantity || 1}</p>
                               </div>
-                              <div className="text-left">
+                           </div>
+                           
+                           <div className="bg-slate-50 dark:bg-surface-dark border border-slate-100 dark:border-border-dark p-3 rounded-2xl space-y-2 group-hover:bg-white dark:group-hover:bg-card-dark transition-colors">
+                              <div className="flex items-center gap-2">
+                                 <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                    <UsersIcon size={12} />
+                                 </div>
                                  <p className="text-[10px] font-black text-slate-800 dark:text-white">{order.userName}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                 <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
+                                    <Phone size={12} />
+                                 </div>
                                  <p className="text-[10px] text-slate-500 font-bold tabular-nums">{order.userPhone}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                 <div className="w-6 h-6 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500">
+                                    <AtSign size={12} />
+                                 </div>
                                  <p className="text-[9px] text-slate-400 font-bold">{order.userEmail}</p>
+                              </div>
+                              <div className="flex items-start gap-2 pt-1 border-t border-slate-100 dark:border-border-dark">
+                                 <div className="w-6 h-6 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500 shrink-0">
+                                    <MapPin size={12} />
+                                 </div>
+                                 <p className="text-[10px] text-slate-500 leading-relaxed font-medium">
+                                    📍 {order.userAddress}
+                                 </p>
                               </div>
                            </div>
                         </div>
                      </div>
-                     <div className="bg-slate-50 dark:bg-surface-dark p-3 rounded-2xl text-[10px] font-bold text-slate-500">
-                        📍 {order.userAddress}
-                     </div>
+
                      <div className="flex gap-2">
-                        {order.status === 'pending' && (
-                          <button 
-                            onClick={() => updateDoc(doc(db, 'orders', order.id), { status: 'ready' })}
-                            className="flex-1 py-2.5 bg-primary text-white rounded-xl text-[10px] font-black shadow-lg shadow-primary/20"
-                          >
-                            جاهز للتسليم
-                          </button>
-                        )}
-                        {order.status === 'ready' && (
-                          <button 
-                            onClick={() => updateDoc(doc(db, 'orders', order.id), { status: 'delivered' })}
-                            className="flex-1 py-2.5 bg-green-500 text-white rounded-xl text-[10px] font-black shadow-lg shadow-green-500/20"
-                          >
-                            تم التوصيل
-                          </button>
-                        )}
-                        <button onClick={() => { if(window.confirm('هل أنت متأكد من حذف الطلب؟')) handleDelete('orders', order.id) }} className="p-2.5 text-red-500 border border-red-100 dark:border-red-900/30 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/10 transition-all"><Trash2 size={18} /></button>
+                        <select 
+                          className="flex-1 p-2 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-[10px] font-black outline-none appearance-none"
+                          value={order.status}
+                          onChange={async (e) => {
+                            try {
+                              const { updateDoc, doc } = await import('firebase/firestore');
+                              const { db } = await import('../lib/firebase');
+                              await updateDoc(doc(db, 'orders', order.id), { status: e.target.value as any });
+                              alert('تم تحديث الحالة بنجاح');
+                            } catch (err) {
+                              console.error(err);
+                              alert('فشل تحديث الحالة');
+                            }
+                          }}
+                        >
+                          <option value="pending">تحت التحضير</option>
+                          <option value="processing">جاري التنفيذ</option>
+                          <option value="ready">جاهز</option>
+                          <option value="delivered">تم الاستلام</option>
+                          <option value="sold">تم البيع</option>
+                        </select>
+                        <button 
+                          onClick={() => { if(window.confirm('هل أنت متأكد من حذف الطلب؟')) handleDelete('orders', order.id) }} 
+                          className="px-4 text-red-500 border border-red-100 dark:border-red-900/30 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/10 transition-all flex items-center justify-center"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                      </div>
                    </div>
                  ))}
@@ -1665,6 +1885,52 @@ export default function Admin() {
             </div>
           ))}
 
+          {activeTab === 'notifications' && (
+            <div className="bg-white dark:bg-card-dark rounded-xl p-5 shadow-sm space-y-5 border border-border-light dark:border-border-dark">
+              <div className="pb-4 border-b border-border-light dark:border-border-dark">
+                 <h3 className="text-sm font-black mb-1">إرسال إشعار لحظي</h3>
+                 <p className="text-[10px] text-slate-500 font-bold">إرسال إشعارات لجميع المستخدمين أو لمستخدم محدد</p>
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-500 mb-1.5 block">عنوان الإشعار</label>
+                <input 
+                  type="text" 
+                  value={notificationForm.title} 
+                  onChange={(e) => setNotificationForm({...notificationForm, title: e.target.value})}
+                  className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold focus:border-primary outline-none transition-colors"
+                  placeholder="مثال: عاجل - تعاقد جديد"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-500 mb-1.5 block">نص الإشعار</label>
+                <textarea 
+                  value={notificationForm.body} 
+                  onChange={(e) => setNotificationForm({...notificationForm, body: e.target.value})}
+                  className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold focus:border-primary outline-none transition-colors min-h-[100px] resize-none"
+                  placeholder="محتوى الإشعار وتفاصيله..."
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-500 mb-1.5 block">الجمهور المستهدف (اكتب all للجميع أو UID لمستخدم محدد)</label>
+                <input 
+                  type="text" 
+                  value={notificationForm.target} 
+                  onChange={(e) => setNotificationForm({...notificationForm, target: e.target.value})}
+                  className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-mono focus:border-primary outline-none transition-colors text-left"
+                  dir="ltr"
+                />
+              </div>
+              <button 
+                onClick={handleSendNotification} 
+                disabled={isSending}
+                className="w-full bg-primary text-white py-4 rounded-2xl font-black text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform active:scale-95"
+              >
+                {isSending ? <Loader2 className="animate-spin" size={18} /> : <Bell size={18} />}
+                إرسال الإشعار
+              </button>
+            </div>
+          )}
+
           {activeTab === 'settings' && (
             <div className="bg-white dark:bg-card-dark rounded-xl p-5 shadow-sm space-y-5 border border-border-light dark:border-border-dark">
               <div className="pb-4 border-b border-border-light dark:border-border-dark">
@@ -1681,16 +1947,58 @@ export default function Admin() {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black text-slate-500 mb-1.5 block">رابط اللوجو (PNG شفاف مفضل)</label>
-                <input 
-                  type="text" 
-                  value={formData.appLogo ?? appSettings.appLogo} 
-                  onChange={(e) => setFormData({...formData, appLogo: e.target.value})}
-                  className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-mono focus:border-primary outline-none transition-colors"
-                />
-                <div className="mt-4 p-6 bg-slate-50 dark:bg-surface-dark rounded-2xl flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-border-dark">
-                   { (formData.appLogo || appSettings.appLogo) && (
-                     <img src={formData.appLogo ?? appSettings.appLogo} className="h-20 object-contain drop-shadow-lg mb-2" referrerPolicy="no-referrer" />
+                <label className="text-[10px] font-black text-slate-500 mb-1.5 block">نوع الشعار</label>
+                <div className="flex bg-slate-100 dark:bg-surface-dark rounded-xl p-1 mb-4">
+                  <button 
+                    onClick={() => setFormData({...formData, logoType: 'image'})}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                      (formData.logoType || appSettings.logoType || 'image') === 'image' ? 'bg-white dark:bg-card-dark shadow-sm text-primary' : 'text-slate-500'
+                    }`}
+                  >
+                    صورة
+                  </button>
+                  <button 
+                    onClick={() => setFormData({...formData, logoType: 'text'})}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                      (formData.logoType || appSettings.logoType) === 'text' ? 'bg-white dark:bg-card-dark shadow-sm text-primary' : 'text-slate-500'
+                    }`}
+                  >
+                    نص مكتوب
+                  </button>
+                </div>
+
+                {(formData.logoType || appSettings.logoType || 'image') === 'image' ? (
+                  <>
+                    <label className="text-[10px] font-black text-slate-500 mb-1.5 block">رابط اللوجو (PNG شفاف مفضل)</label>
+                    <input 
+                      type="text" 
+                      value={formData.appLogo ?? appSettings.appLogo} 
+                      onChange={(e) => setFormData({...formData, appLogo: e.target.value})}
+                      className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-mono focus:border-primary outline-none transition-colors"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <label className="text-[10px] font-black text-slate-500 mb-1.5 block">النص البديل للشعار</label>
+                    <input 
+                      type="text" 
+                      value={formData.logoText ?? appSettings.logoText ?? ''} 
+                      onChange={(e) => setFormData({...formData, logoText: e.target.value})}
+                      className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold focus:border-primary outline-none transition-colors"
+                      placeholder="مثال: الاتحاد السكندري"
+                    />
+                  </>
+                )}
+
+                <div className="mt-4 p-6 bg-slate-50 dark:bg-surface-dark rounded-2xl flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-border-dark min-h-[120px]">
+                   {(formData.logoType || appSettings.logoType || 'image') === 'image' ? (
+                     (formData.appLogo || appSettings.appLogo) && (
+                       <img src={formData.appLogo ?? appSettings.appLogo} className="h-20 object-contain drop-shadow-lg mb-2" referrerPolicy="no-referrer" />
+                     )
+                   ) : (
+                     <h1 className="text-3xl font-black text-primary-dark dark:text-white drop-shadow-md mb-2">
+                       {formData.logoText || appSettings.logoText || 'شعار الموقع'}
+                     </h1>
                    )}
                    <span className="text-[10px] text-slate-400 font-bold">معاينة الشعار</span>
                 </div>
@@ -2125,6 +2433,7 @@ export default function Admin() {
                   activeTab === 'news' ? 'خبر' : 
                   activeTab === 'media' ? 'ميديا' : 
                   activeTab === 'matches' ? 'مباراة' : 
+                  activeTab === 'city' ? 'بيانات المدينة' :
                   activeTab === 'clubs' ? 'نادي' : 
                   activeTab === 'products' ? 'منتج' :
                   activeTab === 'history' ? (historySubTab === 'stats' ? 'رقم' : historySubTab === 'titles' ? 'بطولة' : historySubTab === 'timeline' ? 'حدث' : 'ملعب') :
@@ -2377,6 +2686,10 @@ export default function Admin() {
                       <label className="text-[10px] font-black text-slate-500 mb-1 block">مصدر الخبر</label>
                       <input type="text" placeholder="مثلاً: الموقع الرسمي" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.author || ''} onChange={(e) => setFormData({...formData, author: e.target.value})} />
                     </div>
+                    <div>
+                      <label className="text-[10px] font-black text-slate-500 mb-1 block">اسم المحرر</label>
+                      <input type="text" placeholder="مثلاً: أحمد محمد" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.editorName || ''} onChange={(e) => setFormData({...formData, editorName: e.target.value})} />
+                    </div>
                    </div>
                     <UploadOrUrlField label="صورة الخبر" fieldName="image" currentUrl={formData.image} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                    <div>
@@ -2513,18 +2826,72 @@ export default function Admin() {
                  </>
                )}
                
-               {activeTab === 'matches' && (
-                 <>
-                   <div className="grid grid-cols-2 gap-2">
-                     <div>
-                       <label className="text-[10px] font-black text-slate-500 mb-1 block">الفريق المضيف</label>
-                       <input type="text" placeholder="الفريق المضيف" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 text-sm font-bold" value={formData.homeTeam || ''} onChange={(e) => setFormData({...formData, homeTeam: e.target.value})} />
-                     </div>
-                     <div>
-                       <label className="text-[10px] font-black text-slate-500 mb-1 block">الفريق الخصم</label>
-                       <input type="text" placeholder="الفريق الخصم" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 text-sm font-bold" value={formData.awayTeam || ''} onChange={(e) => setFormData({...formData, awayTeam: e.target.value})} />
-                     </div>
-                   </div>
+                {activeTab === 'city' && (
+                  <>
+                    <div>
+                      <label className="text-[10px] font-black text-slate-500 mb-1 block">اسم المدينة</label>
+                      <input type="text" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.cityName || ''} onChange={(e) => setFormData({...formData, cityName: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                       <div>
+                         <label className="text-[10px] font-black text-slate-500 mb-1 block">درجة الحرارة</label>
+                         <input type="text" placeholder="مثلاً: 25" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.temperature || ''} onChange={(e) => setFormData({...formData, temperature: e.target.value})} />
+                       </div>
+                       <div>
+                         <label className="text-[10px] font-black text-slate-500 mb-1 block">حالة الطقس</label>
+                         <input type="text" placeholder="مثلاً: صافي / غائم جزئياً" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.condition || ''} onChange={(e) => setFormData({...formData, condition: e.target.value})} />
+                       </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                       <div>
+                         <label className="text-[10px] font-black text-slate-500 mb-1 block">وقت الشروق</label>
+                         <input type="text" placeholder="06:30 AM" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-black tabular-nums" value={formData.sunrise || ''} onChange={(e) => setFormData({...formData, sunrise: e.target.value})} />
+                       </div>
+                       <div>
+                         <label className="text-[10px] font-black text-slate-500 mb-1 block">وقت الغروب</label>
+                         <input type="text" placeholder="07:15 PM" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-black tabular-nums" value={formData.sunset || ''} onChange={(e) => setFormData({...formData, sunset: e.target.value})} />
+                       </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-slate-500 mb-1 block">وصف للمدينة</label>
+                      <textarea className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm min-h-[100px]" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                    </div>
+                    <UploadOrUrlField label="صورة الغلاف للمدينة" fieldName="image" currentUrl={formData.image} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark">
+                        <input type="checkbox" id="cityActive" checked={formData.active ?? true} onChange={(e) => setFormData({...formData, active: e.target.checked})} />
+                        <label htmlFor="cityActive" className="text-xs font-bold cursor-pointer">تفعيل عرض بطاقة المدينة في الصفحة الرئيسية</label>
+                      </div>
+                      <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark">
+                        <input type="checkbox" id="cityAutoWeather" checked={formData.useAutoWeather ?? true} onChange={(e) => setFormData({...formData, useAutoWeather: e.target.checked})} />
+                        <label htmlFor="cityAutoWeather" className="text-xs font-bold cursor-pointer">ترتبيط تلقائي للطقس من الإنترنت (Open-Meteo)</label>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {activeTab === 'matches' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-black text-slate-500 mb-1 block">الرياضة</label>
+                        <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.sport || 'football'} onChange={(e) => setFormData({...formData, sport: e.target.value})}>
+                           <option value="football">كرة قدم</option>
+                           <option value="basketball">كرة سلة</option>
+                        </select>
+                      </div>
+                      <div className="opacity-0 pointer-events-none">Placeholder</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-black text-slate-500 mb-1 block">الفريق المضيف</label>
+                        <input type="text" placeholder="الفريق المضيف" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.homeTeam || ''} onChange={(e) => setFormData({...formData, homeTeam: e.target.value})} />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-slate-500 mb-1 block">الفريق الخصم</label>
+                        <input type="text" placeholder="الفريق الخصم" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.awayTeam || ''} onChange={(e) => setFormData({...formData, awayTeam: e.target.value})} />
+                      </div>
+                    </div>
                    <div className="grid grid-cols-2 gap-2">
                      <div>
                        <UploadOrUrlField label="لوجو صاحب الأرض" fieldName="homeLogo" currentUrl={formData.homeLogo} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />

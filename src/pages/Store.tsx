@@ -92,7 +92,7 @@ export default function Store() {
   };
 
   return (
-    <div className="flex-1 w-full max-w-md mx-auto bg-background-light dark:bg-background-dark min-h-screen pb-24 text-right">
+    <div className="flex-1 w-full max-w-md mx-auto bg-background-light dark:bg-background-dark min-h-screen pb-32 text-right">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 py-4">
         <div className="flex items-center justify-between">
@@ -102,7 +102,7 @@ export default function Store() {
             </button>
             <div>
               <h1 className="text-lg font-black text-primary-dark dark:text-white uppercase leading-none">متجر الجماهير</h1>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 inline-block">Official Fan Store</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 inline-block">المتجر الرسمي للجماهير</span>
             </div>
           </div>
           <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary relative">

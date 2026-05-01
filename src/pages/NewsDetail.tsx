@@ -42,34 +42,25 @@ export default function NewsDetail() {
   };
 
   return (
-    <div className="relative flex-1 flex flex-col bg-background-light dark:bg-background-dark min-h-screen pb-24 overflow-x-hidden">
-      {/* Article Header Background */}
-      <div className="absolute top-0 left-0 right-0 h-[45vh] overflow-hidden">
-         <div className="absolute inset-0 bg-gradient-to-t from-background-light dark:from-background-dark via-transparent to-transparent z-10"></div>
-         <div 
-           className="w-full h-full bg-cover bg-center scale-105"
-           style={{ backgroundImage: `url('${article.image}')` }}
-         />
-      </div>
-
+    <div className="relative flex-1 flex flex-col bg-background-light dark:bg-background-dark min-h-screen pb-32 overflow-x-hidden">
       {/* Floating Header */}
-      <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-4 backdrop-blur-md bg-transparent">
-        <Link to="/news" className="p-2.5 rounded-full bg-white/20 dark:bg-black/20 backdrop-blur-xl text-white shadow-lg pressable border border-white/20">
+      <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-4 backdrop-blur-xl bg-background-light/80 dark:bg-background-dark/80 border-b border-border-light/40 dark:border-border-dark/40 shadow-sm">
+        <Link to="/news" className="p-2.5 rounded-full bg-slate-100 dark:bg-surface-dark text-slate-800 dark:text-white shadow-sm pressable border border-border-light dark:border-border-dark">
           <ArrowRight size={22} />
         </Link>
         <div className="flex gap-2">
            {profile?.role === 'admin' && (
              <button 
                onClick={() => navigate('/admin', { state: { editCategory: 'news', editId: article.id } })}
-               className="p-2.5 rounded-full bg-primary text-white shadow-lg pressable border border-primary/20"
+               className="p-2.5 rounded-full bg-primary text-white shadow-sm pressable border border-primary/20"
              >
                <Edit2 size={18} />
              </button>
            )}
-           <button className="p-2.5 rounded-full bg-white/20 dark:bg-black/20 backdrop-blur-xl text-white shadow-lg pressable border border-white/20">
+           <button className="p-2.5 rounded-full bg-slate-100 dark:bg-surface-dark text-slate-800 dark:text-white shadow-sm pressable border border-border-light dark:border-border-dark">
              <Share2 size={18} />
            </button>
-           <button className="p-2.5 rounded-full bg-white/20 dark:bg-black/20 backdrop-blur-xl text-white shadow-lg pressable border border-white/20">
+           <button className="p-2.5 rounded-full bg-slate-100 dark:bg-surface-dark text-slate-800 dark:text-white shadow-sm pressable border border-border-light dark:border-border-dark">
              <Bookmark size={18} />
            </button>
         </div>
@@ -79,21 +70,37 @@ export default function NewsDetail() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-20 px-5 pt-[25vh]"
+        className="relative z-20 px-4 pt-6"
       >
-        <motion.div variants={itemVariants} className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-xl border border-border-light dark:border-border-dark">
-          <div className="flex items-center gap-3 mb-4 text-[10px] font-black uppercase tracking-wider text-primary">
-            <span className="px-2 py-0.5 border border-primary/30 rounded">{article.category || 'أخبار النادي'}</span>
-            <span className="text-slate-400 font-bold">•</span>
-            <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined !text-[12px]">schedule</span>
-              {formatDistanceToNow(new Date(article.date), { locale: ar, addSuffix: true })}
-            </span>
+        <motion.div variants={itemVariants} className="bg-white dark:bg-card-dark rounded-[32px] overflow-hidden shadow-2xl border border-border-light dark:border-border-dark">
+          {/* Full Professional Image Container */}
+          <div className="w-full bg-black/5 dark:bg-black/40 relative flex items-center justify-center min-h-[250px] max-h-[50vh]">
+            {/* Blurred background for contrast */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center opacity-30 blur-2xl scale-110"
+              style={{ backgroundImage: `url('${article.image}')` }}
+            />
+            {/* Main Full Image */}
+            <img 
+              src={article.image} 
+              alt={article.title} 
+              className="relative z-10 w-full h-full max-h-[50vh] object-contain drop-shadow-2xl" 
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10"></div>
+            
+            <div className="absolute bottom-4 left-4 right-4 z-20 flex items-center gap-3 text-[10px] font-black uppercase tracking-wider text-white drop-shadow-md">
+              <span className="px-3 py-1 bg-primary/90 text-white rounded-lg backdrop-blur-md">{article.category || 'أخبار النادي'}</span>
+              <span className="flex items-center gap-1 opacity-90 text-xs">
+                {formatDistanceToNow(new Date(article.date), { locale: ar, addSuffix: true })}
+              </span>
+            </div>
           </div>
 
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white leading-snug mb-6">{article.title}</h1>
+          <div className="p-6">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-snug mb-6">{article.title}</h1>
 
-          <div className="flex items-center justify-between py-4 border-y border-border-light dark:border-border-dark mb-6">
+            <div className="flex items-center justify-between py-4 border-y border-border-light dark:border-border-dark mb-6">
              <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                    <span className="material-symbols-outlined !text-[16px]">person</span>
@@ -132,6 +139,7 @@ export default function NewsDetail() {
                   </a>
                </div>
             )}
+          </div>
           </div>
         </motion.div>
 

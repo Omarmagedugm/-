@@ -139,7 +139,7 @@ export default function Live() {
   };
 
   return (
-    <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-24 bg-background-light dark:bg-background-dark min-h-screen">
+    <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-32 bg-background-light dark:bg-background-dark min-h-screen">
       <main className="flex-1 flex flex-col">
         {/* Video Player */}
         <section className="relative w-full aspect-video bg-black shadow-lg sticky top-[64px] z-40 lg:static">

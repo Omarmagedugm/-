@@ -140,6 +140,12 @@ service cloud.firestore {
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text']);
       allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
+    // City Info
+    match /city_info/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /admins/{adminId} {
       allow read: if isAdmin();
       allow write: if false; // Only manageable through Firebase Console or specific server scripts
@@ -197,9 +203,18 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    // Books
     match /books/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Notifications
+    match /notifications/{id} {
+      allow read: if isSignedIn() && (resource.data.target == 'all' || resource.data.target == request.auth.uid);
+      allow write: if isAdmin();
+      allow update: if isSignedIn() && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy']));
+    }
   }
 }
+

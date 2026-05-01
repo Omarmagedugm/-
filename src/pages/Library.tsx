@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Music, 
   BookOpen, 
@@ -18,11 +19,15 @@ import {
   Library as LibraryIcon,
   Book as BookIcon,
   Maximize2,
-  X
+  X,
+  Image as ImageIcon,
+  Video,
+  Heart,
+  Check
 } from 'lucide-react';
 import { useAppStore } from '../store';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { collection, onSnapshot, query, where, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { db, auth } from '../lib/firebase';
 
 export default function Library() {
   const { 
@@ -40,10 +45,41 @@ export default function Library() {
     isPlaying,
     setActivePlaylist 
   } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'music' | 'books' | 'media'>('music');
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'media' | 'music' | 'books'>('media');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBook, setSelectedBook] = useState<any>(null);
+  const [selectedMedia, setSelectedMedia] = useState<any>(null);
   const [filterType, setFilterType] = useState<string>('all');
+  const [mediaTypeFilter, setMediaTypeFilter] = useState<'all' | 'photo' | 'video'>('all');
+  const [isLiking, setIsLiking] = useState<string | null>(null);
+
+  const handleDownload = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleLikeMedia = async (e: React.MouseEvent, item: any) => {
+    e.stopPropagation();
+    if (!auth.currentUser) return alert('يرجى تسجيل الدخول أولاً');
+    
+    setIsLiking(item.id);
+    const hasLiked = item.likes?.includes(auth.currentUser.uid);
+    
+    try {
+      await updateDoc(doc(db, 'media', item.id), {
+        likes: hasLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid)
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLiking(null);
+    }
+  };
 
   useEffect(() => {
     const unsubSongs = onSnapshot(collection(db, 'songs'), (snap) => {
@@ -55,10 +91,14 @@ export default function Library() {
     const unsubAlbums = onSnapshot(collection(db, 'albums'), (snap) => {
       setAlbums(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
     });
+    const unsubMedia = onSnapshot(collection(db, 'media'), (snap) => {
+      setMedia(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
+    });
     return () => {
       unsubSongs();
       unsubBooks();
       unsubAlbums();
+      unsubMedia();
     };
   }, []);
 
@@ -69,6 +109,11 @@ export default function Library() {
 
   const filteredBooks = books.filter(b => 
     b.title.toLowerCase().includes(searchQuery.toLowerCase()) || b.author.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredMedia = media.filter(m => 
+    m.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
+    (mediaTypeFilter === 'all' || m.type === mediaTypeFilter)
   );
 
   const handlePlaySong = (song: any) => {
@@ -103,6 +148,13 @@ export default function Library() {
           </motion.div>
 
           <div className="flex gap-2 mb-6">
+            <button 
+              onClick={() => setActiveTab('media')}
+              className={`px-6 py-2.5 rounded-full font-black text-sm transition-all flex items-center gap-2 ${activeTab === 'media' ? 'bg-white text-primary shadow-lg' : 'bg-white/10 text-white hover:bg-white/20'}`}
+            >
+              <LibraryIcon size={18} />
+              الميديا
+            </button>
             <button 
               onClick={() => setActiveTab('music')}
               className={`px-6 py-2.5 rounded-full font-black text-sm transition-all flex items-center gap-2 ${activeTab === 'music' ? 'bg-white text-primary shadow-lg' : 'bg-white/10 text-white hover:bg-white/20'}`}
@@ -149,7 +201,92 @@ export default function Library() {
 
         <div className="mt-8">
           <AnimatePresence mode="wait">
-            {activeTab === 'music' ? (
+            {activeTab === 'media' ? (
+              <motion.div
+                key="media-tab"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="space-y-8"
+              >
+                {/* Media Type Sub-Tabs */}
+                <div className="flex items-center gap-3 bg-white dark:bg-card-dark p-2 rounded-2xl border border-border-light dark:border-border-dark inline-flex">
+                  <button 
+                    onClick={() => setMediaTypeFilter('all')}
+                    className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${mediaTypeFilter === 'all' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-background-dark'}`}
+                  >
+                    الكل
+                  </button>
+                  <button 
+                    onClick={() => setMediaTypeFilter('photo')}
+                    className={`px-6 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${mediaTypeFilter === 'photo' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-background-dark'}`}
+                  >
+                    <ImageIcon size={14} />
+                    صور
+                  </button>
+                  <button 
+                    onClick={() => setMediaTypeFilter('video')}
+                    className={`px-6 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${mediaTypeFilter === 'video' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-background-dark'}`}
+                  >
+                    <Video size={14} />
+                    فيديو
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredMedia.map((item) => (
+                        <motion.div 
+                          key={item.id}
+                          whileHover={{ y: -5 }}
+                          onClick={() => setSelectedMedia(item)}
+                          className="group relative h-64 rounded-[32px] overflow-hidden shadow-premium cursor-pointer"
+                        >
+                          <img src={item.thumbnailUrl} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                          
+                          <div className="absolute top-6 right-6 flex flex-col gap-2 scale-90 group-hover:scale-100 transition-all opacity-0 group-hover:opacity-100">
+                             <button 
+                               onClick={(e) => handleLikeMedia(e, item)}
+                               className={`w-10 h-10 rounded-xl flex items-center justify-center backdrop-blur-md border transition-all ${item.likes?.includes(auth.currentUser?.uid) ? 'bg-primary text-white border-primary' : 'bg-white/20 text-white border-white/20 hover:bg-primary'}`}
+                             >
+                               <Heart size={18} fill={item.likes?.includes(auth.currentUser?.uid) ? 'currentColor' : 'none'} />
+                             </button>
+                             <button 
+                               onClick={(e) => { e.stopPropagation(); handleDownload(item.videoUrl || item.thumbnailUrl, item.title); }}
+                               className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-white border border-white/20 hover:bg-slate-800 transition-all"
+                             >
+                               <Download size={18} />
+                             </button>
+                          </div>
+
+                          <div className="absolute inset-0 flex flex-col justify-end p-6">
+                             <span className="text-primary text-[10px] font-black uppercase tracking-wider mb-1">
+                               {item.type === 'video' ? 'فيديو' : 'صورة'}
+                             </span>
+                             <h3 className="text-white text-lg font-black leading-tight line-clamp-2">{item.title}</h3>
+                             <div className="flex items-center justify-between mt-3">
+                                {item.duration && <span className="text-white/60 text-[10px] font-bold flex items-center gap-1"><Clock size={12} /> {item.duration}</span>}
+                                <span className="text-white/60 text-[10px] font-bold flex items-center gap-1">
+                                   <Heart size={12} fill="currentColor" className="text-primary" />
+                                   {item.likes?.length || 0}
+                                </span>
+                             </div>
+                          </div>
+
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center scale-0 group-hover:scale-100 transition-all duration-300 shadow-2xl">
+                             {item.type === 'video' ? <Play fill="currentColor" size={24} /> : <Maximize2 size={24} />}
+                          </div>
+                        </motion.div>
+                      ))}
+                  {filteredMedia.length === 0 && (
+                     <div className="col-span-full py-12 text-center bg-white dark:bg-card-dark rounded-3xl border-2 border-dashed border-slate-200 dark:border-border-dark">
+                        <LibraryIcon className="mx-auto text-slate-300 mb-2" size={48} />
+                        <p className="text-slate-400 font-bold">لا توجد نتائج في هذا القسم</p>
+                     </div>
+                  )}
+                </div>
+              </motion.div>
+            ) : activeTab === 'music' ? (
               <motion.div
                 key="music-tab"
                 initial={{ opacity: 0, x: -20 }}
@@ -325,6 +462,74 @@ export default function Library() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Media Detail Modal */}
+      <AnimatePresence>
+        {selectedMedia && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedMedia(null)}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-sm p-4 cursor-pointer"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-6xl flex flex-col gap-4 cursor-default"
+            >
+              <div className="flex items-center justify-between">
+                 <div className="flex flex-col">
+                   <h2 className="text-white text-2xl font-black">{selectedMedia.title}</h2>
+                   <p className="text-primary text-xs font-bold uppercase tracking-widest">{selectedMedia.type === 'video' ? 'فيديو' : 'صورة'}</p>
+                 </div>
+                 <div className="flex items-center gap-2">
+                    <button 
+                      onClick={(e) => handleLikeMedia(e, selectedMedia)}
+                      className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl font-black text-sm transition-all ${selectedMedia.likes?.includes(auth.currentUser?.uid) ? 'bg-primary text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                    >
+                      <Heart size={18} fill={selectedMedia.likes?.includes(auth.currentUser?.uid) ? 'currentColor' : 'none'} />
+                      {selectedMedia.likes?.length || 0}
+                    </button>
+                    <button 
+                      onClick={() => handleDownload(selectedMedia.videoUrl || selectedMedia.thumbnailUrl, selectedMedia.title)}
+                      className="px-6 py-2.5 bg-white/10 text-white rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-white/20 transition-all"
+                    >
+                      <Download size={18} />
+                      تحميل
+                    </button>
+                    <button 
+                     onClick={() => setSelectedMedia(null)}
+                     className="p-3 bg-white/10 text-white hover:bg-red-500 rounded-2xl transition-all"
+                    >
+                     <X size={20} />
+                    </button>
+                 </div>
+              </div>
+
+              <div className="aspect-video w-full rounded-[40px] overflow-hidden bg-slate-900 shadow-2xl relative border border-white/10">
+                 {selectedMedia.type === 'video' ? (
+                   <video 
+                     src={selectedMedia.videoUrl} 
+                     controls 
+                     autoPlay 
+                     className="w-full h-full object-contain"
+                   />
+                 ) : (
+                   <img 
+                     src={selectedMedia.thumbnailUrl} 
+                     className="w-full h-full object-contain" 
+                     referrerPolicy="no-referrer"
+                     alt={selectedMedia.title}
+                   />
+                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Book Reader Modal */}
       <AnimatePresence>

@@ -82,8 +82,9 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                   </div>
                 </Link>
               )}
+
               <div className="pt-2 pb-1 px-4">
-                 <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest">التنقل السريع</p>
+                 <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest">الأقسام الرئيسية</p>
               </div>
               
               <Link to="/" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
@@ -96,24 +97,9 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                 <span className="text-sm font-bold">الأخبار والتغطيات</span>
               </Link>
 
-              <Link to="/library" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <span className="material-symbols-outlined !text-[20px]">library_music</span>
-                <span className="text-sm font-bold">المكتبة الرقمية</span>
-              </Link>
-
               <Link to="/matches" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
                 <span className="material-symbols-outlined !text-[20px]">sports_soccer</span>
                 <span className="text-sm font-bold">جدول المباريات</span>
-              </Link>
-
-              <Link to="/media" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <span className="material-symbols-outlined !text-[20px]">movie</span>
-                <span className="text-sm font-bold">الميديا والملخصات</span>
-              </Link>
-
-              <Link to="/fan-zone" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <span className="material-symbols-outlined !text-[20px] text-accent">forum</span>
-                <span className="text-sm font-black">منطقة الجماهير</span>
               </Link>
 
               <Link to="/live" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
@@ -121,21 +107,40 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                 <span className="text-sm font-bold">البث المباشر</span>
               </Link>
 
-              <Link to="/profile" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <span className="material-symbols-outlined !text-[20px]">person</span>
-                <span className="text-sm font-bold">حسابي</span>
+              <Link to="/fan-zone" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable border-b border-slate-100 dark:border-border-dark pb-6 mb-4">
+                <span className="material-symbols-outlined !text-[20px] text-accent">stadium</span>
+                <span className="text-sm font-black">منطقة الجماهير</span>
               </Link>
-              <div className="pt-4 pb-1 px-4 border-t border-slate-100 dark:border-border-dark mt-2">
-                 <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest">معلومات</p>
+
+              <div className="pt-2 pb-1 px-4">
+                 <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest">استكشف المزيد</p>
               </div>
+
+              <Link to="/library" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
+                <span className="material-symbols-outlined !text-[20px]">library_music</span>
+                <span className="text-sm font-bold">المكتبة الرقمية</span>
+              </Link>
+
+              <Link to="/media" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
+                <span className="material-symbols-outlined !text-[20px]">movie</span>
+                <span className="text-sm font-bold">الميديا والملخصات</span>
+              </Link>
+
               <Link to="/history" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable uppercase">
                 <span className="material-symbols-outlined !text-[20px]">history_edu</span>
                 <span className="text-sm font-bold">تاريخ النادي</span>
               </Link>
+
               <Link to="/store" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable uppercase">
                 <span className="material-symbols-outlined !text-[20px]">shopping_bag</span>
                 <span className="text-sm font-bold">متجر الجماهير</span>
               </Link>
+
+              <Link to="/profile" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
+                <span className="material-symbols-outlined !text-[20px]">person</span>
+                <span className="text-sm font-bold">حسابي</span>
+              </Link>
+
               <Link to="/bookmarks" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable uppercase">
                 <span className="material-symbols-outlined !text-[20px]">bookmark</span>
                 <span className="text-sm font-bold">محفوظاتي</span>
@@ -156,7 +161,11 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
 
             <div className="p-6 border-t border-slate-100 dark:border-border-dark">
               <div className="flex items-center justify-center p-4 rounded-2xl bg-slate-50 dark:bg-card-dark/50 border border-border-light dark:border-border-dark gap-3">
-                <img src={appSettings.appLogo} className="h-8 w-8 opacity-40 grayscale" alt="" referrerPolicy="no-referrer" />
+                {(appSettings.logoType || 'image') === 'image' ? (
+                  <img src={appSettings.appLogo} className="h-8 w-8 opacity-40 grayscale" alt="" referrerPolicy="no-referrer" />
+                ) : (
+                  <span className="text-xl font-black text-slate-400 opacity-60">{appSettings.logoText}</span>
+                )}
                 <div className="text-center">
                   <p className="text-[10px] font-bold text-slate-400">إصدار التطبيق 1.2.0</p>
                   <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter">{appSettings.appName}</p>

@@ -4,12 +4,22 @@ import { ar } from 'date-fns/locale';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
-import { Play, Image as ImageIcon, Video, Radio, Clock, Eye, X, ChevronRight, Calendar } from 'lucide-react';
+import { Play, Image as ImageIcon, Video, Radio, Clock, Eye, X, ChevronRight, Calendar, Download, Heart } from 'lucide-react';
 
 export default function Media() {
   const { media } = useAppStore();
   const [activeTab, setActiveTab] = useState<'all' | 'photo' | 'video'>('all');
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
+
+  const handleDownload = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const photos = media.filter(m => m.type === 'photo');
   const videos = media.filter(m => m.type === 'video');
@@ -54,7 +64,7 @@ export default function Media() {
   };
 
   return (
-    <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-24 px-0 bg-background-light dark:bg-background-dark min-h-screen">
+    <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-32 px-0 bg-background-light dark:bg-background-dark min-h-screen">
       <div className="sticky top-[65px] z-30 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl px-4 py-2 border-b border-border-light/40 dark:border-border-dark/40">
         <div className="flex gap-2 p-1 bg-slate-100 dark:bg-surface-dark rounded-2xl">
           {[
@@ -152,6 +162,7 @@ export default function Media() {
                   <motion.div 
                     key={item.id} 
                     whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedPhoto(item)}
                     className="group relative aspect-[4/5] rounded-[32px] overflow-hidden shadow-premium border border-border-light/40 dark:border-border-dark/40 cursor-pointer"
                   >
                     <img src={item.thumbnailUrl} alt={item.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
@@ -159,7 +170,7 @@ export default function Media() {
                     <div className="absolute top-3 right-3 w-8 h-8 rounded-2xl bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center">
                       <ImageIcon size={14} className="text-white" />
                     </div>
-                    <div className="absolute bottom-4 left-4 right-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                    <div className="absolute bottom-4 left-4 right-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300 text-right">
                       <p className="text-[10px] font-black text-white line-clamp-2 leading-tight uppercase tracking-tighter">
                         {item.title}
                       </p>
@@ -169,6 +180,51 @@ export default function Media() {
               </div>
             </motion.section>
           )}
+
+          {/* Featured Photo Modal */}
+          <AnimatePresence>
+            {selectedPhoto && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[110] flex items-center justify-center bg-black/95 backdrop-blur-2xl p-4"
+              >
+                <div className="relative w-full max-w-lg flex flex-col gap-6">
+                  <div className="flex items-center justify-between">
+                     <div className="flex flex-col text-right">
+                        <h2 className="text-white font-black text-lg line-clamp-1">{selectedPhoto.title}</h2>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Photo Gallery</span>
+                     </div>
+                     <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => handleDownload(selectedPhoto.thumbnailUrl, selectedPhoto.title)}
+                          className="px-4 py-2 bg-white/10 text-white rounded-xl font-black text-[10px] flex items-center gap-2 hover:bg-white/20 transition-all"
+                        >
+                          <Download size={16} />
+                          تحميل
+                        </button>
+                        <button 
+                         onClick={() => setSelectedPhoto(null)}
+                         className="p-3 bg-white/10 text-white hover:bg-red-500 rounded-2xl transition-all border border-white/10"
+                        >
+                         <X size={20} />
+                        </button>
+                     </div>
+                  </div>
+
+                  <div className="aspect-[4/5] w-full rounded-[40px] overflow-hidden bg-slate-900 shadow-2xl relative border border-white/10">
+                     <img 
+                       src={selectedPhoto.thumbnailUrl} 
+                       className="w-full h-full object-contain" 
+                       referrerPolicy="no-referrer"
+                       alt={selectedPhoto.title}
+                     />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Videos Feed Upgrade */}
           {(activeTab === 'all' || activeTab === 'video') && videos.length > 0 && (
@@ -242,12 +298,20 @@ export default function Media() {
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl"
           >
             <div className="relative w-full max-w-4xl aspect-video bg-black rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-white/10">
-              <button 
-                onClick={() => setSelectedVideo(null)}
-                className="absolute top-6 right-6 z-50 w-12 h-12 bg-black/40 hover:bg-red-500 backdrop-blur-xl text-white rounded-2xl flex items-center justify-center transition-all border border-white/10"
-              >
-                <X size={24} />
-              </button>
+              <div className="absolute top-6 right-6 z-50 flex gap-2">
+                <button 
+                  onClick={() => handleDownload(selectedVideo.url, selectedVideo.title)}
+                  className="w-12 h-12 bg-black/40 hover:bg-primary backdrop-blur-xl text-white rounded-2xl flex items-center justify-center transition-all border border-white/10"
+                >
+                  <Download size={20} />
+                </button>
+                <button 
+                  onClick={() => setSelectedVideo(null)}
+                  className="w-12 h-12 bg-black/40 hover:bg-red-500 backdrop-blur-xl text-white rounded-2xl flex items-center justify-center transition-all border border-white/10"
+                >
+                  <X size={24} />
+                </button>
+              </div>
 
               {isYoutube(selectedVideo.url) || selectedVideo.source === 'embed' ? (
                 <iframe 

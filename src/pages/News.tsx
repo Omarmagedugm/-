@@ -7,10 +7,10 @@ import { Rss, Search, SlidersHorizontal, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
 export default function News() {
-  const { news } = useAppStore();
+  const { news, newsCategories } = useAppStore();
   const [selectedCategory, setSelectedCategory] = useState('الكل');
   
-  const categories = ['الكل', 'كرة القدم', 'كرة السلة', 'الناشئين', 'النادي', 'أخبار'];
+  const categories = ['الكل', ...newsCategories];
 
   const filteredNews = selectedCategory === 'الكل' 
     ? news 
@@ -37,7 +37,7 @@ export default function News() {
   };
 
   return (
-    <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-24 px-0 bg-background-light dark:bg-background-dark min-h-screen">
+    <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-32 px-0 bg-background-light dark:bg-background-dark min-h-screen">
       <motion.main 
         variants={containerVariants}
         initial="hidden"

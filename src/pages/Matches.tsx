@@ -7,11 +7,12 @@ import { useState, useEffect } from 'react';
 import { ChevronRight, Calendar, Trophy, MapPin, Edit2, Play, Users, Send, Target, X } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, query, where, getDocs, doc, setDoc, onSnapshot } from 'firebase/firestore';
+import ScoreSelector from '../components/ScoreSelector';
 
 export default function Matches() {
   const { matches, profile } = useAppStore();
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<'all' | 'past' | 'upcoming'>('all');
+  const [selectedSport, setSelectedSport] = useState<'all' | 'football' | 'basketball'>('all');
   const [showPredictionsList, setShowPredictionsList] = useState<string | null>(null);
   const [matchPredictions, setMatchPredictions] = useState<any[]>([]);
   const [tick, setTick] = useState(0);
@@ -109,14 +110,32 @@ export default function Matches() {
   };
 
   const sortedMatches = [...matches].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  const newestMatch = matches.find(m => m.status === 'live') || matches.find(m => m.status === 'upcoming') || sortedMatches[0];
 
-  const filteredMatches = sortedMatches.filter(m => {
-    if (filter === 'all') return true;
-    if (filter === 'past') return m.status === 'finished';
-    if (filter === 'upcoming') return m.status === 'upcoming' || m.status === 'live';
-    return true;
-  });
+  const getNewestMatch = (sportMatches: any[]) => {
+    return sportMatches.find(m => m.status === 'live') || sportMatches.find(m => m.status === 'upcoming') || sportMatches[0];
+  };
+
+  const footballMatches = sortedMatches.filter(m => m.sport === 'football' || !m.sport);
+  const basketballMatches = sortedMatches.filter(m => m.sport === 'basketball');
+
+  const sportSections = [
+    { 
+      id: 'football', 
+      title: 'مباريات كرة القدم', 
+      subtitle: 'Football Matches', 
+      matches: footballMatches, 
+      newestMatch: getNewestMatch(footballMatches),
+      icon: <Trophy size={16} className="text-primary" /> 
+    },
+    { 
+      id: 'basketball', 
+      title: 'مباريات كرة السلة', 
+      subtitle: 'Basketball Matches', 
+      matches: basketballMatches, 
+      newestMatch: getNewestMatch(basketballMatches),
+      icon: <div className="text-[#ea580c]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-dribbble"><circle cx="12" cy="12" r="10"/><path d="M19.13 5.09C15.22 9.14 10 10.44 2.25 10.94"/><path d="M21.75 12.84c-6.62-1.41-12.14 1-16.38 6.32"/><path d="M8.56 2.75c4.37 6 6 9.42 8 17.72"/></svg></div> 
+    }
+  ].filter(section => selectedSport === 'all' || section.id === selectedSport);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -157,19 +176,19 @@ export default function Matches() {
   const lossRate = (seasonStats.losses / totalGames) * 100;
 
   return (
-    <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-24 px-0 bg-background-light dark:bg-background-dark min-h-screen">
-      <div className="sticky top-[65px] z-30 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl px-4 py-2 border-b border-border-light/40 dark:border-border-dark/40">
+    <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-32 px-0 bg-background-light dark:bg-background-dark min-h-screen">
+      <div className="sticky top-[65px] z-30 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl px-4 py-2 border-b border-border-light/40 dark:border-border-dark/40 flex flex-col gap-2">
         <div className="flex gap-2 p-1 bg-slate-100 dark:bg-surface-dark rounded-2xl">
           {[
             { id: 'all', label: 'الكل' },
-            { id: 'past', label: 'النتائج' },
-            { id: 'upcoming', label: 'القادمة' }
+            { id: 'football', label: 'كرة القدم' },
+            { id: 'basketball', label: 'كرة السلة' }
           ].map((tab) => (
             <button 
               key={tab.id}
-              onClick={() => setFilter(tab.id as any)}
-              className={`flex-1 py-2 rounded-xl text-[10px] font-black transition-all duration-300 ${
-                filter === tab.id 
+              onClick={() => setSelectedSport(tab.id as any)}
+              className={`flex-1 py-1.5 rounded-xl text-[10px] font-black transition-all duration-300 ${
+                selectedSport === tab.id 
                   ? 'bg-white dark:bg-primary text-primary-dark dark:text-white shadow-premium' 
                   : 'text-slate-500 hover:text-primary-dark dark:hover:text-white'
               }`}
@@ -181,246 +200,254 @@ export default function Matches() {
       </div>
 
       <motion.main 
-        key={filter}
+        key={selectedSport}
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         className="flex-1 overflow-x-hidden p-4 flex flex-col gap-8"
       >
-        {/* Featured Match Hero Upgrade */}
-        {newestMatch && filter === 'all' && (
-          <motion.section variants={itemVariants}>
-            <div className={`relative w-full rounded-[40px] overflow-hidden shadow-2xl stadium-gradient cinematic-glow border border-white/5`}>
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-overlay"></div>
-              
-              <div className="relative p-6">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-xl text-[9px] font-black text-white ring-1 ring-white/20 uppercase tracking-widest">
-                    <Trophy size={10} className="text-accent" />
-                    {newestMatch.competition}
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <div className="flex items-center gap-1.5 text-white/60 text-[9px] font-black uppercase tracking-tighter">
-                      <Calendar size={10} />
-                      {format(new Date(newestMatch.date), 'dd MMMM yyyy', { locale: ar })}
-                    </div>
+        {/* Matches Feed Upgrade */}
+        <motion.section variants={itemVariants} className="space-y-12">
+          {sportSections.map((section) => (
+            section.matches.length > 0 && (
+              <div key={section.id} className="space-y-6">
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex flex-col">
+                    <h2 className="text-lg font-black text-slate-800 dark:text-white leading-none uppercase flex items-center gap-2">
+                       {section.icon}
+                       {section.title}
+                    </h2>
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">{section.subtitle}</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 items-center gap-4 my-2">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-[28px] p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float">
-                      <img src={newestMatch.homeLogo} alt={newestMatch.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
-                    </div>
-                    <span className="text-white font-black text-[10px] text-center uppercase tracking-widest">{newestMatch.homeTeam}</span>
-                  </div>
+                {section.newestMatch && (
+                  <motion.div variants={itemVariants}>
+                    <div className={`relative w-full rounded-[40px] overflow-hidden shadow-2xl ${section.id === 'basketball' ? 'bg-gradient-to-br from-orange-600 via-orange-900 to-slate-900 border border-orange-500/30' : 'stadium-gradient border border-white/5'} cinematic-glow`}>
+                      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-overlay"></div>
+                      
+                      <div className="relative p-6">
+                        <div className="flex items-center justify-between mb-8">
+                          <div className="flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-xl text-[9px] font-black text-white ring-1 ring-white/20 uppercase tracking-widest">
+                            <Trophy size={10} className="text-accent" />
+                            {section.newestMatch.competition}
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <div className="flex items-center gap-1.5 text-white/60 text-[9px] font-black uppercase tracking-tighter">
+                              <Calendar size={10} />
+                              {format(new Date(section.newestMatch.date), 'dd MMMM yyyy', { locale: ar })}
+                            </div>
+                          </div>
+                        </div>
 
-                  <div className="flex flex-col items-center">
-                    <div className="text-5xl font-black text-white tracking-widest flex items-center gap-2 drop-shadow-[0_5px_15px_rgba(46,204,113,0.3)] tabular-nums">
-                      {newestMatch.status === 'upcoming' ? (
-                        <span className="text-2xl opacity-40 italic">VS</span>
-                      ) : (
-                        <>
-                          <span>{newestMatch.homeScore}</span>
-                          <span className="text-accent opacity-50">:</span>
-                          <span>{newestMatch.awayScore}</span>
-                        </>
-                      )}
-                    </div>
-                    {newestMatch.status === 'live' && (
-                       <div className="mt-4 flex flex-col items-center gap-2">
-                         <div className="flex items-center gap-1.5 px-3 py-1 bg-red-600 rounded-full animate-pulse shadow-glow">
-                            <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                            <span className="text-white text-[9px] font-black tracking-widest">بث مباشر</span>
-                         </div>
-                         <span className="text-white text-[10px] font-black tracking-widest mt-1">د {calculateCurrentMinute(newestMatch)}</span>
-                       </div>
-                    )}
-                  </div>
+                        <div className="grid grid-cols-3 items-center gap-4 my-2">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-[28px] p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float">
+                              <img src={section.newestMatch.homeLogo} alt={section.newestMatch.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
+                            </div>
+                            <span className="text-white font-black text-[10px] text-center uppercase tracking-widest">{section.newestMatch.homeTeam}</span>
+                          </div>
 
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-[28px] p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float [animation-delay:0.5s]">
-                      <img src={newestMatch.awayLogo} alt={newestMatch.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
-                    </div>
-                    <span className="text-white font-black text-[10px] text-center uppercase tracking-widest">{newestMatch.awayTeam}</span>
-                  </div>
-                </div>
+                          <div className="flex flex-col items-center">
+                            <div className={`font-black text-white tracking-widest flex items-center gap-2 tabular-nums ${String(section.newestMatch.homeScore).length > 2 || String(section.newestMatch.awayScore).length > 2 ? 'text-2xl sm:text-4xl' : 'text-5xl'} ${section.id === 'basketball' ? 'drop-shadow-[0_5px_15px_rgba(234,88,12,0.3)]' : 'drop-shadow-[0_5px_15px_rgba(46,204,113,0.3)]'}`}>
+                              {section.newestMatch.status === 'upcoming' ? (
+                                <span className="text-2xl opacity-40 italic">VS</span>
+                              ) : (
+                                <>
+                                  <span>{section.newestMatch.homeScore}</span>
+                                  <span className={`${section.id === 'basketball' ? 'text-orange-400' : 'text-accent'} opacity-50`}>:</span>
+                                  <span>{section.newestMatch.awayScore}</span>
+                                </>
+                              )}
+                            </div>
+                            {section.newestMatch.status === 'live' && (
+                               <div className="mt-4 flex flex-col items-center gap-2">
+                                 <div className="flex items-center gap-1.5 px-3 py-1 bg-red-600 rounded-full animate-pulse shadow-glow">
+                                    <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                                    <span className="text-white text-[9px] font-black tracking-widest">بث مباشر</span>
+                                 </div>
+                                 <span className="text-white text-[10px] font-black tracking-widest mt-1">د {calculateCurrentMinute(section.newestMatch)}</span>
+                               </div>
+                            )}
+                          </div>
 
-                <div className="mt-10 grid grid-cols-2 gap-4">
-                    <motion.button 
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => navigate(newestMatch.status === 'live' ? '/live' : '/news')}
-                      className="h-12 bg-white text-primary-dark font-black text-[11px] rounded-2xl flex items-center justify-center gap-2 shadow-2xl transition-all"
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-[28px] p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float [animation-delay:0.5s]">
+                              <img src={section.newestMatch.awayLogo} alt={section.newestMatch.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
+                            </div>
+                            <span className="text-white font-black text-[10px] text-center uppercase tracking-widest">{section.newestMatch.awayTeam}</span>
+                          </div>
+                        </div>
+
+                        <div className="mt-10 grid grid-cols-2 gap-4">
+                            <motion.button 
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => navigate(section.newestMatch.status === 'live' ? '/live' : '/news')}
+                              className="h-12 bg-white text-primary-dark font-black text-[11px] rounded-2xl flex items-center justify-center gap-2 shadow-2xl transition-all"
+                            >
+                                <span className="material-symbols-outlined font-variation-settings-fill !text-[20px]">
+                                  {section.newestMatch.status === 'live' ? 'sensors' : 'article'}
+                                </span>
+                                {section.newestMatch.status === 'live' ? 'دخول البث' : 'تغطية المباراة'}
+                            </motion.button>
+                            {(section.newestMatch.status === 'finished' || section.newestMatch.status === 'live') && (
+                              <motion.button 
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => navigate('/media')}
+                                className="h-12 bg-white/10 backdrop-blur-md text-white border border-white/20 font-black text-[11px] rounded-2xl flex items-center justify-center gap-2 transition-all"
+                              >
+                                  <Play size={16} fill="white" />
+                                  ملخص المباراة
+                              </motion.button>
+                            )}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                <div className="flex flex-col gap-5 pt-4">
+                  {section.matches.map((match) => (
+                    <motion.div 
+                      key={match.id} 
+                      className={`flex flex-col glass-card p-5 rounded-[32px] border shadow-premium overflow-hidden relative group transition-all duration-300 ${match.status === 'live' ? 'border-red-500/30' : 'hover:border-primary/40 text-slate-400'}`}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => navigate(match.status === 'live' ? '/live' : '/matches')}
                     >
-                        <span className="material-symbols-outlined font-variation-settings-fill !text-[20px]">
-                          {newestMatch.status === 'live' ? 'sensors' : 'article'}
-                        </span>
-                        {newestMatch.status === 'live' ? 'دخول البث' : 'تغطية المباراة'}
-                    </motion.button>
-                    {(newestMatch.status === 'finished' || newestMatch.status === 'live') && (
-                      <motion.button 
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => navigate('/media')}
-                        className="h-12 bg-white/10 backdrop-blur-md text-white border border-white/20 font-black text-[11px] rounded-2xl flex items-center justify-center gap-2 transition-all"
-                      >
-                          <Play size={16} fill="white" />
-                          ملخص المباراة
-                      </motion.button>
-                    )}
+                      {match.status === 'live' && (
+                        <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-red-500 to-orange-500 animate-pulse"></div>
+                      )}
+                      
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2 px-2 py-0.5 bg-slate-100 dark:bg-surface-dark rounded-lg text-[8px] font-black text-slate-500 uppercase tracking-tighter">
+                            <Trophy size={10} />
+                            {match.competition}
+                          </div>
+                          {match.isMatchDay && (
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-accent/20 text-accent rounded-lg text-[8px] font-black uppercase tracking-tighter ring-1 ring-accent/30">
+                              Match Day
+                            </div>
+                          )}
+                          {match.stadium && (
+                            <div className="flex items-center gap-1 text-[8px] font-bold text-slate-400">
+                              <MapPin size={8} />
+                              {match.stadium}
+                            </div>
+                          )}
+                        </div>
+                        <div className={`text-[9px] font-black px-2 py-1 rounded-lg ${
+                          match.status === 'live' ? 'bg-red-500 text-white animate-pulse' : 
+                          match.status === 'finished' ? 'bg-slate-100 dark:bg-surface-dark text-slate-400' : 
+                          'bg-primary/10 text-primary'
+                        }`}>
+                          {match.status === 'live' ? 'بث مباشر' : match.status === 'finished' ? 'انتهت' : 'قيد الانتظار'}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-[1fr_auto_1fr] sm:grid-cols-3 items-center gap-2">
+                        <div className="flex flex-col items-center gap-2 sm:gap-3 group/team">
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 sm:p-3 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center transition-transform group-hover/team:scale-110">
+                            <img src={match.homeLogo} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-md" />
+                          </div>
+                          <span className="text-[10px] sm:text-xs font-black text-slate-800 dark:text-white uppercase text-center">{match.homeTeam}</span>
+                        </div>
+
+                        <div className="flex flex-col items-center px-1 sm:px-0">
+                          <div className={`font-black text-slate-800 dark:text-white tabular-nums flex items-center gap-2 sm:gap-3 filter drop-shadow-md ${String(match.homeScore).length > 2 || String(match.awayScore).length > 2 ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-4xl'}`}>
+                            {match.status === 'upcoming' ? (
+                              <span className="text-xs sm:text-sm opacity-20 italic">VS</span>
+                            ) : (
+                              <>
+                                <span>{match.homeScore}</span>
+                                <span className={`opacity-20 text-sm sm:text-xl`}>-</span>
+                                <span>{match.awayScore}</span>
+                              </>
+                            )}
+                          </div>
+                          {match.status === 'live' && (
+                            <span className="text-[9px] sm:text-[10px] font-black text-red-500 mt-2">د {calculateCurrentMinute(match)}</span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col items-center gap-2 sm:gap-3 group/team">
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 sm:p-3 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center transition-transform group-hover/team:scale-110 [animation-delay:0.5s]">
+                            <img src={match.awayLogo} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-md" />
+                          </div>
+                          <span className="text-[10px] sm:text-xs font-black text-slate-800 dark:text-white uppercase text-center">{match.awayTeam}</span>
+                        </div>
+                      </div>
+                      <div className="mt-6 pt-4 border-t border-border-light/40 dark:border-border-dark/40 flex items-center justify-between">
+                         <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex h-6 px-3 items-center justify-center border border-slate-200 dark:border-slate-800 rounded-lg text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tighter">
+                              {format(new Date(match.date), 'EEEE, dd MMM', { locale: ar })}
+                            </div>
+                            {auth.currentUser && (
+                              <div className="flex items-center gap-2">
+                                {match.status === 'upcoming' && (
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPredictionMatchId(match.id);
+                                      const existing = userPredictions[match.id];
+                                      setHomePrediction(existing ? String(existing.homeScore) : '0');
+                                      setAwayPrediction(existing ? String(existing.awayScore) : '0');
+                                    }}
+                                    className={`h-6 px-3 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 transition-all ${userPredictions[match.id] ? 'bg-accent/20 text-accent border border-accent/30' : 'bg-primary/20 text-primary border border-primary/30 hover:bg-primary hover:text-white'}`}
+                                  >
+                                    <Target size={10} />
+                                    {userPredictions[match.id] ? 'تعديل التوقع' : 'توقع النتيجة'}
+                                  </button>
+                                )}
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowPredictionsList(match.id);
+                                  }}
+                                  className="h-6 px-3 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 transition-colors"
+                                >
+                                  <Users size={10} />
+                                  توقعات الجماهير
+                                </button>
+                              </div>
+                            )}
+                         </div>
+                         <div 
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             navigate(match.status === 'live' ? '/live' : '/news');
+                           }}
+                           className="h-8 px-4 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-[10px] font-black hover:bg-primary hover:text-white transition-all cursor-pointer"
+                         >
+                            عرض التغطية
+                            <ChevronRight size={12} strokeWidth={3} className="rotate-180 mr-1" />
+                         </div>
+                      </div>
+
+                      {profile?.role === 'admin' && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate('/admin', { state: { editCategory: 'matches', editId: match.id } });
+                          }}
+                          className="absolute top-4 right-4 p-2.5 bg-accent/10 text-accent rounded-2xl border border-accent/20 pressable opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                      )}
+                    </motion.div>
+                  ))}
                 </div>
               </div>
-            </div>
-          </motion.section>
-        )}
-
-        {/* Matches Feed Upgrade */}
-        <motion.section variants={itemVariants} className="space-y-6">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex flex-col">
-              <h2 className="text-lg font-black text-slate-800 dark:text-white leading-none uppercase">البث المباشر والمباريات</h2>
-              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Live & Scheduled Feed</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-5">
-            {filteredMatches.map((match) => (
-              <motion.div 
-                key={match.id} 
-                className={`flex flex-col glass-card p-5 rounded-[32px] border shadow-premium overflow-hidden relative group transition-all duration-300 ${match.status === 'live' ? 'border-red-500/30' : 'hover:border-primary/40 text-slate-400'}`}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => navigate(match.status === 'live' ? '/live' : '/matches')}
-              >
-                {match.status === 'live' && (
-                  <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-red-500 to-orange-500 animate-pulse"></div>
-                )}
-                
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 px-2 py-0.5 bg-slate-100 dark:bg-surface-dark rounded-lg text-[8px] font-black text-slate-500 uppercase tracking-tighter">
-                      <Trophy size={10} />
-                      {match.competition}
-                    </div>
-                    {match.isMatchDay && (
-                      <div className="flex items-center gap-1.5 px-2 py-0.5 bg-accent/20 text-accent rounded-lg text-[8px] font-black uppercase tracking-tighter ring-1 ring-accent/30">
-                        Match Day
-                      </div>
-                    )}
-                    {match.stadium && (
-                      <div className="flex items-center gap-1 text-[8px] font-bold text-slate-400">
-                        <MapPin size={8} />
-                        {match.stadium}
-                      </div>
-                    )}
-                  </div>
-                  <div className={`text-[9px] font-black px-2 py-1 rounded-lg ${
-                    match.status === 'live' ? 'bg-red-500 text-white animate-pulse' : 
-                    match.status === 'finished' ? 'bg-slate-100 dark:bg-surface-dark text-slate-400' : 
-                    'bg-primary/10 text-primary'
-                  }`}>
-                    {match.status === 'live' ? 'بث مباشر' : match.status === 'finished' ? 'انتهت' : 'قيد الانتظار'}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 items-center gap-2">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-12 h-12 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center">
-                      <img src={match.homeLogo} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
-                    </div>
-                    <span className="text-[10px] font-black text-slate-800 dark:text-white uppercase text-center line-clamp-1">{match.homeTeam}</span>
-                  </div>
-
-                  <div className="flex flex-col items-center">
-                    <div className="text-2xl font-black text-slate-800 dark:text-white tabular-nums flex items-center gap-2">
-                      {match.status === 'upcoming' ? (
-                        <span className="text-xs opacity-20 italic">VS</span>
-                      ) : (
-                        <>
-                          <span>{match.homeScore}</span>
-                          <span className="opacity-20">-</span>
-                          <span>{match.awayScore}</span>
-                        </>
-                      )}
-                    </div>
-                    {match.status === 'live' && (
-                      <span className="text-[9px] font-black text-red-500 mt-2">د {calculateCurrentMinute(match)}</span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-12 h-12 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center">
-                      <img src={match.awayLogo} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
-                    </div>
-                    <span className="text-[10px] font-black text-slate-800 dark:text-white uppercase text-center line-clamp-1">{match.awayTeam}</span>
-                  </div>
-                </div>
-                <div className="mt-6 pt-4 border-t border-border-light/40 dark:border-border-dark/40 flex items-center justify-between">
-                   <div className="flex flex-wrap items-center gap-2">
-                      <div className="flex h-6 px-3 items-center justify-center border border-slate-200 dark:border-slate-800 rounded-lg text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tighter">
-                        {format(new Date(match.date), 'EEEE, dd MMM', { locale: ar })}
-                      </div>
-                      {auth.currentUser && (
-                        <div className="flex items-center gap-2">
-                          {match.status === 'upcoming' && (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPredictionMatchId(match.id);
-                                const existing = userPredictions[match.id];
-                                setHomePrediction(existing ? String(existing.homeScore) : '0');
-                                setAwayPrediction(existing ? String(existing.awayScore) : '0');
-                              }}
-                              className={`h-6 px-3 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 transition-all ${userPredictions[match.id] ? 'bg-accent/20 text-accent border border-accent/30' : 'bg-primary/20 text-primary border border-primary/30 hover:bg-primary hover:text-white'}`}
-                            >
-                              <Target size={10} />
-                              {userPredictions[match.id] ? 'تعديل التوقع' : 'توقع النتيجة'}
-                            </button>
-                          )}
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowPredictionsList(match.id);
-                            }}
-                            className="h-6 px-3 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 transition-colors"
-                          >
-                            <Users size={10} />
-                            توقعات الجماهير
-                          </button>
-                        </div>
-                      )}
-                   </div>
-                   <div 
-                     onClick={(e) => {
-                       e.stopPropagation();
-                       navigate(match.status === 'live' ? '/live' : '/news');
-                     }}
-                     className="h-8 px-4 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-[10px] font-black hover:bg-primary hover:text-white transition-all cursor-pointer"
-                   >
-                      عرض التغطية
-                      <ChevronRight size={12} strokeWidth={3} className="rotate-180 mr-1" />
-                   </div>
-                </div>
-
-                {profile?.role === 'admin' && (
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate('/admin', { state: { editCategory: 'matches', editId: match.id } });
-                    }}
-                    className="absolute top-4 right-4 p-2.5 bg-accent/10 text-accent rounded-2xl border border-accent/20 pressable opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Edit2 size={14} />
-                  </button>
-                )}
-              </motion.div>
-            ))}
-            
-            {filteredMatches.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 glass-card rounded-[40px] border-dashed border-2 border-slate-200 dark:border-border-dark text-slate-400">
-                  <span className="material-symbols-outlined !text-4xl mb-4 opacity-20">sports_soccer</span>
-                  <span className="font-bold text-sm">لا توجد مواجهات مسجلة حالياً</span>
-                </div>
-            )}
-          </div>
+            )
+          ))}
+          
+          {sortedMatches.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 glass-card rounded-[40px] border-dashed border-2 border-slate-200 dark:border-border-dark text-slate-400">
+                <span className="material-symbols-outlined !text-4xl mb-4 opacity-20">sports_soccer</span>
+                <span className="font-bold text-sm">لا توجد مواجهات مسجلة حالياً</span>
+              </div>
+          )}
         </motion.section>
 
         {/* Season Statistics Upgrade */}
@@ -512,13 +539,12 @@ export default function Matches() {
                              <img src={match.homeLogo} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
                            </div>
                            <span className="text-[10px] font-black uppercase text-center w-20 line-clamp-1">{match.homeTeam}</span>
-                           <input 
-                              type="number" 
-                              min="0"
-                              value={homePrediction}
-                              onChange={(e) => setHomePrediction(e.target.value)}
-                              className="w-16 h-16 glass-card border-2 border-primary/20 rounded-2xl text-center text-2xl font-black focus:border-primary outline-none text-slate-800 dark:text-white"
-                           />
+                            <ScoreSelector 
+                               value={parseInt(homePrediction) || 0}
+                               onChange={(val) => setHomePrediction(String(val))}
+                               min={0}
+                               max={10}
+                            />
                         </div>
 
                         <div className="text-2xl font-black text-slate-300">VS</div>
@@ -528,13 +554,12 @@ export default function Matches() {
                              <img src={match.awayLogo} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
                            </div>
                            <span className="text-[10px] font-black uppercase text-center w-20 line-clamp-1">{match.awayTeam}</span>
-                           <input 
-                              type="number" 
-                              min="0"
-                              value={awayPrediction}
-                              onChange={(e) => setAwayPrediction(e.target.value)}
-                              className="w-16 h-16 glass-card border-2 border-primary/20 rounded-2xl text-center text-2xl font-black focus:border-primary outline-none text-slate-800 dark:text-white"
-                           />
+                            <ScoreSelector 
+                               value={parseInt(awayPrediction) || 0}
+                               onChange={(val) => setAwayPrediction(String(val))}
+                               min={0}
+                               max={10}
+                            />
                         </div>
                      </div>
 

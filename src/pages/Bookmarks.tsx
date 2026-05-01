@@ -40,7 +40,7 @@ export default function Bookmarks() {
   };
 
   return (
-    <div className="flex-1 w-full max-w-md mx-auto bg-background-light dark:bg-background-dark min-h-screen pb-24 text-right">
+    <div className="flex-1 w-full max-w-md mx-auto bg-background-light dark:bg-background-dark min-h-screen pb-32 text-right">
       <header className="sticky top-0 z-40 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">

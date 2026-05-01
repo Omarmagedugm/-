@@ -17,7 +17,9 @@ import {
   ShoppingBag,
   ShoppingCart,
   Music,
-  BookOpen
+  BookOpen,
+  CloudSun,
+  Bell
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -46,6 +48,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
       { id: 'orders', icon: <ShoppingCart size={18} />, label: 'المشتريات' },
       { id: 'media', icon: <PlayCircle size={18} />, label: 'المالتيميديا' },
       { id: 'matches', icon: <Trophy size={18} />, label: 'المباريات' },
+      { id: 'city', icon: <CloudSun size={18} />, label: 'طقس الإسكندرية' },
       { id: 'history', icon: <HistoryIcon size={18} />, label: 'تاريخ النادي' },
       { id: 'music', icon: <Music size={18} />, label: 'المكتبة الموسيقية' },
       { id: 'books', icon: <BookOpen size={18} />, label: 'الكتب والمجلات' },
@@ -61,6 +64,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
     { title: 'المستخدمين', items: [
       { id: 'users', icon: <UsersIcon size={18} />, label: 'إدارة الأعضاء' },
       { id: 'comments', icon: <MessageSquare size={18} />, label: 'تعليقات البث' },
+      { id: 'notifications', icon: <Bell size={18} />, label: 'إرسال إشعار' },
     ]},
     { title: 'البيانات', items: [
       { id: 'clubs', icon: <Shield size={18} />, label: 'قائمة الأندية' },

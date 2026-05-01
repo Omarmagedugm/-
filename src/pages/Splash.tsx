@@ -23,7 +23,7 @@ export default function Splash() {
             }
             navigate('/');
           } else {
-            navigate('/auth');
+            navigate('/');
           }
         });
       }, 2000);
@@ -49,20 +49,31 @@ export default function Splash() {
             className="flex flex-col items-center gap-6 z-10"
           >
             <div className="relative">
-              <motion.div 
-                animate={{ 
-                  boxShadow: ["0 0 0px rgba(255,255,255,0)", "0 0 40px rgba(255,255,255,0.4)", "0 0 0px rgba(255,255,255,0)"]
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-32 h-32 rounded-full overflow-hidden bg-white/10 backdrop-blur-md p-1 ring-4 ring-white/20"
-              >
-                <img src={appSettings.appLogo} alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-              </motion.div>
+              {(appSettings.logoType || 'image') === 'image' ? (
+                <motion.div 
+                  animate={{ 
+                    boxShadow: ["0 0 0px rgba(255,255,255,0)", "0 0 40px rgba(255,255,255,0.4)", "0 0 0px rgba(255,255,255,0)"]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="w-32 h-32 rounded-full overflow-hidden bg-white/10 backdrop-blur-md p-1 ring-4 ring-white/20"
+                >
+                  <img src={appSettings.appLogo} alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                </motion.div>
+              ) : (
+                <motion.div 
+                  animate={{ 
+                    boxShadow: ["0 0 0px rgba(255,255,255,0)", "0 0 40px rgba(255,255,255,0.4)", "0 0 0px rgba(255,255,255,0)"]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="w-32 h-32 rounded-full flex items-center justify-center bg-white/10 backdrop-blur-md p-1 ring-4 ring-white/20"
+                >
+                  <span className="text-3xl font-black text-white">{appSettings.logoText}</span>
+                </motion.div>
+              )}
             </div>
             
-            <div className="text-center">
+            <div className="text-center mt-6">
               <h1 className="text-4xl font-black text-white tracking-widest drop-shadow-2xl">{appSettings.appName}</h1>
-              <p className="text-white/60 font-bold tracking-[0.2em] mt-2 uppercase text-[10px]">Official Fan App</p>
             </div>
 
             <motion.div 

@@ -6,7 +6,7 @@ import { useAppStore } from '../store';
 export function useFirestoreSync() {
   const { 
     setNews, setMedia, setMatches, setClubs, setPolls, setPredictions, setFanPosts,
-    setUsers, setSettings, updateLiveStream, updateProfile, profile 
+    setUsers, setSettings, updateLiveStream, updateProfile, profile, setCityInfo 
   } = useAppStore();
 
   useEffect(() => {
@@ -63,6 +63,13 @@ export function useFirestoreSync() {
       }
     }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/global'));
 
+    // Sync News Categories
+    const unsubNewsCategories = onSnapshot(doc(db, 'settings', 'newsCategories'), (docSnap) => {
+      if (docSnap.exists()) {
+        useAppStore.getState().setNewsCategories(docSnap.data().list || []);
+      }
+    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/newsCategories'));
+
     // Sync Live Stream
     const unsubLive = onSnapshot(doc(db, 'settings', 'liveStream'), (docSnap) => {
       if (docSnap.exists()) {
@@ -75,7 +82,14 @@ export function useFirestoreSync() {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data && data.sections) {
-          useAppStore.getState().setHomeSections(data.sections);
+          const defaultSections = useAppStore.getState().homeSections;
+          const mergedSections = [...data.sections];
+          defaultSections.forEach(ds => {
+            if (!mergedSections.find((s: any) => s.id === ds.id)) {
+              mergedSections.push(ds);
+            }
+          });
+          useAppStore.getState().setHomeSections(mergedSections);
         }
       }
     }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/homeLayout'));
@@ -101,6 +115,18 @@ export function useFirestoreSync() {
       useAppStore.getState().setStadiums(items);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'club_stadiums'));
 
+    // Sync Products
+    const unsubProducts = onSnapshot(query(collection(db, 'products')), (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      useAppStore.getState().setProducts(items);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'products'));
+
+    // Sync Orders
+    const unsubOrders = onSnapshot(query(collection(db, 'orders'), orderBy('createdAt', 'desc')), (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      useAppStore.getState().setOrders(items);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'orders'));
+
     // Sync Songs
     const unsubSongs = onSnapshot(collection(db, 'songs'), (snapshot) => {
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
@@ -124,6 +150,15 @@ export function useFirestoreSync() {
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
       useAppStore.getState().setBooks(items);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'books'));
+
+    // Sync City Info
+    const unsubCityInfo = onSnapshot(doc(db, 'city_info', 'alexandria'), (docSnap) => {
+      if (docSnap.exists()) {
+        setCityInfo({ id: docSnap.id, ...docSnap.data() } as any);
+      } else {
+        setCityInfo(null);
+      }
+    }, (error) => handleFirestoreError(error, OperationType.GET, 'city_info/alexandria'));
 
     // Sync Current User Profile
     let unsubProfile = () => {};
@@ -171,18 +206,22 @@ export function useFirestoreSync() {
       unsubFanPosts();
       unsubMedia();
       unsubSettings();
+      unsubNewsCategories();
       unsubLive();
       unsubHomeLayout();
       unsubHistoryStats();
       unsubHistoryTitles();
       unsubHistoryTimeline();
       unsubHistoryStadiums();
+      unsubProducts();
+      unsubOrders();
       unsubSongs();
       unsubAlbums();
       unsubPlaylists();
       unsubBooks();
+      unsubCityInfo();
       unsubProfile();
       unsubUsers();
     };
-  }, [auth.currentUser?.uid, setNews, setMedia, setMatches, setClubs, setPolls, setPredictions, setFanPosts, setUsers, setSettings, updateLiveStream, updateProfile, profile.role]);
+  }, [auth.currentUser?.uid, setNews, setMedia, setMatches, setClubs, setPolls, setPredictions, setFanPosts, setUsers, setSettings, updateLiveStream, updateProfile, profile.role, setCityInfo]);
 }

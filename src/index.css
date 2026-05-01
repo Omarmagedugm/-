@@ -10,15 +10,15 @@
   --color-accent: #2ECC71;
   
   --color-background-light: #F8FAFC;
-  --color-background-dark: #04120E;
+  --color-background-dark: #072418;
   
-  --color-surface-dark: #0A1F19;
+  --color-surface-dark: #0A2E1F;
   --color-surface-light: #FFFFFF;
   
-  --color-card-dark: #0A1F19;
+  --color-card-dark: #0A2E1F;
   --color-card-light: #FFFFFF;
   
-  --color-border-dark: #122B23;
+  --color-border-dark: #0F422E;
   --color-border-light: #E2E8F0;
   
   --font-sans: "Alexandria", ui-sans-serif, system-ui, sans-serif;

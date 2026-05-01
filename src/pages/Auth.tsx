@@ -217,7 +217,11 @@ export default function Auth() {
       >
         <div className="flex flex-col items-center mb-10">
           <div className="relative mb-4">
-             <img src={appSettings.appLogo} alt="Logo" className="h-20 w-20 object-contain drop-shadow-xl" referrerPolicy="no-referrer" />
+             {(appSettings.logoType || 'image') === 'image' ? (
+                <img src={appSettings.appLogo} alt="Logo" className="h-20 w-20 object-contain drop-shadow-xl" referrerPolicy="no-referrer" />
+             ) : (
+                <h1 className="text-4xl font-black text-primary-dark drop-shadow-xl">{appSettings.logoText}</h1>
+             )}
              <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full -z-10"></div>
           </div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{appSettings.appName}</h1>
