@@ -16,6 +16,16 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' })
+          .then((registration) => {
+            console.log('Service Worker registered with scope:', registration.scope);
+          }).catch((err) => {
+            console.error('Service Worker registration failed:', err);
+          });
+      }
+    </script>
   </body>
 </html>
 
