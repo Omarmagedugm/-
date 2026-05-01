@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import ScrollToTop from './components/ScrollToTop';
 import { useAppStore } from './store';
 import { useFirestoreSync } from './hooks/useFirestore';
-import { auth } from './lib/firebase';
+import { auth, requestNotificationPermission } from './lib/firebase';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
 import News from './pages/News';
@@ -35,6 +35,12 @@ export default function App() {
       root.classList.remove('dark');
     }
   }, [theme]);
+
+  // Request notifications
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
 
   // Auth Redirection Logic
   return (

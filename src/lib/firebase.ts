@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import firebaseConfigJson from '../../firebase-applet-config.json';
 
 export enum OperationType {
@@ -80,6 +81,35 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
+
+// Initialize Cloud Messaging and get a reference to the service
+export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+
+export const requestNotificationPermission = async () => {
+  if (!messaging) return;
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      console.log('Notification permission granted.');
+      const currentToken = await getToken(messaging);
+      if (currentToken) {
+        console.log('FCM Token Generated:', currentToken);
+      } else {
+        console.log('No registration token available. Request permission to generate one.');
+      }
+    } else {
+      console.log('Unable to get permission to notify.');
+    }
+  } catch (err) {
+    console.log('An error occurred while retrieving token. ', err);
+  }
+};
+
+if (messaging) {
+  onMessage(messaging, (payload) => {
+    console.log('Message received. ', payload);
+  });
+}
 
 export const uploadImage = async (file: File, folder: string): Promise<string> => {
   const path = `${folder}/${Date.now()}_${file.name}`;
