@@ -1146,23 +1146,32 @@ export default function FanZone() {
                       animate={{ opacity: 1, x: 0 }}
                       className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}
                     >
-                      <img src={msg.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.userId}`} className="w-10 h-10 rounded-[14px] bg-slate-100 shadow-sm border border-border-light dark:border-border-dark shrink-0" alt="avatar" referrerPolicy="no-referrer" />
-                      <div className={`max-w-[80%] ${isOwn ? 'items-end text-left' : 'items-start text-right'} flex flex-col gap-1.5`}>
-                        <div className="flex items-center gap-2 px-1">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{msg.userName}</span>
-                          {(isOwn || isAdmin) && (
-                            <button 
-                              onClick={() => handleDeleteChatMessage(msg.id)}
-                              className="text-red-400 hover:text-red-500 transition-colors"
-                            >
-                              <Trash2 size={10} />
-                            </button>
-                          )}
-                        </div>
-                        <div className={`px-5 py-3 rounded-2xl text-[12px] font-bold leading-relaxed shadow-premium ${isOwn ? 'bg-primary text-white rounded-tl-[4px]' : 'glass-card text-slate-800 dark:text-white rounded-tr-[4px]'}`}>
-                          {msg.text}
-                        </div>
-                      </div>
+                      {(() => {
+                        const chatUser = users.find(u => u.uid === msg.userId);
+                        const chatAvatar = chatUser?.avatar || msg.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.userId}`;
+                        const chatName = chatUser?.name || msg.userName;
+                        return (
+                          <>
+                            <img src={chatAvatar} className="w-10 h-10 rounded-[14px] bg-slate-100 shadow-sm border border-border-light dark:border-border-dark shrink-0" alt="avatar" referrerPolicy="no-referrer" />
+                            <div className={`max-w-[80%] ${isOwn ? 'items-end text-left' : 'items-start text-right'} flex flex-col gap-1.5`}>
+                              <div className="flex items-center gap-2 px-1">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{chatName}</span>
+                                {(isOwn || isAdmin) && (
+                                  <button 
+                                    onClick={() => handleDeleteChatMessage(msg.id)}
+                                    className="text-red-400 hover:text-red-500 transition-colors"
+                                  >
+                                    <Trash2 size={10} />
+                                  </button>
+                                )}
+                              </div>
+                              <div className={`px-5 py-3 rounded-2xl text-[12px] font-bold leading-relaxed shadow-premium ${isOwn ? 'bg-primary text-white rounded-tl-[4px]' : 'glass-card text-slate-800 dark:text-white rounded-tr-[4px]'}`}>
+                                {msg.text}
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </motion.div>
                   );
                 }) : (

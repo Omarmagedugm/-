@@ -4,7 +4,6 @@ import ScrollToTop from './components/ScrollToTop';
 import { useAppStore } from './store';
 import { useFirestoreSync } from './hooks/useFirestore';
 import { auth } from './lib/firebase';
-import Splash from './pages/Splash';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
 import News from './pages/News';
@@ -52,7 +51,6 @@ export default function App() {
       <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display antialiased overflow-x-hidden transition-colors duration-200">
         <TopHeader />
         <Routes>
-          <Route path="/splash" element={<Splash />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Home />} />
           <Route path="/feed" element={<FanZone />} />
@@ -77,23 +75,12 @@ export default function App() {
 }
 
 function AuthRedirector() {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    // Guest browsing allowed, no automatic redirection except for splash
-    if (location.pathname === '/splash') {
-      const timer = setTimeout(() => navigate('/'), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [navigate, location.pathname]);
-
   return null;
 }
 
 function AppNav() {
   const location = useLocation();
-  const hideNavPaths = ['/splash', '/auth'];
+  const hideNavPaths = ['/auth'];
   const isSplashOrAuth = hideNavPaths.includes(location.pathname);
   if (isSplashOrAuth) return null;
   return <BottomNav />;

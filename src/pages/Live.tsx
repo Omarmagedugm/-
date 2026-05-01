@@ -18,7 +18,7 @@ interface Comment {
 }
 
 export default function Live() {
-  const { liveStream, profile } = useAppStore();
+  const { liveStream, profile, users } = useAppStore();
   const [chatMessage, setChatMessage] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
   const [isSending, setIsSending] = useState(false);
@@ -175,27 +175,32 @@ export default function Live() {
             ref={scrollRef}
             className="flex-1 overflow-y-auto no-scrollbar space-y-4 mb-4 min-h-[300px]"
           >
-            {comments.length > 0 ? comments.map((msg) => (
-              <div key={msg.id} className={`flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-                <div className="relative flex-shrink-0">
-                  {msg.userAvatar ? (
-                    <img src={msg.userAvatar} referrerPolicy="no-referrer" className="w-8 h-8 rounded-full border shadow-sm" alt="" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-surface-dark flex items-center justify-center text-slate-500 border border-border-light dark:border-border-dark">
-                      <User size={16} />
-                    </div>
-                  )}
-                  {msg.role === 'admin' && (
-                    <div className="absolute -bottom-1 -right-1 bg-primary text-white p-0.5 rounded-full border border-white">
-                      <ShieldCheck size={8} />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[11px] font-black ${msg.role === 'admin' ? 'text-primary' : 'text-slate-700 dark:text-slate-300'}`}>{msg.userName}</span>
-                      <span className="text-[9px] text-slate-400 font-bold">
+            {comments.length > 0 ? comments.map((msg) => {
+              const chatUser = users.find(u => u.uid === msg.userId);
+              const chatAvatar = chatUser?.avatar || msg.userAvatar;
+              const chatName = chatUser?.name || msg.userName;
+              const isMsgAdmin = msg.role === 'admin' || chatUser?.role === 'admin';
+              return (
+                <div key={msg.id} className={`flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                  <div className="relative flex-shrink-0">
+                    {chatAvatar ? (
+                      <img src={chatAvatar} referrerPolicy="no-referrer" className="w-8 h-8 rounded-full border shadow-sm" alt="" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-surface-dark flex items-center justify-center text-slate-500 border border-border-light dark:border-border-dark">
+                        <User size={16} />
+                      </div>
+                    )}
+                    {isMsgAdmin && (
+                      <div className="absolute -bottom-1 -right-1 bg-primary text-white p-0.5 rounded-full border border-white">
+                        <ShieldCheck size={8} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[11px] font-black ${isMsgAdmin ? 'text-primary' : 'text-slate-700 dark:text-slate-300'}`}>{chatName}</span>
+                        <span className="text-[9px] text-slate-400 font-bold">
                         {msg.createdAt && formatDistanceToNow(msg.createdAt.toDate(), { locale: ar, addSuffix: true })}
                       </span>
                     </div>
@@ -210,7 +215,7 @@ export default function Live() {
                   </div>
                 </div>
               </div>
-            )) : (
+            ); }) : (
               <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 space-y-2">
                  <span className="material-symbols-outlined text-4xl opacity-50">forum</span>
                  <p className="text-xs font-bold">لا توجد تعليقات بعد.. كن أول من يعلق!</p>

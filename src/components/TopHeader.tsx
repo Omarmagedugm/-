@@ -50,7 +50,7 @@ export default function TopHeader() {
     return () => unsubscribe();
   }, [profile?.uid]);
 
-  const hideHeaderPaths = ['/splash', '/auth'];
+  const hideHeaderPaths = ['/auth'];
   if (hideHeaderPaths.includes(location.pathname)) return null;
 
   const isHome = location.pathname === '/';
