@@ -1666,22 +1666,22 @@ export default function FanZone() {
                 {nextMatch ? (
                   <div className="stadium-gradient rounded-[32px] p-6 text-white mb-8 shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 blur-3xl rounded-full"></div>
-                    <div className="flex items-center justify-between gap-4 relative z-10">
+                    <div className="flex items-center justify-between gap-2 relative z-10">
                       <div className="flex flex-col items-center flex-1">
-                        <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-3 backdrop-blur-md border border-white/20">
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-2 sm:mb-3 backdrop-blur-md border border-white/20">
                           <img src={nextMatch.homeLogo} className="w-10 h-10 object-contain" alt="home" referrerPolicy="no-referrer" />
                         </div>
-                        <span className="text-xs font-black text-center">{nextMatch.homeTeam}</span>
+                        <span className="text-[10px] sm:text-xs font-black text-center line-clamp-1">{nextMatch.homeTeam}</span>
                       </div>
 
-                      <div className="flex flex-col items-center gap-2 flex-1">
-                        <div className={`font-black tracking-tighter tabular-nums drop-shadow-lg ${String(nextMatch.homeScore).length > 2 || String(nextMatch.awayScore).length > 2 ? 'text-xl' : 'text-3xl'}`}>
+                      <div className="flex flex-col items-center gap-2 flex-shrink-0 px-2 sm:px-4">
+                        <div className={`font-black tracking-tighter tabular-nums drop-shadow-lg ${String(nextMatch.homeScore).length > 2 || String(nextMatch.awayScore).length > 2 ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'}`}>
                           {nextMatch.status === 'upcoming' ? '-- : --' : `${nextMatch.homeScore} - ${nextMatch.awayScore}`}
                         </div>
                         {nextMatch.status === 'live' && (
-                          <div className="flex items-center gap-2 px-3 py-1 bg-red-500 rounded-full shadow-glow">
-                             <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                             <span className="text-[10px] font-black tabular-nums">LIVE {calculateCurrentMinute(nextMatch)}'</span>
+                          <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 bg-red-500 rounded-full shadow-glow">
+                             <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-pulse" />
+                             <span className="text-[8px] sm:text-[10px] font-black tabular-nums">LIVE {calculateCurrentMinute(nextMatch)}'</span>
                           </div>
                         )}
                         {nextMatch.status === 'upcoming' && (
@@ -1690,10 +1690,10 @@ export default function FanZone() {
                       </div>
 
                       <div className="flex flex-col items-center flex-1">
-                        <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-3 backdrop-blur-md border border-white/20">
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-2 sm:mb-3 backdrop-blur-md border border-white/20">
                           <img src={nextMatch.awayLogo} className="w-10 h-10 object-contain" alt="away" referrerPolicy="no-referrer" />
                         </div>
-                        <span className="text-xs font-black text-center">{nextMatch.awayTeam}</span>
+                        <span className="text-[10px] sm:text-xs font-black text-center line-clamp-1">{nextMatch.awayTeam}</span>
                       </div>
                     </div>
                   </div>

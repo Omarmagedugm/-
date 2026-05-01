@@ -240,16 +240,16 @@ export default function Matches() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 items-center gap-4 my-2">
-                          <div className="flex flex-col items-center gap-4">
-                            <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-[28px] p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float">
+                        <div className="flex justify-between items-center gap-2 sm:gap-4 my-2">
+                          <div className="flex flex-col items-center gap-2 sm:gap-4 flex-1">
+                            <div className="w-14 h-14 sm:w-20 sm:h-20 bg-white/10 backdrop-blur-xl rounded-[20px] sm:rounded-[28px] p-2.5 sm:p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float">
                               <img src={section.newestMatch.homeLogo} alt={section.newestMatch.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
                             </div>
-                            <span className="text-white font-black text-[10px] text-center uppercase tracking-widest">{section.newestMatch.homeTeam}</span>
+                            <span className="text-white font-black text-[9px] sm:text-[10px] text-center uppercase tracking-widest line-clamp-2">{section.newestMatch.homeTeam}</span>
                           </div>
 
-                          <div className="flex flex-col items-center">
-                            <div className={`font-black text-white tracking-widest flex items-center gap-2 tabular-nums ${String(section.newestMatch.homeScore).length > 2 || String(section.newestMatch.awayScore).length > 2 ? 'text-2xl sm:text-4xl' : 'text-5xl'} ${section.id === 'basketball' ? 'drop-shadow-[0_5px_15px_rgba(234,88,12,0.3)]' : 'drop-shadow-[0_5px_15px_rgba(46,204,113,0.3)]'}`}>
+                          <div className="flex flex-col items-center flex-shrink-0 px-2 sm:px-4">
+                            <div className={`font-black text-white tracking-widest flex items-center justify-center gap-1 sm:gap-2 tabular-nums ${String(section.newestMatch.homeScore).length > 2 || String(section.newestMatch.awayScore).length > 2 ? 'text-2xl sm:text-4xl' : 'text-4xl sm:text-5xl'} ${section.id === 'basketball' ? 'drop-shadow-[0_5px_15px_rgba(234,88,12,0.3)]' : 'drop-shadow-[0_5px_15px_rgba(46,204,113,0.3)]'}`}>
                               {section.newestMatch.status === 'upcoming' ? (
                                 <span className="text-2xl opacity-40 italic">VS</span>
                               ) : (
@@ -271,11 +271,11 @@ export default function Matches() {
                             )}
                           </div>
 
-                          <div className="flex flex-col items-center gap-4">
-                            <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-[28px] p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float [animation-delay:0.5s]">
+                          <div className="flex flex-col items-center gap-2 sm:gap-4 flex-1">
+                            <div className="w-14 h-14 sm:w-20 sm:h-20 bg-white/10 backdrop-blur-xl rounded-[20px] sm:rounded-[28px] p-2.5 sm:p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float [animation-delay:0.5s]">
                               <img src={section.newestMatch.awayLogo} alt={section.newestMatch.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
                             </div>
-                            <span className="text-white font-black text-[10px] text-center uppercase tracking-widest">{section.newestMatch.awayTeam}</span>
+                            <span className="text-white font-black text-[9px] sm:text-[10px] text-center uppercase tracking-widest line-clamp-2">{section.newestMatch.awayTeam}</span>
                           </div>
                         </div>
 
@@ -345,16 +345,16 @@ export default function Matches() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-[1fr_auto_1fr] sm:grid-cols-3 items-center gap-2">
-                        <div className="flex flex-col items-center gap-2 sm:gap-3 group/team">
+                      <div className="flex justify-between items-center gap-2 sm:gap-4">
+                        <div className="flex flex-col items-center gap-2 sm:gap-3 flex-1 group/team">
                           <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 sm:p-3 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center transition-transform group-hover/team:scale-110">
                             <img src={match.homeLogo} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-md" />
                           </div>
-                          <span className="text-[10px] sm:text-xs font-black text-slate-800 dark:text-white uppercase text-center">{match.homeTeam}</span>
+                          <span className="text-[10px] sm:text-xs font-black text-slate-800 dark:text-white uppercase text-center line-clamp-1">{match.homeTeam}</span>
                         </div>
 
-                        <div className="flex flex-col items-center px-1 sm:px-0">
-                          <div className={`font-black text-slate-800 dark:text-white tabular-nums flex items-center gap-2 sm:gap-3 filter drop-shadow-md ${String(match.homeScore).length > 2 || String(match.awayScore).length > 2 ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-4xl'}`}>
+                        <div className="flex flex-col items-center flex-shrink-0 px-2 sm:px-4">
+                          <div className={`font-black text-slate-800 dark:text-white tabular-nums flex items-center justify-center gap-1 sm:gap-3 filter drop-shadow-md ${String(match.homeScore).length > 2 || String(match.awayScore).length > 2 ? 'text-lg sm:text-2xl' : 'text-2xl sm:text-4xl'}`}>
                             {match.status === 'upcoming' ? (
                               <span className="text-xs sm:text-sm opacity-20 italic">VS</span>
                             ) : (
@@ -370,11 +370,11 @@ export default function Matches() {
                           )}
                         </div>
 
-                        <div className="flex flex-col items-center gap-2 sm:gap-3 group/team">
+                        <div className="flex flex-col items-center gap-2 sm:gap-3 flex-1 group/team">
                           <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 sm:p-3 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center transition-transform group-hover/team:scale-110 [animation-delay:0.5s]">
                             <img src={match.awayLogo} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-md" />
                           </div>
-                          <span className="text-[10px] sm:text-xs font-black text-slate-800 dark:text-white uppercase text-center">{match.awayTeam}</span>
+                          <span className="text-[10px] sm:text-xs font-black text-slate-800 dark:text-white uppercase text-center line-clamp-1">{match.awayTeam}</span>
                         </div>
                       </div>
                       <div className="mt-6 pt-4 border-t border-border-light/40 dark:border-border-dark/40 flex items-center justify-between">

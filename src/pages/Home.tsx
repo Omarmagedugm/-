@@ -171,20 +171,20 @@ export default function Home() {
                    </div>
                   </div>
                   
-                  <div className="grid grid-cols-[1fr_auto_1fr] md:grid-cols-3 items-center gap-2 sm:gap-4 py-4">
-                    <div className="flex flex-col items-center gap-2 sm:gap-4 group/team">
-                      <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl sm:rounded-[28px] bg-white/10 p-2 sm:p-3 ring-1 ring-white/20 backdrop-blur-xl shadow-premium animate-float group-hover/team:scale-110 transition-transform duration-500">
+                  <div className="flex justify-between items-center gap-1 sm:gap-4 py-4">
+                    <div className="flex flex-col items-center gap-2 sm:gap-4 flex-1 group/team">
+                      <div className="relative flex h-14 w-14 sm:h-20 sm:w-20 items-center justify-center rounded-[20px] sm:rounded-[28px] bg-white/10 p-2 sm:p-3 ring-1 ring-white/20 backdrop-blur-xl shadow-premium animate-float group-hover/team:scale-110 transition-transform duration-500">
                         <img alt={heroMatch.homeTeam} className="w-full h-full object-contain filter drop-shadow-2xl" src={heroMatch.homeLogo} referrerPolicy="no-referrer" />
                       </div>
-                      <span className="text-center text-[9px] sm:text-[10px] font-black text-white uppercase tracking-wider">{heroMatch.homeTeam}</span>
+                      <span className="text-center text-[9px] sm:text-[10px] font-black text-white uppercase tracking-wider line-clamp-2">{heroMatch.homeTeam}</span>
                     </div>
                     
-                    <div className="flex flex-col items-center px-1 sm:px-0">
-                      <div className={`font-black text-white tracking-widest tabular-nums filter ${String(heroMatch.homeScore).length > 2 || String(heroMatch.awayScore).length > 2 ? 'text-2xl sm:text-4xl' : 'text-4xl sm:text-5xl'} ${selectedSport === 'basketball' ? 'drop-shadow-[0_5px_15px_rgba(234,88,12,0.3)]' : 'drop-shadow-[0_5px_15px_rgba(46,204,113,0.3)]'}`}>
+                    <div className="flex flex-col items-center px-2 flex-shrink-0">
+                      <div className={`font-black text-white tracking-widest tabular-nums filter ${String(heroMatch.homeScore).length > 2 || String(heroMatch.awayScore).length > 2 ? 'text-2xl sm:text-4xl' : 'text-3xl sm:text-5xl'} ${selectedSport === 'basketball' ? 'drop-shadow-[0_5px_15px_rgba(234,88,12,0.3)]' : 'drop-shadow-[0_5px_15px_rgba(46,204,113,0.3)]'}`}>
                         {heroMatch.status === 'upcoming' ? (
                           <div className="text-xl sm:text-2xl opacity-60">VS</div>
                         ) : (
-                          <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="flex items-center justify-center gap-1 sm:gap-3">
                             <span>{heroMatch.homeScore}</span>
                             <span className={selectedSport === 'basketball' ? 'text-orange-400' : 'text-accent'}>:</span>
                             <span>{heroMatch.awayScore}</span>
@@ -213,11 +213,11 @@ export default function Home() {
                       </div>
                     </div>
                     
-                    <div className="flex flex-col items-center gap-2 sm:gap-4 group/team">
-                      <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl sm:rounded-[28px] bg-white/10 p-2 sm:p-3 ring-1 ring-white/20 backdrop-blur-xl shadow-premium animate-float [animation-delay:0.5s] group-hover/team:scale-110 transition-transform duration-500">
+                    <div className="flex flex-col items-center gap-2 sm:gap-4 flex-1 group/team">
+                      <div className="relative flex h-14 w-14 sm:h-20 sm:w-20 items-center justify-center rounded-[20px] sm:rounded-[28px] bg-white/10 p-2 sm:p-3 ring-1 ring-white/20 backdrop-blur-xl shadow-premium animate-float [animation-delay:0.5s] group-hover/team:scale-110 transition-transform duration-500">
                         <img alt={heroMatch.awayTeam} className="w-full h-full object-contain filter drop-shadow-2xl" src={heroMatch.awayLogo} referrerPolicy="no-referrer" />
                       </div>
-                      <span className="text-center text-[9px] sm:text-[10px] font-black text-white uppercase tracking-wider">{heroMatch.awayTeam}</span>
+                      <span className="text-center text-[9px] sm:text-[10px] font-black text-white uppercase tracking-wider line-clamp-2">{heroMatch.awayTeam}</span>
                     </div>
                   </div>
                   
