@@ -18,13 +18,21 @@
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "b243371a-35ab-4762-b1b7-dab279ee0d8c",
-          safari_web_id: "web.onesignal.auto.6a13c381-7602-4e1d-b2a0-1098f769d9cc",
-          notifyButton: {
-            enable: true,
-          },
-        });
+        if (window.location.hostname.includes('itthadalextv.com')) {
+          try {
+            await OneSignal.init({
+              appId: "b243371a-35ab-4762-b1b7-dab279ee0d8c",
+              safari_web_id: "web.onesignal.auto.6a13c381-7602-4e1d-b2a0-1098f769d9cc",
+              notifyButton: {
+                enable: true,
+              },
+            });
+          } catch (e) {
+            console.warn("OneSignal failed to initialize:", e);
+          }
+        } else {
+          console.log("OneSignal skipped: Not running on itthadalextv.com");
+        }
       });
     </script>
   </head>
