@@ -18,9 +18,15 @@
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "b243371a-35ab-4762-b1b7-dab279ee0d8c",
-        });
+        try {
+          if (window.location.hostname.includes('itthadalextv.com') || window.location.hostname === 'localhost') {
+            await OneSignal.init({
+              appId: "b243371a-35ab-4762-b1b7-dab279ee0d8c",
+            });
+          }
+        } catch (error) {
+          console.warn("OneSignal initialization skipped/failed:", error);
+        }
       });
     </script>
   </head>
