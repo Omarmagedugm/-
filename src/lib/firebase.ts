@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import firebaseConfigJson from '../../firebase-applet-config.json';
 
 export enum OperationType {
@@ -83,17 +83,54 @@ export const auth = getAuth(app);
 export const storage = getStorage(app);
 
 // Initialize Cloud Messaging and get a reference to the service
-export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+// We wrap this in a safe check because some browsers/environments don't support FCM
+let messagingInstance: any = null;
+
+const initializeMessaging = async () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const supported = await isSupported();
+    if (supported) {
+      messagingInstance = getMessaging(app);
+      
+      // Set up onMessage listener once initialized
+      onMessage(messagingInstance, (payload) => {
+        console.log('Message received. ', payload);
+        const title = payload.notification?.title || 'إشعار جديد';
+        const body = payload.notification?.body || '';
+        
+        // Broadcast via custom event so the UI can show a toast
+        const event = new CustomEvent('fcm-message', { detail: { title, body, payload } });
+        window.dispatchEvent(event);
+      });
+      
+      return messagingInstance;
+    }
+  } catch (e) {
+    console.warn("Firebase Messaging initialization failed:", e);
+  }
+  return null;
+};
+
+// Start initialization
+initializeMessaging();
+
+export const messaging = messagingInstance;
 
 export const requestNotificationPermission = async () => {
-  if (!messaging) return;
+  const activeMessaging = messagingInstance || await initializeMessaging();
+  if (!activeMessaging) {
+    console.log('Messaging not supported in this environment.');
+    return;
+  }
+  
   try {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
       console.log('Notification permission granted.');
       
       const registration = await navigator.serviceWorker.ready;
-      const currentToken = await getToken(messaging, { 
+      const currentToken = await getToken(activeMessaging, { 
         vapidKey: 'BLpfNtPFcOkDCoXJ0F_vmM3RmtPtWy24cGby0tw-XL2EeZz3xxa_2DXYjS8uw_dRSsZIrcq-05Rv68nTJbJgrzg',
         serviceWorkerRegistration: registration 
       });
@@ -123,19 +160,14 @@ export const requestNotificationPermission = async () => {
   }
 };
 
+// This is now handled inside initializeMessaging
+/*
 if (messaging) {
   onMessage(messaging, (payload) => {
-    console.log('Message received. ', payload);
-    const title = payload.notification?.title || 'إشعار جديد';
-    const body = payload.notification?.body || '';
-    
-    // Broadcast via custom event so the UI can show a toast
-    if (typeof window !== 'undefined') {
-      const event = new CustomEvent('fcm-message', { detail: { title, body, payload } });
-      window.dispatchEvent(event);
-    }
+    ...
   });
 }
+*/
 
 export const uploadImage = async (file: File, folder: string): Promise<string> => {
   const path = `${folder}/${Date.now()}_${file.name}`;

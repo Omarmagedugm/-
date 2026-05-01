@@ -1301,78 +1301,122 @@ export default function FanZone() {
                           </div>
                           
                           <div className="flex items-center justify-center gap-8 w-full">
-                             <div className="flex flex-col items-center gap-2 w-24">
-                               <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 relative group-hover:border-primary/50 transition-colors">
-                                 <img src={match.homeLogo} className="w-8 h-8 object-contain" alt="home" referrerPolicy="no-referrer" />
-                                 {predictions.filter(p => p.matchId === match.id).length > 0 && (
-                                   <div className="absolute -top-2 -right-2 bg-primary text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
-                                     {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.homeScore) > Number(p.awayScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
-                                   </div>
-                                 )}
-                               </div>
-                               <span className="text-[10px] font-black uppercase text-center line-clamp-1">{match.homeTeam}</span>
-                               <button 
-                                 onClick={() => setSelectedPrediction({ matchId: match.id, home: 1, away: 0 })}
-                                 className={`px-3 py-1 rounded-full text-[8px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home > selectedPrediction.away ? 'bg-primary text-white scale-110 shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-primary/20'}`}
-                               >
-                                 توقع الفوز
-                               </button>
-                             </div>
-                             <div className="flex items-center gap-3">
-                               <ScoreSelector 
-                                 value={selectedPrediction?.matchId === match.id ? selectedPrediction.home : 0}
-                                 onChange={(val) => setSelectedPrediction({ 
-                                   matchId: match.id, 
-                                   home: val, 
-                                   away: selectedPrediction?.matchId === match.id ? selectedPrediction.away : 0 
-                                 })}
-                                 min={0}
-                                 max={10}
-                               />
-                               <div className="flex flex-col items-center gap-1 mt-10">
-                                 <div className="relative">
-                                    <span className="text-slate-300 font-black">VS</span>
-                                    {predictions.filter(p => p.matchId === match.id).length > 0 && (
-                                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-slate-400 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full">
-                                        {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.homeScore) === Number(p.awayScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
-                                      </div>
-                                    )}
-                                 </div>
+                             {match.sport === 'basketball' ? (
+                               <div className="flex items-center gap-4 w-full">
                                  <button 
-                                   onClick={() => setSelectedPrediction({ matchId: match.id, home: 1, away: 1 })}
-                                   className={`px-2 py-0.5 rounded-full text-[7px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home === selectedPrediction.away && selectedPrediction.home > 0 ? 'bg-slate-400 text-white scale-110' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}
+                                   onClick={() => setSelectedPrediction({ matchId: match.id, home: 1, away: 0 })}
+                                   className={`flex-1 flex flex-col items-center gap-3 p-6 rounded-[32px] border-2 transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home > selectedPrediction.away ? 'bg-orange-500 border-orange-400 text-white shadow-lg scale-105' : 'bg-white dark:bg-surface-dark border-border-light dark:border-border-dark text-slate-500 hover:border-orange-500/50'}`}
                                  >
-                                   تعادل
+                                   <div className="relative w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center p-2 mb-1">
+                                      <img src={match.homeLogo} className="w-full h-full object-contain" alt="home" referrerPolicy="no-referrer" />
+                                      {predictions.filter(p => p.matchId === match.id).length > 0 && (
+                                        <div className="absolute -top-2 -right-2 bg-orange-600 text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg border border-white/20">
+                                          {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.homeScore) > Number(p.awayScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
+                                        </div>
+                                      )}
+                                   </div>
+                                   <span className="text-xs font-black uppercase text-center line-clamp-1">{match.homeTeam}</span>
+                                   <div className="px-4 py-1.5 rounded-full bg-black/10 text-[9px] font-black">توقع الفوز</div>
+                                 </button>
+
+                                 <div className="flex flex-col items-center gap-2">
+                                   <div className="h-10 w-[1px] bg-border-light dark:bg-border-dark" />
+                                   <span className="text-[10px] font-black text-slate-300">VS</span>
+                                   <div className="h-10 w-[1px] bg-border-light dark:bg-border-dark" />
+                                 </div>
+
+                                 <button 
+                                   onClick={() => setSelectedPrediction({ matchId: match.id, home: 0, away: 1 })}
+                                   className={`flex-1 flex flex-col items-center gap-3 p-6 rounded-[32px] border-2 transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.away > selectedPrediction.home ? 'bg-orange-500 border-orange-400 text-white shadow-lg scale-105' : 'bg-white dark:bg-surface-dark border-border-light dark:border-border-dark text-slate-500 hover:border-orange-500/50'}`}
+                                 >
+                                   <div className="relative w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center p-2 mb-1">
+                                      <img src={match.awayLogo} className="w-full h-full object-contain" alt="away" referrerPolicy="no-referrer" />
+                                      {predictions.filter(p => p.matchId === match.id).length > 0 && (
+                                        <div className="absolute -top-2 -left-2 bg-orange-600 text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg border border-white/20">
+                                          {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.awayScore) > Number(p.homeScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
+                                        </div>
+                                      )}
+                                   </div>
+                                   <span className="text-xs font-black uppercase text-center line-clamp-1">{match.awayTeam}</span>
+                                   <div className="px-4 py-1.5 rounded-full bg-black/10 text-[9px] font-black">توقع الفوز</div>
                                  </button>
                                </div>
-                               <ScoreSelector 
-                                 value={selectedPrediction?.matchId === match.id ? selectedPrediction.away : 0}
-                                 onChange={(val) => setSelectedPrediction({ 
-                                   matchId: match.id, 
-                                   home: selectedPrediction?.matchId === match.id ? selectedPrediction.home : 0, 
-                                   away: val 
-                                 })}
-                                 min={0}
-                                 max={10}
-                               />
-                             </div>
-                             <div className="flex flex-col items-center gap-2 w-24">
-                               <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 relative group-hover:border-accent/50 transition-colors">
-                                 <img src={match.awayLogo} className="w-8 h-8 object-contain" alt="away" referrerPolicy="no-referrer" />
-                                 {predictions.filter(p => p.matchId === match.id).length > 0 && (
-                                   <div className="absolute -top-2 -left-2 bg-accent text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
-                                     {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.awayScore) > Number(p.homeScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
+                             ) : (
+                               <>
+                                 <div className="flex flex-col items-center gap-2 w-24">
+                                   <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 relative group-hover:border-primary/50 transition-colors">
+                                     <img src={match.homeLogo} className="w-8 h-8 object-contain" alt="home" referrerPolicy="no-referrer" />
+                                     {predictions.filter(p => p.matchId === match.id).length > 0 && (
+                                       <div className="absolute -top-2 -right-2 bg-primary text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
+                                         {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.homeScore) > Number(p.awayScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
+                                       </div>
+                                     )}
                                    </div>
-                                 )}
-                               </div>
-                               <span className="text-[10px] font-black uppercase text-center line-clamp-1">{match.awayTeam}</span>
-                               <button 
-                                 onClick={() => setSelectedPrediction({ matchId: match.id, home: 0, away: 1 })}
-                                 className={`px-3 py-1 rounded-full text-[8px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.away > selectedPrediction.home ? 'bg-accent text-white scale-110 shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-accent/20'}`}
-                               >
-                                 توقع الفوز
-                               </button>
-                             </div>
+                                   <span className="text-[10px] font-black uppercase text-center line-clamp-1">{match.homeTeam}</span>
+                                   <button 
+                                     onClick={() => setSelectedPrediction({ matchId: match.id, home: 1, away: 0 })}
+                                     className={`px-3 py-1 rounded-full text-[8px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home > selectedPrediction.away ? 'bg-primary text-white scale-110 shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-primary/20'}`}
+                                   >
+                                     توقع الفوز
+                                   </button>
+                                 </div>
+                                 <div className="flex items-center gap-3">
+                                   <ScoreSelector 
+                                     value={selectedPrediction?.matchId === match.id ? selectedPrediction.home : 0}
+                                     onChange={(val) => setSelectedPrediction({ 
+                                       matchId: match.id, 
+                                       home: val, 
+                                       away: selectedPrediction?.matchId === match.id ? selectedPrediction.away : 0 
+                                     })}
+                                     min={0}
+                                     max={10}
+                                   />
+                                   <div className="flex flex-col items-center gap-1 mt-10">
+                                     <div className="relative">
+                                        <span className="text-slate-300 font-black">VS</span>
+                                        {predictions.filter(p => p.matchId === match.id).length > 0 && (
+                                          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-slate-400 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full">
+                                            {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.homeScore) === Number(p.awayScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
+                                          </div>
+                                        )}
+                                     </div>
+                                     <button 
+                                       onClick={() => setSelectedPrediction({ matchId: match.id, home: 1, away: 1 })}
+                                       className={`px-2 py-0.5 rounded-full text-[7px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home === selectedPrediction.away && selectedPrediction.home > 0 ? 'bg-slate-400 text-white scale-110' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}
+                                     >
+                                       تعادل
+                                     </button>
+                                   </div>
+                                   <ScoreSelector 
+                                     value={selectedPrediction?.matchId === match.id ? selectedPrediction.away : 0}
+                                     onChange={(val) => setSelectedPrediction({ 
+                                       matchId: match.id, 
+                                       home: selectedPrediction?.matchId === match.id ? selectedPrediction.home : 0, 
+                                       away: val 
+                                     })}
+                                     min={0}
+                                     max={10}
+                                   />
+                                 </div>
+                                 <div className="flex flex-col items-center gap-2 w-24">
+                                   <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 relative group-hover:border-accent/50 transition-colors">
+                                     <img src={match.awayLogo} className="w-8 h-8 object-contain" alt="away" referrerPolicy="no-referrer" />
+                                     {predictions.filter(p => p.matchId === match.id).length > 0 && (
+                                       <div className="absolute -top-2 -left-2 bg-accent text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
+                                         {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.awayScore) > Number(p.homeScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
+                                       </div>
+                                     )}
+                                   </div>
+                                   <span className="text-[10px] font-black uppercase text-center line-clamp-1">{match.awayTeam}</span>
+                                   <button 
+                                     onClick={() => setSelectedPrediction({ matchId: match.id, home: 0, away: 1 })}
+                                     className={`px-3 py-1 rounded-full text-[8px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.away > selectedPrediction.home ? 'bg-accent text-white scale-110 shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-accent/20'}`}
+                                   >
+                                     توقع الفوز
+                                   </button>
+                                 </div>
+                               </>
+                             )}
                           </div>
                           <button 
                             onClick={handlePredict}
@@ -1431,10 +1475,12 @@ export default function FanZone() {
                                     <span className="text-primary uppercase">فوز {match.homeTeam}</span>
                                     <span className="text-slate-900 dark:text-white text-[10px]">{homeWins} مشجع ({homePct}%)</span>
                                   </div>
-                                  <div className="flex flex-col items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
-                                    <span className="text-slate-400 uppercase tracking-tighter">تعادل</span>
-                                    <span className="text-slate-900 dark:text-white text-[10px]">{draws} مشجع ({drawPct}%)</span>
-                                  </div>
+                                  {match.sport !== 'basketball' && (
+                                    <div className="flex flex-col items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
+                                      <span className="text-slate-400 uppercase tracking-tighter">تعادل</span>
+                                      <span className="text-slate-900 dark:text-white text-[10px]">{draws} مشجع ({drawPct}%)</span>
+                                    </div>
+                                  )}
                                   <div className="flex flex-col items-center gap-1 p-1 rounded-lg bg-accent/5">
                                     <span className="text-accent uppercase">فوز {match.awayTeam}</span>
                                     <span className="text-slate-900 dark:text-white text-[10px]">{awayWins} مشجع ({awayPct}%)</span>
@@ -1574,7 +1620,9 @@ export default function FanZone() {
                                 <img src={pred.userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(pred.userName)}&background=random`} className="w-8 h-8 rounded-xl object-cover" alt="user" />
                                 <div className="flex flex-col">
                                   <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">{pred.userName}</span>
-                                  <span className="text-[8px] font-bold text-slate-400">{match.homeTeam} {pred.homeScore}-{pred.awayScore} {match.awayTeam}</span>
+                                  <span className="text-[8px] font-bold text-slate-400">
+                                    {match.homeTeam} {match.sport === 'basketball' ? (pred.homeScore > pred.awayScore ? 'فوز' : 'خسارة') : `${pred.homeScore}-${pred.awayScore}`} {match.awayTeam}
+                                  </span>
                                 </div>
                               </div>
                               <span className="text-[8px] font-black text-slate-300">

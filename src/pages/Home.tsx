@@ -55,7 +55,7 @@ export default function Home() {
           return r.json();
         })
         .then(data => {
-          if (!data || !data.current_weather || !data.daily) return;
+          if (!data || !data.current_weather || !data.daily || !data.daily.sunrise || !data.daily.sunset) return;
           
           const weatherCodeToText = (code: number) => {
              if (code === 0) return 'sunny';
@@ -72,18 +72,24 @@ export default function Home() {
           };
 
           const formatTime = (timeStr: string) => {
-             const date = new Date(timeStr);
-             let hours = date.getHours();
-             const mins = date.getMinutes().toString().padStart(2, '0');
-             const ampm = hours >= 12 ? 'PM' : 'AM';
-             hours = hours % 12;
-             hours = hours ? hours : 12;
-             return `${hours}:${mins} ${ampm}`;
+             try {
+               if (!timeStr) return '--:--';
+               const date = new Date(timeStr);
+               if (isNaN(date.getTime())) return '--:--';
+               let hours = date.getHours();
+               const mins = date.getMinutes().toString().padStart(2, '0');
+               const ampm = hours >= 12 ? 'PM' : 'AM';
+               hours = hours % 12;
+               hours = hours ? hours : 12;
+               return `${hours}:${mins} ${ampm}`;
+             } catch (e) {
+               return '--:--';
+             }
           };
 
           setAutoWeather({
-             temp: Math.round(data.current_weather.temperature).toString(),
-             condition: weatherCodeToText(data.current_weather.weathercode),
+             temp: Math.round(data.current_weather.temperature ?? 25).toString(),
+             condition: weatherCodeToText(data.current_weather.weathercode ?? 0),
              sunrise: formatTime(data.daily.sunrise[0]),
              sunset: formatTime(data.daily.sunset[0])
           });
@@ -178,9 +184,9 @@ export default function Home() {
                       </button>
                     </div>
                   </div>
-                  <div className="flex justify-center items-center gap-3 sm:gap-10 py-6 sm:py-8">
+                  <div className="flex justify-center items-center gap-3 sm:gap-10 py-4 sm:py-6">
                     <div className="flex flex-col items-center gap-3 sm:gap-5 w-28 sm:w-44 group/team shrink-0">
-                      <div className={`relative flex items-center justify-center rounded-[28px] sm:rounded-[44px] bg-white/10 p-3 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium animate-float group-hover/team:scale-110 transition-transform duration-500 ${heroMatch.status === 'upcoming' ? 'h-24 w-24 sm:h-36 sm:w-36' : 'h-20 w-20 sm:h-28 sm:w-28'}`}>
+                      <div className={`relative flex items-center justify-center rounded-[28px] sm:rounded-[44px] bg-white/10 p-3 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium animate-float group-hover/team:scale-110 transition-transform duration-500 ${heroMatch.status === 'upcoming' ? 'h-20 w-20 sm:h-32 sm:w-32' : 'h-16 w-16 sm:h-24 sm:w-24'}`}>
                         <img alt={heroMatch.homeTeam} className="w-full h-full object-contain filter drop-shadow-2xl" src={heroMatch.homeLogo} referrerPolicy="no-referrer" />
                       </div>
                       <span className="text-center text-[11px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">{heroMatch.homeTeam}</span>
@@ -189,7 +195,12 @@ export default function Home() {
                     <div className="flex flex-col items-center flex-1 min-w-[70px] sm:min-w-[120px]">
                       <div className={`font-black text-white tracking-widest tabular-nums filter ${String(heroMatch.homeScore).length > 2 || String(heroMatch.awayScore).length > 2 ? 'text-2xl sm:text-4xl' : 'text-3xl sm:text-6xl'} ${selectedSport === 'basketball' ? 'drop-shadow-[0_5px_15px_rgba(234,88,12,0.3)]' : 'drop-shadow-[0_5px_15px_rgba(46,204,113,0.3)]'}`}>
                         {heroMatch.status === 'upcoming' ? (
-                          <div className="text-xl sm:text-3xl opacity-60">VS</div>
+                          <div className="flex flex-col items-center gap-1">
+                            <div className="text-xl sm:text-3xl opacity-60">VS</div>
+                            <div className="text-[10px] sm:text-xs font-bold text-white/60 tracking-normal whitespace-nowrap bg-black/20 px-3 py-1 rounded-full border border-white/5">
+                              {format(new Date(heroMatch.date), 'EEEE d MMMM | p', { locale: ar })}
+                            </div>
+                          </div>
                         ) : (
                           <div className="flex items-center justify-center gap-2 sm:gap-4">
                             <span>{heroMatch.homeScore}</span>
@@ -221,14 +232,14 @@ export default function Home() {
                     </div>
                     
                     <div className="flex flex-col items-center gap-3 sm:gap-5 w-28 sm:w-44 group/team shrink-0">
-                      <div className={`relative flex items-center justify-center rounded-[28px] sm:rounded-[44px] bg-white/10 p-3 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium animate-float [animation-delay:0.5s] group-hover/team:scale-110 transition-transform duration-500 ${heroMatch.status === 'upcoming' ? 'h-24 w-24 sm:h-36 sm:w-36' : 'h-20 w-20 sm:h-28 sm:w-28'}`}>
+                      <div className={`relative flex items-center justify-center rounded-[28px] sm:rounded-[44px] bg-white/10 p-3 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium animate-float [animation-delay:0.5s] group-hover/team:scale-110 transition-transform duration-500 ${heroMatch.status === 'upcoming' ? 'h-20 w-20 sm:h-32 sm:w-32' : 'h-16 w-16 sm:h-24 sm:w-24'}`}>
                         <img alt={heroMatch.awayTeam} className="w-full h-full object-contain filter drop-shadow-2xl" src={heroMatch.awayLogo} referrerPolicy="no-referrer" />
                       </div>
                       <span className="text-center text-[11px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">{heroMatch.awayTeam}</span>
                     </div>
                   </div>
                   
-                  <div className="mt-8 grid grid-cols-2 gap-3 relative z-20">
+                  <div className="mt-6 grid grid-cols-2 gap-3 relative z-20">
                     <Link 
                       to={heroMatch.status === 'live' || liveStream.isActive ? "/live" : "/matches"} 
                       className="h-14 rounded-2xl bg-white text-primary-dark hover:bg-primary-light hover:text-white transition-all duration-300 font-black text-[11px] flex items-center justify-center gap-2 shadow-premium group/btn relative z-30 cursor-pointer"
@@ -416,15 +427,15 @@ export default function Home() {
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Upcoming Fixtures</span>
             </div>
             
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               {upcomingMatches.map((match) => (
-                <Link key={match.id} to="/matches" className="flex items-center justify-between glass-card p-4 sm:p-5 rounded-[28px] sm:rounded-[32px] shadow-premium hover:border-primary/30 transition-all duration-300">
+                <Link key={match.id} to="/matches" className="flex items-center justify-between glass-card p-3 sm:p-4 rounded-[28px] sm:rounded-[32px] shadow-premium hover:border-primary/30 transition-all duration-300">
                   <div className="flex items-center gap-4 sm:gap-6">
-                    <div className="flex items-center -space-x-6 rtl:space-x-reverse">
-                      <div className="h-20 w-20 rounded-2xl bg-white dark:bg-background-dark p-3 shadow-premium ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center z-10 transition-transform hover:scale-110">
+                    <div className="flex items-center -space-x-4 rtl:space-x-reverse">
+                      <div className="h-14 w-14 rounded-2xl bg-white dark:bg-background-dark p-2.5 shadow-premium ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center z-10 transition-transform hover:scale-110">
                         <img src={match.homeLogo} alt="Home" className="h-full w-full object-contain" referrerPolicy="no-referrer" />
                       </div>
-                      <div className="h-20 w-20 rounded-2xl bg-white dark:bg-background-dark p-3 shadow-premium ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center z-0 scale-90 opacity-90 transition-transform hover:scale-110">
+                      <div className="h-14 w-14 rounded-2xl bg-white dark:bg-background-dark p-2.5 shadow-premium ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center z-0 scale-90 opacity-90 transition-transform hover:scale-110">
                         <img src={match.awayLogo} alt="Away" className="h-full w-full object-contain" referrerPolicy="no-referrer" />
                       </div>
                     </div>
@@ -432,7 +443,7 @@ export default function Home() {
                       <p className="text-xs font-black text-slate-800 dark:text-white">{match.homeTeam} × {match.awayTeam}</p>
                       <div className="flex items-center gap-1.5 mt-1">
                          <span className="text-[9px] font-black text-primary-light bg-primary/5 px-2 py-0.5 rounded-lg">{match.competition}</span>
-                         <span className="text-[9px] font-bold text-slate-400">{format(new Date(match.date), 'EEEE, p', { locale: ar })}</span>
+                         <span className="text-[9px] font-bold text-slate-400">{format(new Date(match.date), 'EEEE d MMMM | p', { locale: ar })}</span>
                       </div>
                     </div>
                   </div>

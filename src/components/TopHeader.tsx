@@ -1,6 +1,6 @@
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, Bell, Search, ChevronRight, X, Info } from 'lucide-react';
+import { Menu, Bell, Search, ChevronRight, X, Info, Sun, Moon } from 'lucide-react';
 import { useAppStore } from '../store';
 import { useState, useEffect, useRef } from 'react';
 import Sidebar from './Sidebar';
@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 export default function TopHeader() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile } = useAppStore();
+  const { profile, theme, toggleTheme } = useAppStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -121,6 +121,14 @@ export default function TopHeader() {
           </div>
 
           <div className="flex items-center gap-2">
+            <motion.button 
+              id="theme-toggle-button"
+              whileTap={{ scale: 0.9 }}
+              onClick={toggleTheme}
+              className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-500 dark:text-slate-400 hover:text-primary transition-all duration-300"
+            >
+              {theme === 'dark' ? <Sun size={20} strokeWidth={2.5} /> : <Moon size={20} strokeWidth={2.5} />}
+            </motion.button>
             {isHome ? (
               <motion.button 
                 id="notification-button"
