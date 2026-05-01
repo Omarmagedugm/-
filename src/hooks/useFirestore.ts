@@ -82,9 +82,15 @@ export function useFirestoreSync() {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data && data.sections) {
-          const defaultSections = useAppStore.getState().homeSections;
           const mergedSections = [...data.sections];
-          defaultSections.forEach(ds => {
+          const initialSections = [
+            { id: 'hero', type: 'hero', active: true, order: 0 },
+            { id: 'matches', type: 'matches', active: true, order: 1 },
+            { id: 'city', type: 'city', active: true, order: 1.5, title: 'عروس البحر المتوسط' },
+            { id: 'news', type: 'news', active: true, order: 2 },
+            { id: 'media', type: 'media', active: true, order: 3 },
+          ];
+          initialSections.forEach(ds => {
             if (!mergedSections.find((s: any) => s.id === ds.id)) {
               mergedSections.push(ds);
             }

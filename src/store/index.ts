@@ -61,6 +61,7 @@ export interface MatchItem {
 export interface CityInfo {
   id: string;
   cityName: string;
+  useAutoWeather?: boolean;
   temperature: string;
   condition: string;
   sunset: string;

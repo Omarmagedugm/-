@@ -780,54 +780,62 @@ export default function FanZone() {
                   
                   <div className="flex items-center justify-between mb-6 relative z-10">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl overflow-hidden glass-card ring-1 ring-primary/10 p-0.5">
-                        <img 
-                          src={post.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.userId}`} 
-                          className="w-full h-full object-cover rounded-2xl bg-slate-100" 
-                          alt={post.userName}
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="text-[14px] font-black text-slate-800 dark:text-white uppercase tracking-tight">{post.userName}</h4>
-                          {(() => {
-                            const postUser = users.find(u => u.uid === post.userId);
-                            const tier = postUser?.tier || 'new';
-                            const role = postUser?.role || 'user';
-                            const isManagement = role === 'admin' || post.userId === 'omarmagedugm' || post.userId === 'copyrightofficialco';
-                            
-                            if (isManagement) return (
-                              <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-yellow-400/20 text-yellow-600 dark:text-yellow-400 text-[8px] font-black uppercase ring-1 ring-yellow-400/30">
-                                <ShieldCheck size={10} />
-                                Admin
-                              </span>
-                            );
+                      {(() => {
+                        const postUser = users.find(u => u.uid === post.userId);
+                        const displayAvatar = postUser?.avatar || post.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.userId}`;
+                        const displayName = postUser?.name || post.userName;
+                        const tier = postUser?.tier || 'new';
+                        const role = postUser?.role || 'user';
+                        const isManagement = role === 'admin' || post.userId === 'omarmagedugm' || post.userId === 'copyrightofficialco';
 
-                            const tierMap: any = {
-                               diamond: { label: 'Diamond', color: 'bg-cyan-500' },
-                               gold: { label: 'Gold', color: 'bg-yellow-500' },
-                               silver: { label: 'Silver', color: 'bg-slate-400' },
-                               bronze: { label: 'Bronze', color: 'bg-orange-700' },
-                               new: { label: 'Fan', color: 'bg-primary' }
-                            };
-                            const tData = tierMap[tier] || tierMap.new;
-                            return (
-                              <div className={`${tData.color} text-white text-[8px] font-black px-2 py-0.5 rounded-lg uppercase tracking-tighter shadow-sm flex items-center gap-1`}>
-                                {tData.label}
+                        return (
+                          <>
+                            <div className="w-12 h-12 rounded-2xl overflow-hidden glass-card ring-1 ring-primary/10 p-0.5 shrink-0">
+                              <img 
+                                src={displayAvatar} 
+                                className="w-full h-full object-cover rounded-2xl bg-slate-100" 
+                                alt={displayName}
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="text-[14px] font-black text-slate-800 dark:text-white uppercase tracking-tight">{displayName}</h4>
+                                {isManagement ? (
+                                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-yellow-400/20 text-yellow-600 dark:text-yellow-400 text-[8px] font-black uppercase ring-1 ring-yellow-400/30">
+                                    <ShieldCheck size={10} />
+                                    Admin
+                                  </span>
+                                ) : (
+                                  (() => {
+                                    const tierMap: any = {
+                                       diamond: { label: 'Diamond', color: 'bg-cyan-500' },
+                                       gold: { label: 'Gold', color: 'bg-yellow-500' },
+                                       silver: { label: 'Silver', color: 'bg-slate-400' },
+                                       bronze: { label: 'Bronze', color: 'bg-orange-700' },
+                                       new: { label: 'Fan', color: 'bg-primary' }
+                                    };
+                                    const tData = tierMap[tier] || tierMap.new;
+                                    return (
+                                      <div className={`${tData.color} text-white text-[8px] font-black px-2 py-0.5 rounded-lg uppercase tracking-tighter shadow-sm flex items-center gap-1`}>
+                                        {tData.label}
+                                      </div>
+                                    );
+                                  })()
+                                )}
                               </div>
-                            );
-                          })()}
-                        </div>
-                        <div className="flex items-center gap-2 text-[9px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest">
-                           {format(new Date(post.date || Date.now()), 'HH:mm', { locale: ar })}
-                           {post.location && (
-                             <span className="flex items-center gap-1 text-primary">
-                               <MapPin size={10} /> {post.location}
-                             </span>
-                           )}
-                        </div>
-                      </div>
+                              <div className="flex items-center gap-2 text-[9px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest">
+                                 {format(new Date(post.date || Date.now()), 'HH:mm', { locale: ar })}
+                                 {post.location && (
+                                   <span className="flex items-center gap-1 text-primary">
+                                     <MapPin size={10} /> {post.location}
+                                   </span>
+                                 )}
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                     {(post.userId === auth.currentUser?.uid || isAdmin) && (
                       <div className="flex items-center gap-1">
@@ -1010,17 +1018,22 @@ export default function FanZone() {
                       </div>
 
                       <div className="space-y-4 max-h-80 overflow-y-auto no-scrollbar pb-2">
-                        {postComments.map((comment) => (
-                          <motion.div 
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            key={comment.id} 
-                            className="flex gap-4 group/comment"
-                          >
-                            <img src={comment.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.userId}`} className="w-9 h-9 rounded-[14px] bg-slate-100 shrink-0 border border-border-light dark:border-border-dark shadow-sm" alt="avatar" referrerPolicy="no-referrer" />
-                            <div className="flex-1 bg-slate-50 dark:bg-surface-dark p-4 rounded-[24px] border border-border-light dark:border-border-dark shadow-sm group-hover/comment:border-primary/20 transition-colors">
-                              <div className="flex items-center justify-between mb-1">
-                                <h5 className="text-[11px] font-black text-primary uppercase tracking-tighter">{comment.userName}</h5>
+                        {postComments.map((comment) => {
+                          const commentUser = users.find(u => u.uid === comment.userId);
+                          const displayAvatar = commentUser?.avatar || comment.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.userId}`;
+                          const displayName = commentUser?.name || comment.userName;
+
+                          return (
+                            <motion.div 
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              key={comment.id} 
+                              className="flex gap-4 group/comment"
+                            >
+                              <img src={displayAvatar} className="w-9 h-9 rounded-[14px] bg-slate-100 shrink-0 border border-border-light dark:border-border-dark shadow-sm" alt="avatar" referrerPolicy="no-referrer" />
+                              <div className="flex-1 bg-slate-50 dark:bg-surface-dark p-4 rounded-[24px] border border-border-light dark:border-border-dark shadow-sm group-hover/comment:border-primary/20 transition-colors">
+                                <div className="flex items-center justify-between mb-1">
+                                  <h5 className="text-[11px] font-black text-primary uppercase tracking-tighter">{displayName}</h5>
                                 <div className="flex items-center gap-2">
                                   <button 
                                     onClick={() => handleLikeComment(post.id, comment.id)}
@@ -1079,7 +1092,8 @@ export default function FanZone() {
                               )}
                             </div>
                           </motion.div>
-                        ))}
+                          );
+                        })}
                         {postComments.length === 0 && (
                           <div className="py-8 text-center opacity-30">
                             <span className="material-symbols-outlined !text-3xl mb-2">comments_disabled</span>
@@ -1666,15 +1680,15 @@ export default function FanZone() {
                 {nextMatch ? (
                   <div className="stadium-gradient rounded-[32px] p-6 text-white mb-8 shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 blur-3xl rounded-full"></div>
-                    <div className="flex items-center justify-between gap-2 relative z-10">
-                      <div className="flex flex-col items-center flex-1">
+                    <div className="flex justify-center items-center gap-4 sm:gap-8 relative z-10">
+                      <div className="flex flex-col items-center w-16 sm:w-20">
                         <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-2 sm:mb-3 backdrop-blur-md border border-white/20">
                           <img src={nextMatch.homeLogo} className="w-10 h-10 object-contain" alt="home" referrerPolicy="no-referrer" />
                         </div>
                         <span className="text-[10px] sm:text-xs font-black text-center line-clamp-1">{nextMatch.homeTeam}</span>
                       </div>
 
-                      <div className="flex flex-col items-center gap-2 flex-shrink-0 px-2 sm:px-4">
+                      <div className="flex flex-col items-center gap-2 flex-shrink-0">
                         <div className={`font-black tracking-tighter tabular-nums drop-shadow-lg ${String(nextMatch.homeScore).length > 2 || String(nextMatch.awayScore).length > 2 ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'}`}>
                           {nextMatch.status === 'upcoming' ? '-- : --' : `${nextMatch.homeScore} - ${nextMatch.awayScore}`}
                         </div>
@@ -1689,7 +1703,7 @@ export default function FanZone() {
                         )}
                       </div>
 
-                      <div className="flex flex-col items-center flex-1">
+                      <div className="flex flex-col items-center w-16 sm:w-20">
                         <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-2 sm:mb-3 backdrop-blur-md border border-white/20">
                           <img src={nextMatch.awayLogo} className="w-10 h-10 object-contain" alt="away" referrerPolicy="no-referrer" />
                         </div>

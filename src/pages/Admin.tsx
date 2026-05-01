@@ -265,6 +265,8 @@ const UploadOrUrlField = ({
 // Triggering deployment change
 const ADMIN_VERSION = '1.2.1';
 
+import { toDate, formatInTimeZone } from 'date-fns-tz';
+
 export default function Admin() {
   const { 
     news, media, matches, liveStream, users, appSettings, profile, clubs, polls, fanPosts, predictions,
@@ -2953,8 +2955,8 @@ export default function Admin() {
                      </div>
                    </div>
                    <div>
-                     <label className="text-[10px] font-black text-slate-500 mb-1 block">تاريخ ووقت المباراة</label>
-                     <input type="datetime-local" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 text-sm" value={formData.date ? new Date(formData.date).toISOString().slice(0, 16) : ''} onChange={(e) => setFormData({...formData, date: e.target.value})} />
+                     <label className="text-[10px] font-black text-slate-500 mb-1 block">تاريخ ووقت المباراة (بتوقيت مصر)</label>
+                     <input type="datetime-local" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 text-sm" value={formData.date && !isNaN(new Date(formData.date).getTime()) ? formatInTimeZone(new Date(formData.date), 'Africa/Cairo', 'yyyy-MM-dd\'T\'HH:mm') : ''} onChange={(e) => setFormData({...formData, date: e.target.value ? toDate(e.target.value, { timeZone: 'Africa/Cairo' }).toISOString() : ''})} />
                     <div className="flex items-center gap-2 mt-4 bg-primary/5 p-3 rounded-xl border border-primary/10">
                        <input 
                          type="checkbox" 

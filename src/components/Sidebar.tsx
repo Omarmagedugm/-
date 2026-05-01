@@ -19,6 +19,7 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
   const isOmar = auth.currentUser?.email === 'omarmagedugm@ittihad.club';
   const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com';
   const isAdmin = profile.role === 'admin' || isOmar || isDev;
+  const isAnonymous = !auth.currentUser || auth.currentUser.isAnonymous;
 
   const handleLogout = async () => {
     try {
@@ -65,8 +66,8 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                   <img src={profile.avatar} alt="Profile" className="w-full h-full object-cover rounded-[14px]" referrerPolicy="no-referrer" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black">{profile.name}</h3>
-                  <p className="text-white/70 text-[10px] font-bold">عضو ماسي • سيد البلد</p>
+                  <h3 className="text-lg font-black">{isAnonymous ? "زائر" : profile.name}</h3>
+                  <p className="text-white/70 text-[10px] font-bold">{isAnonymous ? "زائر اتحاداوي" : "عضو ماسي • سيد البلد"}</p>
                 </div>
               </Link>
             </div>
@@ -150,13 +151,24 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                 <span className="text-sm font-bold">اتصل بنا</span>
               </button>
               
-              <button 
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-red-50 text-red-500 dark:hover:bg-red-500/10 transition-colors pressable text-right mt-4"
-              >
-                <LogOut size={20} />
-                <span className="text-sm font-black">تسجيل الخروج</span>
-              </button>
+              {!isAnonymous ? (
+                <button 
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-red-50 text-red-500 dark:hover:bg-red-500/10 transition-colors pressable text-right mt-4"
+                >
+                  <LogOut size={20} />
+                  <span className="text-sm font-black">تسجيل الخروج</span>
+                </button>
+              ) : (
+                <Link 
+                  to="/auth"
+                  onClick={onClose}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-primary text-white hover:bg-primary-dark transition-colors pressable text-right mt-4"
+                >
+                  <span className="material-symbols-outlined !text-[20px]">login</span>
+                  <span className="text-sm font-black">تسجيل الدخول</span>
+                </Link>
+              )}
             </div>
 
             <div className="p-6 border-t border-slate-100 dark:border-border-dark">
