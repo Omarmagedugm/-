@@ -27,10 +27,25 @@
 @variant dark (&:where(.dark, .dark *));
 
 @layer base {
+  html, body {
+    background-color: #04120E;
+  }
+  
   body {
-    @apply font-sans antialiased bg-background-light text-slate-900 dark:bg-background-dark dark:text-slate-100 transition-colors duration-300;
-    min-height: 100dvh;
+    @apply font-sans antialiased text-slate-900 dark:text-slate-100 transition-colors duration-300;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    margin: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
     font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+  }
+
+  #root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: inherit;
   }
 }
 
