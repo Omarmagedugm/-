@@ -29,10 +29,14 @@ export default function App() {
 
   useEffect(() => {
     const root = window.document.documentElement;
+    const themeColorMeta = document.getElementById('theme-color-meta');
+    
     if (theme === 'dark') {
       root.classList.add('dark');
+      if (themeColorMeta) themeColorMeta.setAttribute('content', '#072418'); // background-dark
     } else {
       root.classList.remove('dark');
+      if (themeColorMeta) themeColorMeta.setAttribute('content', '#F8FAFC'); // background-light
     }
   }, [theme]);
 

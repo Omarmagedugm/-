@@ -28,7 +28,7 @@
 
 @layer base {
   html, body {
-    background-color: #04120E;
+    @apply bg-background-light dark:bg-background-dark;
   }
   
   body {
