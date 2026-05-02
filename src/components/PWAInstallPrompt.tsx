@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Download, Share, PlusSquare, X, CheckCircle2 } from 'lucide-react';
+import { Download, Share, PlusSquare, X, CheckCircle2, Smartphone } from 'lucide-react';
 
 const PWAInstallPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -70,7 +70,7 @@ const PWAInstallPrompt: React.FC = () => {
           <div className="bg-white dark:bg-card-dark rounded-[32px] p-5 shadow-2xl border border-border-light dark:border-border-dark flex items-center justify-between gap-4">
              <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                   <img src="/icon.png" alt="App Icon" className="w-8 h-8 object-contain" />
+                   <Smartphone size={24} />
                 </div>
                 <div>
                    <h3 className="text-sm font-black text-slate-800 dark:text-white">تثبيت قناة الاتحاد</h3>
@@ -110,7 +110,7 @@ const PWAInstallPrompt: React.FC = () => {
              <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                    <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                      <img src="/icon.png" alt="App Icon" className="w-8 h-8 object-contain" />
+                      <Smartphone size={24} />
                    </div>
                    <div>
                       <h3 className="text-sm font-black text-slate-800 dark:text-white">أضف قناة الاتحاد لهاتفك</h3>

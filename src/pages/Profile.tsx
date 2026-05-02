@@ -142,8 +142,9 @@ export default function Profile() {
   // High-level admin/editor check
   const isOmar = auth.currentUser?.email === 'omarmagedugm@ittihad.club';
   const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com';
+  const hasCustomRoles = profile.roles && profile.roles.length > 0;
   const isAdmin = profile.role === 'admin' || isOmar || isDev;
-  const isEditor = profile.role === 'writer' || isAdmin;
+  const isStaff = isAdmin || profile.role === 'writer' || profile.role === 'moderator' || hasCustomRoles;
 
   const handleLogout = async () => {
     try {
@@ -350,27 +351,8 @@ export default function Profile() {
               </div>
             </button>
             <div className="h-px w-full bg-slate-100 dark:border-t dark:border-border-dark"></div>
-            {/* News Editor Dashboard */}
-            {isEditor && !isAdmin && (
-              <>
-                <Link to="/admin" className="flex w-full items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-surface-dark pressable group">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light">
-                      <Newspaper size={20} />
-                    </div>
-                    <div className="flex flex-col items-start">
-                      <span className="text-sm font-bold text-slate-900 dark:text-white">إدارة الأخبار</span>
-                      <span className="text-[10px] font-semibold text-primary/80 mt-0.5">إضافة وتعديل وحذف أخبار النادي</span>
-                    </div>
-                  </div>
-                  <span className="material-symbols-outlined text-primary !text-[20px]">chevron_left</span>
-                </Link>
-                <div className="h-px w-full bg-slate-100 dark:border-t dark:border-border-dark"></div>
-              </>
-            )}
-
-            {/* Admin Panel */}
-            {isAdmin && (
+            {/* Staff / Admin Dashboard */}
+            {isStaff && (
               <>
                 <Link to="/admin" className="flex w-full items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-surface-dark pressable group">
                   <div className="flex items-center gap-4">
@@ -379,7 +361,7 @@ export default function Profile() {
                     </div>
                     <div className="flex flex-col items-start">
                       <span className="text-sm font-bold text-slate-900 dark:text-white">لوحة التحكم</span>
-                      <span className="text-[10px] font-semibold text-primary/80 mt-0.5">إدارة الأخبار، المباريات، والأعضاء</span>
+                      <span className="text-[10px] font-semibold text-primary/80 mt-0.5">إدارة محتوى المنصة والصلاحيات</span>
                     </div>
                   </div>
                   <span className="material-symbols-outlined text-primary !text-[20px]">chevron_left</span>

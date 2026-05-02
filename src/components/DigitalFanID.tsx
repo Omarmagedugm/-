@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { Download, Loader2 } from 'lucide-react';
+import { useAppStore } from '../store';
 
 interface DigitalFanIDProps {
   username: string;
@@ -11,6 +12,7 @@ interface DigitalFanIDProps {
 export default function DigitalFanID({ username, memberId, avatarUrl }: DigitalFanIDProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
+  const { appSettings } = useAppStore();
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
@@ -92,7 +94,8 @@ export default function DigitalFanID({ username, memberId, avatarUrl }: DigitalF
           {/* A small watermark / logo could go here */}
           <div className="h-8 w-8 opacity-50 grayscale brightness-200">
             <img 
-              src="/icon.png" 
+              src={appSettings.appLogo} 
+              onError={(e) => { e.currentTarget.src = 'https://res.cloudinary.com/dqj6gzwfg/image/upload/v1777716805/favicon_gd0ic4.png'; }}
               alt="Logo" 
               className="w-full h-full object-contain"
               crossOrigin="anonymous" 

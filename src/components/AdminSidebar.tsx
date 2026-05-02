@@ -45,7 +45,12 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
   const hasRole = (role: AppRole | AppRole[]) => {
     if (isDev) return true;
     if (profile.role === 'admin') return true;
-    const userRoles = profile.roles || [];
+    const userRoles = [...(profile.roles || [])];
+    
+    // Legacy support
+    if (profile.role === 'writer') userRoles.push('news_editor');
+    if (profile.role === 'moderator') userRoles.push('user_manager');
+    
     const requiredRoles = Array.isArray(role) ? role : [role];
     return requiredRoles.some(r => userRoles.includes(r));
   };

@@ -102,16 +102,6 @@ export default defineConfig(({ mode }) => {
       assetsDir: 'assets',
       emptyOutDir: true,
       sourcemap: false,
-      minify: 'esbuild',
-      chunkSizeWarningLimit: 2000,
-      reportCompressedSize: false,
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom', 'react-router-dom', 'lucide-react', 'motion'],
-          },
-        },
-      },
     },
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY || env.GEMINI_API_KEY || ''),

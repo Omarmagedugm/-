@@ -1,10 +1,11 @@
-import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import ScrollToTop from './components/ScrollToTop';
 import { useAppStore } from './store';
 import { useFirestoreSync } from './hooks/useFirestore';
 import { auth, requestNotificationPermission } from './lib/firebase';
+
 import Auth from './pages/Auth';
 import Home from './pages/Home';
 import News from './pages/News';
@@ -19,6 +20,7 @@ import History from './pages/History';
 import Store from './pages/Store';
 import Bookmarks from './pages/Bookmarks';
 import Library from './pages/Library';
+
 import BottomNav from './components/BottomNav';
 import TopHeader from './components/TopHeader';
 import MusicPlayer from './components/MusicPlayer';

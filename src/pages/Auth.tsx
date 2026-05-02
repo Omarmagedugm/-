@@ -9,7 +9,7 @@ import {
   signInWithPopup,
   sendPasswordResetEmail
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Lock, User, AtSign, ArrowLeft, Loader2, ShieldCheck, HelpCircle } from 'lucide-react';
 import { useAppStore } from '../store';
@@ -109,7 +109,23 @@ export default function Auth() {
         if (finalEmail.toLowerCase() === 'omarmagedugm') {
           finalEmail = 'omarmagedugm@ittihad.club';
         } else if (!finalEmail.includes('@')) {
-          finalEmail = `${finalEmail.toLowerCase()}@ittihad.club`;
+          // If it's a username, try to find the linked email in Firestore
+          try {
+            const q = query(collection(db, 'users'), where('username', '==', finalEmail.toLowerCase()));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+              const userData = querySnapshot.docs[0].data();
+              if (userData && userData.email) {
+                finalEmail = userData.email;
+              }
+            } else {
+              // If not found in DB, fallback to legacy auto-email or throw error later
+              finalEmail = `${finalEmail.toLowerCase()}@ittihad.club`;
+            }
+          } catch (err) {
+            console.warn("Username lookup failed, trying direct email", err);
+            finalEmail = `${finalEmail.toLowerCase()}@ittihad.club`;
+          }
         }
       } else {
         // Signup mode: if email field didn't contain @, treat it as part of an auto-email

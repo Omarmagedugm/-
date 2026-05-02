@@ -418,7 +418,12 @@ export default function Admin() {
   const hasPermission = (roles: AppRole | AppRole[]) => {
     if (isDev) return true;
     if (profile.role === 'admin') return true;
-    const userRoles = profile.roles || [];
+    const userRoles = [...(profile.roles || [])];
+    
+    // Legacy support for writer/moderator roles
+    if (profile.role === 'writer') userRoles.push('news_editor');
+    if (profile.role === 'moderator') userRoles.push('user_manager');
+    
     const requiredRoles = Array.isArray(roles) ? roles : [roles];
     return requiredRoles.some(r => userRoles.includes(r));
   };
