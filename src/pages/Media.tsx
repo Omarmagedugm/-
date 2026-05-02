@@ -311,7 +311,7 @@ export default function Media() {
 
               {isEmbeddable(selectedVideo.url) || selectedVideo.source === 'embed' ? (
                 <iframe 
-                  src={getEmbedUrl(selectedVideo.url, selectedVideo.source) || ''} 
+                  src={getEmbedUrl(selectedVideo.url, selectedVideo.source) || undefined} 
                   className="w-full h-full"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                   allowFullScreen

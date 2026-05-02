@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import ScrollToTop from './components/ScrollToTop';
@@ -87,6 +87,7 @@ export default function App() {
           <Route path="/store" element={<Store />} />
           <Route path="/bookmarks" element={<Bookmarks />} />
           <Route path="/library" element={<Library />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <AppNav />
         <MusicPlayer />
@@ -96,6 +97,21 @@ export default function App() {
 }
 
 function AuthRedirector() {
+  const { profile } = useAppStore();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // If logged in and on auth page, go home
+    if (profile.uid && location.pathname === '/auth') {
+      navigate('/', { replace: true });
+    }
+    // If not logged in and on a protected page like admin, go to auth
+    if (!profile.uid && location.pathname === '/admin') {
+      navigate('/auth', { replace: true });
+    }
+  }, [profile.uid, location.pathname, navigate]);
+
   return null;
 }
 

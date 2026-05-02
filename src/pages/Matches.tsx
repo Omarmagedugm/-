@@ -243,7 +243,7 @@ export default function Matches() {
                         <div className="flex justify-center items-center gap-4 sm:gap-8 my-2">
                           <div className="flex flex-col items-center gap-2 sm:gap-4 w-20 sm:w-32">
                             <div className="w-18 h-18 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-xl rounded-[24px] sm:rounded-[32px] p-2.5 sm:p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float">
-                              <img src={section.newestMatch.homeLogo} alt={section.newestMatch.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
+                              <img src={section.newestMatch.homeLogo || undefined} alt={section.newestMatch.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
                             </div>
                             <span className="text-white font-black text-[9px] sm:text-[10px] text-center uppercase tracking-widest line-clamp-2">{section.newestMatch.homeTeam}</span>
                           </div>
@@ -273,7 +273,7 @@ export default function Matches() {
 
                           <div className="flex flex-col items-center gap-2 sm:gap-4 w-20 sm:w-32">
                             <div className="w-18 h-18 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-xl rounded-[24px] sm:rounded-[32px] p-2.5 sm:p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float [animation-delay:0.5s]">
-                              <img src={section.newestMatch.awayLogo} alt={section.newestMatch.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
+                              <img src={section.newestMatch.awayLogo || undefined} alt={section.newestMatch.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
                             </div>
                             <span className="text-white font-black text-[9px] sm:text-[10px] text-center uppercase tracking-widest line-clamp-2">{section.newestMatch.awayTeam}</span>
                           </div>
@@ -354,7 +354,7 @@ export default function Matches() {
                       <div className="flex justify-center items-center gap-4 sm:gap-8">
                         <div className="flex flex-col items-center gap-2 sm:gap-3 w-20 sm:w-32 group/team">
                           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 sm:p-3 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center transition-transform group-hover/team:scale-110">
-                            <img src={match.homeLogo} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-md" />
+                            <img src={match.homeLogo || undefined} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-md" />
                           </div>
                           <span className="text-[10px] sm:text-xs font-black text-slate-800 dark:text-white uppercase text-center line-clamp-1">{match.homeTeam}</span>
                         </div>
@@ -378,7 +378,7 @@ export default function Matches() {
 
                         <div className="flex flex-col items-center gap-2 sm:gap-3 w-20 sm:w-32 group/team">
                           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 sm:p-3 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center transition-transform group-hover/team:scale-110 [animation-delay:0.5s]">
-                            <img src={match.awayLogo} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-md" />
+                            <img src={match.awayLogo || undefined} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-md" />
                           </div>
                           <span className="text-[10px] sm:text-xs font-black text-slate-800 dark:text-white uppercase text-center line-clamp-1">{match.awayTeam}</span>
                         </div>
@@ -551,7 +551,7 @@ export default function Matches() {
                                 className={`flex-1 flex flex-col items-center gap-4 p-5 rounded-[28px] border-2 transition-all duration-300 ${homePrediction === '1' ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10' : 'border-border-light dark:border-border-dark opacity-40 grayscale hover:opacity-100 hover:grayscale-0'}`}
                               >
                                 <div className="w-14 h-14 bg-white dark:bg-surface-dark rounded-2xl p-2.5 flex items-center justify-center border border-border-light dark:border-border-dark shadow-sm">
-                                  <img src={match.homeLogo} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
+                                  <img src={match.homeLogo || undefined} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
                                 </div>
                                 <span className="text-[9px] font-black uppercase text-center line-clamp-1 h-3">{match.homeTeam}</span>
                                 <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black ${homePrediction === '1' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>فوز</div>
@@ -563,7 +563,7 @@ export default function Matches() {
                                 className={`flex-1 flex flex-col items-center gap-4 p-5 rounded-[28px] border-2 transition-all duration-300 ${awayPrediction === '1' ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10' : 'border-border-light dark:border-border-dark opacity-40 grayscale hover:opacity-100 hover:grayscale-0'}`}
                               >
                                 <div className="w-14 h-14 bg-white dark:bg-surface-dark rounded-2xl p-2.5 flex items-center justify-center border border-border-light dark:border-border-dark shadow-sm">
-                                  <img src={match.awayLogo} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
+                                  <img src={match.awayLogo || undefined} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
                                 </div>
                                 <span className="text-[9px] font-black uppercase text-center line-clamp-1 h-3">{match.awayTeam}</span>
                                 <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black ${awayPrediction === '1' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>فوز</div>
@@ -574,7 +574,7 @@ export default function Matches() {
                         <div className="flex items-center justify-between px-4">
                            <div className="flex flex-col items-center gap-3">
                               <div className="w-16 h-16 bg-slate-50 dark:bg-surface-dark rounded-2xl p-3 flex items-center justify-center border border-border-light dark:border-border-dark">
-                                <img src={match.homeLogo} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
+                                <img src={match.homeLogo || undefined} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
                               </div>
                               <span className="text-[10px] font-black uppercase text-center w-20 line-clamp-1">{match.homeTeam}</span>
                                <ScoreSelector 
@@ -589,7 +589,7 @@ export default function Matches() {
 
                            <div className="flex flex-col items-center gap-3">
                               <div className="w-16 h-16 bg-slate-50 dark:bg-surface-dark rounded-2xl p-3 flex items-center justify-center border border-border-light dark:border-border-dark">
-                                <img src={match.awayLogo} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
+                                <img src={match.awayLogo || undefined} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
                               </div>
                               <span className="text-[10px] font-black uppercase text-center w-20 line-clamp-1">{match.awayTeam}</span>
                                <ScoreSelector 

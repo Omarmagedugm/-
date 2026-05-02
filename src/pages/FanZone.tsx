@@ -519,7 +519,7 @@ export default function FanZone() {
             
             <div className="flex gap-4 mb-4 relative z-10">
               <div className="w-12 h-12 rounded-2xl overflow-hidden glass-card ring-1 ring-primary/20 shrink-0">
-                <img src={profile.avatar} className="w-full h-full object-cover" alt="user" referrerPolicy="no-referrer" />
+                <img src={profile.avatar || undefined} className="w-full h-full object-cover" alt="user" referrerPolicy="no-referrer" />
               </div>
               <div className="flex-1">
                 <textarea 
@@ -923,9 +923,14 @@ export default function FanZone() {
                   </div>
 
                   {post.image && (
-                    <div className="relative w-full aspect-[16/10] rounded-[36px] overflow-hidden mb-6 border border-border-light dark:border-border-dark shadow-premium group/img">
-                      <img src={post.image} className="w-full h-full object-cover transition-transform duration-1000 group-hover/img:scale-110" alt="post attachment" referrerPolicy="no-referrer" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity"></div>
+                    <div className="relative w-full aspect-[16/10] rounded-[36px] overflow-hidden mb-6 border border-border-light dark:border-border-dark shadow-premium group/img bg-slate-50 dark:bg-slate-900/40">
+                      <img 
+                        src={post.image} 
+                        className="w-full h-full object-contain transition-transform duration-1000" 
+                        alt="post attachment" 
+                        referrerPolicy="no-referrer" 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity pointer-events-none"></div>
                     </div>
                   )}
 
@@ -982,7 +987,7 @@ export default function FanZone() {
                     >
                       <div className="flex gap-3 mb-6">
                         <div className="w-10 h-10 rounded-xl overflow-hidden glass-card ring-1 ring-primary/20 shrink-0">
-                          <img src={profile.avatar} className="w-full h-full object-cover" alt="me" referrerPolicy="no-referrer" />
+                          <img src={profile.avatar || undefined} className="w-full h-full object-cover" alt="me" referrerPolicy="no-referrer" />
                         </div>
                         <div className="flex-1 flex gap-2 relative">
                           <input 

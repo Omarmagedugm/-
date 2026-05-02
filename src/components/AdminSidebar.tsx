@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { auth } from '../lib/firebase';
 import { useAppStore } from '../store';
 import { 
@@ -31,6 +32,7 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ activeTab, setActiveTab, onClose }: AdminSidebarProps) {
   const { profile } = useAppStore();
+  const navigate = useNavigate();
   const Shield = ({ size }: { size: number }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -141,10 +143,10 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
                 await auth.signOut();
                 localStorage.clear();
                 sessionStorage.clear();
-                window.location.href = '/auth';
+                navigate('/auth', { replace: true });
               } catch (error) {
                 console.error('Logout error:', error);
-                window.location.href = '/auth';
+                navigate('/auth', { replace: true });
               }
             }}
             className="w-full py-2.5 rounded-xl bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark text-[10px] font-black text-slate-500 hover:text-red-500 transition-colors"

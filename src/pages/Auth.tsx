@@ -218,7 +218,7 @@ export default function Auth() {
         <div className="flex flex-col items-center mb-10">
           <div className="relative mb-4">
              {(appSettings.logoType || 'image') === 'image' ? (
-                <img src={appSettings.appLogo} onError={(e) => { e.currentTarget.src = 'https://res.cloudinary.com/dqj6gzwfg/image/upload/v1777716805/favicon_gd0ic4.png'; }} alt="Logo" className="h-20 w-20 object-contain drop-shadow-xl" referrerPolicy="no-referrer" />
+                <img src={appSettings.appLogo || undefined} onError={(e) => { e.currentTarget.src = 'https://res.cloudinary.com/dqj6gzwfg/image/upload/v1777716805/favicon_gd0ic4.png'; }} alt="Logo" className="h-20 w-20 object-contain drop-shadow-xl" referrerPolicy="no-referrer" />
              ) : (
                 <h1 className="text-4xl font-black text-primary-dark drop-shadow-xl">{appSettings.logoText}</h1>
              )}

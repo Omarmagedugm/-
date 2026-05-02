@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore, UserProfile } from '../store';
 import React, { useState, useEffect } from 'react';
-import { Camera, X, Check, Lock, ShieldCheck, Mail, Loader2, Save, Upload, Edit2 } from 'lucide-react';
+import { Camera, X, Check, Lock, ShieldCheck, Mail, Loader2, Save, Upload, Edit2, Newspaper } from 'lucide-react';
 import { db, auth, uploadImage } from '../lib/firebase';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { updatePassword, updateProfile as updateAuthProfile } from 'firebase/auth';
@@ -131,20 +131,21 @@ export default function Profile() {
     }
   };
 
-  // High-level admin check
+  // High-level admin/editor check
   const isOmar = auth.currentUser?.email === 'omarmagedugm@ittihad.club';
   const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com';
   const isAdmin = profile.role === 'admin' || isOmar || isDev;
+  const isEditor = profile.role === 'writer' || isAdmin;
 
   const handleLogout = async () => {
     try {
       await auth.signOut();
       localStorage.clear();
       sessionStorage.clear();
-      window.location.href = '/auth';
+      navigate('/auth', { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
-      window.location.href = '/auth';
+      navigate('/auth', { replace: true });
     }
   };
 
@@ -341,6 +342,25 @@ export default function Profile() {
               </div>
             </button>
             <div className="h-px w-full bg-slate-100 dark:border-t dark:border-border-dark"></div>
+            {/* News Editor Dashboard */}
+            {isEditor && !isAdmin && (
+              <>
+                <Link to="/admin" className="flex w-full items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-surface-dark pressable group">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light">
+                      <Newspaper size={20} />
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-bold text-slate-900 dark:text-white">إدارة الأخبار</span>
+                      <span className="text-[10px] font-semibold text-primary/80 mt-0.5">إضافة وتعديل وحذف أخبار النادي</span>
+                    </div>
+                  </div>
+                  <span className="material-symbols-outlined text-primary !text-[20px]">chevron_left</span>
+                </Link>
+                <div className="h-px w-full bg-slate-100 dark:border-t dark:border-border-dark"></div>
+              </>
+            )}
+
             {/* Admin Panel */}
             {isAdmin && (
               <>

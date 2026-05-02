@@ -47,6 +47,11 @@
     height: 100%;
     min-height: inherit;
   }
+
+  .dark input.bg-slate-50, .dark textarea.bg-slate-50, .dark select.bg-slate-50,
+  .dark input.bg-white, .dark textarea.bg-white, .dark select.bg-white {
+    color: #0f172a !important; /* text-slate-900 */
+  }
 }
 
 @layer components {

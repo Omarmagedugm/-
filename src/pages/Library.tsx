@@ -241,7 +241,7 @@ export default function Library() {
                           onClick={() => setSelectedMedia(item)}
                           className="group relative h-64 rounded-[32px] overflow-hidden shadow-premium cursor-pointer"
                         >
-                          <img src={item.thumbnailUrl} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
+                          <img src={item.thumbnailUrl || undefined} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                           
                           <div className="absolute top-6 right-6 flex flex-col gap-2 scale-90 group-hover:scale-100 transition-all opacity-0 group-hover:opacity-100">
@@ -312,7 +312,7 @@ export default function Library() {
                       >
                         <div className="aspect-square rounded-2xl overflow-hidden mb-4 relative">
                           {album.coverUrl && album.coverUrl.trim() !== '' ? (
-                            <img src={album.coverUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
+                            <img src={album.coverUrl || undefined} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
                           ) : (
                             <div className="w-full h-full bg-slate-100 flex items-center justify-center">
                               <Disc size={48} className="text-slate-300" />
@@ -368,7 +368,7 @@ export default function Library() {
                       >
                          <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0">
                            {song.coverUrl && song.coverUrl.trim() !== '' ? (
-                             <img src={song.coverUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                             <img src={song.coverUrl || undefined} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                            ) : (
                              <div className="w-full h-full bg-slate-100 flex items-center justify-center">
                                <Music size={24} className="text-slate-300" />
@@ -425,7 +425,7 @@ export default function Library() {
                   >
                     <div className="aspect-[3/4] rounded-[32px] overflow-hidden shadow-premium group-hover:shadow-2xl transition-all relative mb-4">
                       {book.coverUrl && book.coverUrl.trim() !== '' ? (
-                        <img src={book.coverUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" referrerPolicy="no-referrer" />
+                        <img src={book.coverUrl || undefined} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-full h-full bg-slate-100 flex items-center justify-center">
                           <BookOpen size={48} className="text-slate-300" />
@@ -512,14 +512,14 @@ export default function Library() {
               <div className="aspect-video w-full rounded-[40px] overflow-hidden bg-slate-900 shadow-2xl relative border border-white/10">
                  {selectedMedia.type === 'video' ? (
                    <video 
-                     src={selectedMedia.videoUrl} 
+                     src={selectedMedia.videoUrl || undefined} 
                      controls 
                      autoPlay 
                      className="w-full h-full object-contain"
                    />
                  ) : (
                    <img 
-                     src={selectedMedia.thumbnailUrl} 
+                     src={selectedMedia.thumbnailUrl || undefined} 
                      className="w-full h-full object-contain" 
                      referrerPolicy="no-referrer"
                      alt={selectedMedia.title}
@@ -549,7 +549,7 @@ export default function Library() {
               <div className="p-6 border-b border-border-light dark:border-border-dark flex items-center justify-between bg-white dark:bg-surface-dark">
                 <div className="flex items-center gap-4">
                   {selectedBook.coverUrl && selectedBook.coverUrl.trim() !== '' ? (
-                    <img src={selectedBook.coverUrl} className="w-12 h-12 rounded-xl object-cover shadow-sm" referrerPolicy="no-referrer" />
+                    <img src={selectedBook.coverUrl || undefined} className="w-12 h-12 rounded-xl object-cover shadow-sm" referrerPolicy="no-referrer" />
                   ) : (
                     <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center shadow-sm">
                       <BookOpen size={20} className="text-slate-300" />
@@ -577,13 +577,13 @@ export default function Library() {
               <div className="flex-1 bg-slate-900 relative">
                 {selectedBook.pdfUrl.includes('drive.google.com') ? (
                   <iframe 
-                    src={selectedBook.pdfUrl.replace('/view', '/preview')} 
+                    src={selectedBook.pdfUrl.replace('/view', '/preview') || undefined} 
                     className="w-full h-full border-none"
                     allow="autoplay"
                   />
                 ) : (
                   <iframe 
-                    src={selectedBook.pdfUrl} 
+                    src={selectedBook.pdfUrl || undefined} 
                     className="w-full h-full border-none"
                     title="book-reader"
                   />

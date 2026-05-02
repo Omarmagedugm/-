@@ -239,7 +239,7 @@ export interface UserProfile {
   joinDate: string;
   avatar: string;
   isVerified?: boolean;
-  role?: 'user' | 'admin' | 'moderator';
+  role?: 'user' | 'admin' | 'moderator' | 'writer';
   tier?: 'new' | 'bronze' | 'silver' | 'gold' | 'diamond';
   bio?: string;
   email?: string;

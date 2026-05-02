@@ -150,7 +150,7 @@ const UploadField = ({
           <input 
             type="file" 
             accept={type === 'video' ? "video/*" : "audio/*"} 
-            className="hidden" 
+            className="absolute inset-0 opacity-0 cursor-pointer" 
             onChange={(e) => handleFileUpload(e, fieldName, type)}
             disabled={uploading}
           />

@@ -101,7 +101,7 @@ export default function ImageUploader({
           type="file" 
           accept="image/*" 
           onChange={handleFileChange} 
-          className="absolute w-1 h-1 opacity-0 overflow-hidden -z-10"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           disabled={isUploading}
         />
         {isUploading ? (
