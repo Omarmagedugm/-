@@ -8,8 +8,19 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="قناة الاتحاد">
     <link rel="manifest" href="/site.webmanifest" />
-    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/Omarmagedugm/-/main/icon.png" />
-    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/Omarmagedugm/-/main/icon.png" />
+    <link rel="icon" type="image/png" href="/icon.png" />
+    <link rel="apple-touch-icon" href="/icon.png" />
+    <script>
+      (function() {
+        var img = new Image();
+        img.onerror = function() {
+          var fallback = 'https://res.cloudinary.com/dqj6gzwfg/image/upload/v1777716805/favicon_gd0ic4.png';
+          document.querySelector('link[rel="icon"]').href = fallback;
+          document.querySelector('link[rel="apple-touch-icon"]').href = fallback;
+        };
+        img.src = '/icon.png';
+      })();
+    </script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <title>قناة الاتحاد السكندري</title>
   </head>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { v4 as uuidv4 } from 'uuid';
-import { toDate, formatInTimeZone } from 'date-fns-tz';
+import { toDate, formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { db, auth, uploadImage } from '../lib/firebase';
 import { 
   collection, 
@@ -2014,7 +2014,7 @@ export default function Admin() {
                 <div className="mt-4 p-6 bg-slate-50 dark:bg-surface-dark rounded-2xl flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-border-dark min-h-[120px]">
                    {(formData.logoType || appSettings.logoType || 'image') === 'image' ? (
                      (formData.appLogo || appSettings.appLogo) && (
-                       <img src={formData.appLogo ?? appSettings.appLogo} className="h-20 object-contain drop-shadow-lg mb-2" referrerPolicy="no-referrer" />
+                       <img src={formData.appLogo ?? appSettings.appLogo} onError={(e) => { e.currentTarget.src = 'https://res.cloudinary.com/dqj6gzwfg/image/upload/v1777716805/favicon_gd0ic4.png'; }} className="h-20 object-contain drop-shadow-lg mb-2" referrerPolicy="no-referrer" />
                      )
                    ) : (
                      <h1 className="text-3xl font-black text-primary-dark dark:text-white drop-shadow-md mb-2">
@@ -2977,7 +2977,7 @@ export default function Admin() {
                    </div>
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">تاريخ ووقت المباراة (بتوقيت مصر)</label>
-                     <input type="datetime-local" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 text-sm" value={formData.date && !isNaN(new Date(formData.date).getTime()) ? formatInTimeZone(new Date(formData.date), 'Africa/Cairo', 'yyyy-MM-dd\'T\'HH:mm') : ''} onChange={(e) => setFormData({...formData, date: e.target.value ? toDate(e.target.value, { timeZone: 'Africa/Cairo' }).toISOString() : ''})} />
+                     <input type="datetime-local" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 text-sm" value={formData.date && !isNaN(new Date(formData.date).getTime()) ? formatInTimeZone(new Date(formData.date), 'Africa/Cairo', 'yyyy-MM-dd\'T\'HH:mm') : ''} onChange={(e) => setFormData({...formData, date: e.target.value ? fromZonedTime(e.target.value, 'Africa/Cairo').toISOString() : ''})} />
                     <div className="flex items-center gap-2 mt-4 bg-primary/5 p-3 rounded-xl border border-primary/10">
                        <input 
                          type="checkbox" 
