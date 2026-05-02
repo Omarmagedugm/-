@@ -24,6 +24,12 @@
   --font-sans: "Alexandria", ui-sans-serif, system-ui, sans-serif;
 }
 
+@media (display-mode: standalone) {
+  .standalone\:hidden {
+    display: none !important;
+  }
+}
+
 @variant dark (&:where(.dark, .dark *));
 
 @layer base {

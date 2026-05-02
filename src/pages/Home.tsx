@@ -377,7 +377,7 @@ export default function Home() {
               </Link>
             </div>
             
-            <div className="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth snap-x pb-4 -mx-4 px-4">
+            <div className="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth snap-x pb-1 -mx-4 px-4">
               {recentNews.map((item) => (
                 <motion.div 
                   key={item.id}
@@ -998,11 +998,15 @@ export default function Home() {
         animate="visible"
         className="flex-1 overflow-x-hidden px-4 flex flex-col gap-0 py-6"
       >
-        {sortedSections.map(section => (
-          <div key={section.id} style={{ marginBottom: `${section.spacing ?? 32}px` }}>
-            {renderSection(section)}
-          </div>
-        ))}
+        {sortedSections.map(section => {
+          const content = renderSection(section);
+          if (!content) return null;
+          return (
+            <div key={section.id} style={{ marginBottom: `${section.spacing ?? 24}px` }}>
+              {content}
+            </div>
+          );
+        })}
       </motion.main>
     </div>
   );

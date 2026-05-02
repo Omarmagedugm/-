@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => {
           skipWaiting: true,
           clientsClaim: true,
           globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff2,webmanifest}'],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // Increase to 5MB
           navigateFallback: 'index.html',
           // Optimize for Vercel
           runtimeCaching: [
@@ -101,6 +102,9 @@ export default defineConfig(({ mode }) => {
       assetsDir: 'assets',
       emptyOutDir: true,
       sourcemap: false,
+      minify: 'esbuild',
+      chunkSizeWarningLimit: 2000,
+      reportCompressedSize: false,
       rollupOptions: {
         output: {
           manualChunks: {

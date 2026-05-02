@@ -9,6 +9,7 @@
         "name": { "type": "string" },
         "email": { "type": "string" },
         "role": { "type": "string", "enum": ["user", "admin"] },
+        "roles": { "type": "array", "items": { "type": "string" } },
         "avatar": { "type": "string" },
         "location": { "type": "string" },
         "joinDate": { "type": "string" },

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../lib/firebase';
-import { useAppStore } from '../store';
+import { useAppStore, AppRole } from '../store';
 import { 
   LayoutDashboard, 
   Newspaper, 
@@ -41,51 +41,60 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
   );
 
   const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com' || auth.currentUser?.email === 'omarmagedugm@ittihad.club';
-  const effectiveRole = isDev ? 'admin' : profile.role;
-  const isWriter = effectiveRole === 'writer' || effectiveRole === 'moderator';
+  
+  const hasRole = (role: AppRole | AppRole[]) => {
+    if (isDev) return true;
+    if (profile.role === 'admin') return true;
+    const userRoles = profile.roles || [];
+    const requiredRoles = Array.isArray(role) ? role : [role];
+    return requiredRoles.some(r => userRoles.includes(r));
+  };
 
-  const tabs = isWriter ? [
-    { title: 'المحتوى', items: [
-      { id: 'news', icon: <Newspaper size={18} />, label: 'الأخبار' },
-    ]}
-  ] : [
+  const isAdmin = isDev || profile.role === 'admin';
+
+  const allTabs = [
     { title: 'عام', items: [
-      { id: 'overview', icon: <LayoutDashboard size={18} />, label: 'لوحة القيادة' },
-      { id: 'layout', icon: <LayoutDashboard size={18} />, label: 'إدارة الصفحة الرئيسية' },
-      { id: 'settings', icon: <SettingsIcon size={18} />, label: 'إعدادات التطبيق' },
+      { id: 'overview', icon: <LayoutDashboard size={18} />, label: 'لوحة القيادة', show: true },
+      { id: 'layout', icon: <LayoutDashboard size={18} />, label: 'إدارة الصفحة الرئيسية', show: isAdmin || hasRole('layout_editor') },
+      { id: 'settings', icon: <SettingsIcon size={18} />, label: 'إعدادات التطبيق', show: isAdmin },
     ]},
     { title: 'المحتوى', items: [
-      { id: 'news', icon: <Newspaper size={18} />, label: 'الأخبار' },
-      {id: 'news-categories', icon: <Tags size={18} />, label: 'أقسام الأخبار'},
-      {id: 'products', icon: <ShoppingBag size={18} />, label: 'إدارة المتجر'},
-      { id: 'orders', icon: <ShoppingCart size={18} />, label: 'المشتريات' },
-      { id: 'media', icon: <PlayCircle size={18} />, label: 'المالتيميديا' },
-      { id: 'matches', icon: <Trophy size={18} />, label: 'المباريات' },
-      { id: 'city', icon: <CloudSun size={18} />, label: 'طقس الإسكندرية' },
-      { id: 'history', icon: <HistoryIcon size={18} />, label: 'تاريخ النادي' },
-      { id: 'music', icon: <Music size={18} />, label: 'المكتبة الموسيقية' },
-      { id: 'books', icon: <BookOpen size={18} />, label: 'الكتب والمجلات' },
-      { id: 'live', icon: <Radio size={18} />, label: 'البث المباشر' },
+      { id: 'news', icon: <Newspaper size={18} />, label: 'الأخبار', show: isAdmin || hasRole('news_editor') },
+      { id: 'news-categories', icon: <Tags size={18} />, label: 'أقسام الأخبار', show: isAdmin || hasRole('news_editor') },
+      { id: 'products', icon: <ShoppingBag size={18} />, label: 'إدارة المتجر', show: isAdmin || hasRole('store_editor') },
+      { id: 'orders', icon: <ShoppingCart size={18} />, label: 'المشتريات', show: isAdmin || hasRole('store_editor') },
+      { id: 'media', icon: <PlayCircle size={18} />, label: 'المالتيميديا', show: isAdmin || hasRole('media_editor') },
+      { id: 'matches', icon: <Trophy size={18} />, label: 'المباريات', show: isAdmin || hasRole('matches_editor') },
+      { id: 'city', icon: <CloudSun size={18} />, label: 'طقس الإسكندرية', show: isAdmin || hasRole('layout_editor') },
+      { id: 'history', icon: <HistoryIcon size={18} />, label: 'تاريخ النادي', show: isAdmin || hasRole('layout_editor') },
+      { id: 'music', icon: <Music size={18} />, label: 'المكتبة الموسيقية', show: isAdmin || hasRole('media_editor') },
+      { id: 'books', icon: <BookOpen size={18} />, label: 'الكتب والمجلات', show: isAdmin || hasRole('media_editor') },
+      { id: 'live', icon: <Radio size={18} />, label: 'البث المباشر', show: isAdmin || hasRole('matches_editor') },
     ]},
     { title: 'الجماهير', items: [
-      { id: 'fanzone', icon: <UsersIcon size={18} />, label: 'منطقة الجماهير' },
-      { id: 'posts', icon: <MessageSquare size={18} />, label: 'المنشورات' },
-      { id: 'fan-comments', icon: <MessageCircle size={18} />, label: 'التعليقات' },
-      { id: 'polls', icon: <BarChart3 size={18} />, label: 'الاستطلاعات' },
-      { id: 'predictions', icon: <Trophy size={18} />, label: 'التوقعات' },
+      { id: 'fanzone', icon: <UsersIcon size={18} />, label: 'منطقة الجماهير', show: isAdmin || hasRole(['news_editor', 'user_manager']) },
+      { id: 'posts', icon: <MessageSquare size={18} />, label: 'المنشورات', show: isAdmin || hasRole(['user_manager']) },
+      { id: 'fan-comments', icon: <MessageCircle size={18} />, label: 'التعليقات', show: isAdmin || hasRole(['user_manager']) },
+      { id: 'polls', icon: <BarChart3 size={18} />, label: 'الاستطلاعات', show: isAdmin || hasRole(['layout_editor', 'user_manager']) },
+      { id: 'predictions', icon: <Trophy size={18} />, label: 'التوقعات', show: isAdmin || hasRole(['matches_editor', 'user_manager']) },
     ]},
     { title: 'المستخدمين', items: [
-      { id: 'users', icon: <UsersIcon size={18} />, label: 'إدارة الأعضاء' },
-      { id: 'comments', icon: <MessageSquare size={18} />, label: 'تعليقات البث' },
-      { id: 'notifications', icon: <Bell size={18} />, label: 'إرسال إشعار' },
+      { id: 'users', icon: <UsersIcon size={18} />, label: 'إدارة الأعضاء', show: isAdmin || hasRole('user_manager') },
+      { id: 'comments', icon: <MessageSquare size={18} />, label: 'تعليقات البث', show: isAdmin || hasRole(['matches_editor', 'user_manager']) },
+      { id: 'notifications', icon: <Bell size={18} />, label: 'إرسال إشعار', show: isAdmin || hasRole('user_manager') },
     ]},
     { title: 'البيانات', items: [
-      { id: 'clubs', icon: <Shield size={18} />, label: 'قائمة الأندية' },
+      { id: 'clubs', icon: <Shield size={18} />, label: 'قائمة الأندية', show: isAdmin || hasRole(['matches_editor', 'layout_editor']) },
     ]},
     { title: 'النظام', items: [
-      { id: 'backup', icon: <Database size={18} />, label: 'نسخة احتياطية' },
+      { id: 'backup', icon: <Database size={18} />, label: 'نسخة احتياطية', show: isAdmin },
     ]}
   ];
+
+  const tabs = allTabs.map(group => ({
+    ...group,
+    items: group.items.filter(item => item.show)
+  })).filter(group => group.items.length > 0);
 
   return (
     <div className="w-64 bg-white dark:bg-card-dark border-l border-border-light dark:border-border-dark flex flex-col h-full overflow-y-auto no-scrollbar py-6">

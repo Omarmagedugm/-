@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAppStore } from '../store';
+import { useAppStore, AppRole } from '../store';
 import { v4 as uuidv4 } from 'uuid';
 import { toDate, formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { db, auth, uploadImage, handleFirestoreError, OperationType } from '../lib/firebase';
@@ -282,7 +282,17 @@ const UploadOrUrlField = ({
 };
 
 // Triggering deployment change
-const ADMIN_VERSION = '1.2.2';
+const ADMIN_VERSION = '1.3.0';
+
+const APP_ROLES: { id: AppRole; label: string; icon: any; color: string }[] = [
+  { id: 'admin', label: 'مدير كامل', icon: Shield, color: 'text-red-500' },
+  { id: 'news_editor', label: 'محرر أخبار', icon: Newspaper, color: 'text-blue-500' },
+  { id: 'media_editor', label: 'مدير الميديا', icon: PlayCircle, color: 'text-purple-500' },
+  { id: 'matches_editor', label: 'مدير المباريات', icon: Trophy, color: 'text-orange-500' },
+  { id: 'store_editor', label: 'مدير المتجر', icon: ShoppingCart, color: 'text-green-500' },
+  { id: 'layout_editor', label: 'مدير الواجهة', icon: LayoutDashboard, color: 'text-accent' },
+  { id: 'user_manager', label: 'مدير أعضاء', icon: UsersIcon, color: 'text-indigo-500' },
+];
 
 export default function Admin() {
   const { 
@@ -405,10 +415,50 @@ export default function Admin() {
   // Security check
   const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com' || auth.currentUser?.email === 'omarmagedugm@ittihad.club';
   
+  const hasPermission = (roles: AppRole | AppRole[]) => {
+    if (isDev) return true;
+    if (profile.role === 'admin') return true;
+    const userRoles = profile.roles || [];
+    const requiredRoles = Array.isArray(roles) ? roles : [roles];
+    return requiredRoles.some(r => userRoles.includes(r));
+  };
+
+  const isTabAllowed = (tab: string) => {
+    if (isDev || profile.role === 'admin') return true;
+    if (tab === 'overview') return true;
+    
+    const roleMap: Record<string, AppRole[]> = {
+      'news': ['news_editor'],
+      'news-categories': ['news_editor'],
+      'fanzone': ['news_editor', 'user_manager'],
+      'media': ['media_editor'],
+      'music': ['media_editor'],
+      'books': ['media_editor'],
+      'matches': ['matches_editor'],
+      'live': ['matches_editor'],
+      'comments': ['matches_editor', 'user_manager'],
+      'clubs': ['matches_editor', 'layout_editor'],
+      'products': ['store_editor'],
+      'orders': ['store_editor'],
+      'layout': ['layout_editor'],
+      'city': ['layout_editor'],
+      'history': ['layout_editor'],
+      'polls': ['layout_editor', 'user_manager'],
+      'users': ['user_manager'],
+      'notifications': ['user_manager'],
+      'posts': ['user_manager'],
+      'fan-comments': ['user_manager'],
+      'predictions': ['user_manager', 'matches_editor'],
+    };
+
+    const required = roleMap[tab];
+    if (!required) return false;
+    return hasPermission(required);
+  };
+
   // If Omar or Dev, they are always admin in UI regardless of DB role
   const effectiveRole = isDev ? 'admin' : profile.role;
-  const isWriter = effectiveRole === 'writer' || effectiveRole === 'moderator';
-  const isAdminOrWriter = effectiveRole === 'admin' || isWriter;
+  const isAdminOrWriter = isDev || profile.role === 'admin' || (profile.roles && profile.roles.length > 0) || profile.role === 'writer' || profile.role === 'moderator';
 
   if (!isAdminOrWriter) {
     return (
@@ -479,6 +529,7 @@ export default function Admin() {
         const payload = {
           name: formData.name || '',
           role: formData.role || 'user',
+          roles: formData.roles || [],
           tier: formData.tier || 'new'
         };
 
@@ -2028,66 +2079,91 @@ export default function Admin() {
           )}
 
           {activeTab === 'users' && users.map((u) => (
-            <div key={u.uid} className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  {u.avatar && u.avatar.trim() !== '' ? (
-                    <img src={u.avatar} className="w-12 h-12 rounded-full border-2 border-slate-100 dark:border-border-dark" referrerPolicy="no-referrer" />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-card-dark border-2 border-slate-100 dark:border-border-dark flex items-center justify-center">
-                      <UsersIcon size={20} className="text-slate-400" />
+            <div key={u.uid} className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-5 flex flex-col gap-4 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    {u.avatar && u.avatar.trim() !== '' ? (
+                      <img src={u.avatar} className="w-14 h-14 rounded-full border-2 border-slate-100 dark:border-border-dark" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-card-dark border-2 border-slate-100 dark:border-border-dark flex items-center justify-center">
+                        <UsersIcon size={24} className="text-slate-400" />
+                      </div>
+                    )}
+                    {u.role === 'admin' && (
+                      <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-white shadow-sm">ADMIN</div>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-base font-black leading-tight flex items-center gap-1.5">
+                      {u.name}
+                      {u.isVerified && <Check size={14} className="text-blue-500" strokeWidth={3} />}
+                    </h4>
+                    <p className="text-[10px] text-slate-500 font-bold mb-1">{u.email}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                       <span className={`text-[8px] font-black px-2 py-0.5 rounded-lg ${u.role === 'admin' ? 'bg-red-500/10 text-red-500' : 'bg-slate-100 text-slate-500'}`}>
+                         {u.role === 'admin' ? 'مدير عام' : 'عضو'}
+                       </span>
+                       {u.roles?.map(roleId => {
+                         const role = APP_ROLES.find(r => r.id === roleId);
+                         return (
+                           <span key={roleId} className="text-[8px] font-black px-2 py-0.5 rounded-lg bg-primary/10 text-primary uppercase">
+                             {role?.label || roleId}
+                           </span>
+                         );
+                       })}
                     </div>
-                  )}
-                  {u.role === 'admin' && (
-                    <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-[8px] font-black px-1 rounded border border-white">ADMIN</div>
-                  )}
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold leading-tight">{u.name}</h4>
-                  <p className="text-[10px] text-slate-500 font-bold mb-1">{u.email}</p>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${u.role === 'admin' ? 'bg-yellow-400/20 text-yellow-600' : 'bg-slate-100 text-slate-500'}`}>
-                      {u.role === 'admin' ? 'مدير نظام' : 'عضو'}
-                    </span>
-                    <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-primary/10 text-primary uppercase">
-                      {u.tier || 'new'}
-                    </span>
-                    <span className="text-[8px] text-slate-400 font-bold">عضو منذ {u.joinDate}</span>
                   </div>
                 </div>
+                <div className="flex gap-1.5">
+                   <button 
+                    title="تعديل الرتب والصلاحيات"
+                    onClick={() => {
+                      setFormData({ ...u, roles: u.roles || [] });
+                      setIsEditing(true);
+                      setEditingId(u.uid!);
+                      setShowModal(true);
+                    }}
+                    className="w-10 h-10 flex items-center justify-center text-blue-500 bg-blue-50 dark:bg-blue-500/10 rounded-2xl transition-all hover:scale-105 active:scale-95"
+                   >
+                     <Shield size={20} />
+                   </button>
+                   <button 
+                    onClick={() => handleDelete('users', u.uid!)} 
+                    className="w-10 h-10 flex items-center justify-center text-red-500 bg-red-50 dark:bg-red-500/10 rounded-2xl transition-all hover:scale-105 active:scale-95"
+                   >
+                     <Trash2 size={20} />
+                   </button>
+                </div>
               </div>
-              <div className="flex gap-1">
-                 <button 
-                  title="تعديل اسم العضو"
-                  onClick={() => {
-                    setFormData({ ...u });
-                    setIsEditing(true);
-                    setEditingId(u.uid!);
-                    setShowModal(true);
-                  }}
-                  className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                 >
-                   <Edit2 size={18} />
-                 </button>
-                 <button 
-                  title={u.role === 'admin' ? 'تخفيض لصلاحيات عضو' : 'ترقية لصلاحيات مدير'}
-                  onClick={async () => {
-                    if (u.uid === auth.currentUser?.uid) return alert('لا يمكنك تغيير صلاحياتك بنفسك');
-                    const newRole = u.role === 'admin' ? 'user' : 'admin';
-                    if (confirm(`هل تريد ${newRole === 'admin' ? 'ترقية' : 'تخفيض'} ${u.name}؟`)) {
-                      await updateDoc(doc(db, 'users', u.uid!), { role: newRole });
-                    }
-                  }}
-                  className={`p-2 rounded-lg transition-colors ${u.role === 'admin' ? 'text-orange-500 hover:bg-orange-50' : 'text-blue-500 hover:bg-blue-50'}`}
-                 >
-                   <ShieldAlert size={18} />
-                 </button>
-                 <button 
-                  onClick={() => handleDelete('users', u.uid!)} 
-                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                 >
-                   <Trash2 size={18} />
-                 </button>
+
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-border-dark">
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-[8px] font-black text-slate-400 uppercase">Tier</span>
+                    <span className="text-[10px] font-black text-slate-700 dark:text-white uppercase tracking-tighter">{u.tier || 'new'}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[8px] font-black text-slate-400 uppercase">Member Since</span>
+                    <span className="text-[10px] font-black text-slate-700 dark:text-white uppercase tracking-tighter">{u.joinDate}</span>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                   {u.uid !== auth.currentUser?.uid && (
+                     <button 
+                      onClick={async () => {
+                        const newRole = u.role === 'admin' ? 'user' : 'admin';
+                        if (confirm(`هل تريد ${newRole === 'admin' ? 'ترقية' : 'تخفيض'} ${u.name} لجعلة مدير عام؟`)) {
+                          await updateDoc(doc(db, 'users', u.uid!), { role: newRole });
+                        }
+                      }}
+                      className="text-[9px] font-black px-3 py-1.5 rounded-xl border border-slate-200 dark:border-border-dark text-slate-500 hover:bg-slate-50 dark:hover:bg-surface-dark transition-all"
+                     >
+                        تبديل الإدارة العامة
+                     </button>
+                   )}
+                </div>
               </div>
             </div>
           ))}
@@ -2985,18 +3061,18 @@ export default function Admin() {
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">البريد الإلكتروني (للعرض فقط)</label>
                      <input type="text" disabled className="w-full p-3 rounded-xl border border-border-light bg-slate-200 dark:bg-slate-800 dark:border-border-dark text-sm opacity-50 cursor-not-allowed text-left dir-ltr" value={formData.email || ''} />
                    </div>
-                   <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div className="grid grid-cols-2 gap-3 mt-3">
                       <div>
-                        <label className="text-[10px] font-black text-slate-500 mb-1 block">الصلاحيات</label>
+                        <label className="text-[10px] font-black text-slate-500 mb-1 block">الصلاحيات الأساسية</label>
                         <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.role || 'user'} onChange={(e) => setFormData({...formData, role: e.target.value})}>
                           <option value="user">عضو عادي</option>
-                          <option value="writer">محرر أخبار</option>
+                          <option value="writer">محرر بسيط</option>
                           <option value="moderator">مشرف</option>
-                          <option value="admin">مدير نظام</option>
+                          <option value="admin">مدير نظام كامل</option>
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10px] font-black text-slate-500 mb-1 block">الرتبة</label>
+                        <label className="text-[10px] font-black text-slate-500 mb-1 block">الرتبة (Tier)</label>
                         <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.tier || 'new'} onChange={(e) => setFormData({...formData, tier: e.target.value})}>
                           <option value="new">عضو جديد (New)</option>
                           <option value="bronze">عضو برونزي (Bronze)</option>
@@ -3004,6 +3080,46 @@ export default function Admin() {
                           <option value="gold">عضو ذهبي (Gold)</option>
                           <option value="diamond">عضو ماسي (Diamond)</option>
                         </select>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 p-4 bg-slate-50 dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark">
+                      <label className="text-xs font-black text-slate-800 dark:text-white mb-3 block">الرتب والصلاحيات المخصصة</label>
+                      <div className="grid grid-cols-1 gap-2">
+                        {APP_ROLES.map(role => (
+                          <label 
+                            key={role.id} 
+                            className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                              formData.roles?.includes(role.id) 
+                                ? 'bg-primary/5 border-primary/20' 
+                                : 'bg-white dark:bg-card-dark border-transparent hover:border-slate-200'
+                            }`}
+                          >
+                            <input 
+                              type="checkbox"
+                              className="hidden"
+                              checked={formData.roles?.includes(role.id)}
+                              onChange={(e) => {
+                                const currentRoles = formData.roles || [];
+                                if (e.target.checked) {
+                                  setFormData({ ...formData, roles: [...currentRoles, role.id] });
+                                } else {
+                                  setFormData({ ...formData, roles: currentRoles.filter((r: string) => r !== role.id) });
+                                }
+                              }}
+                            />
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${formData.roles?.includes(role.id) ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-surface-dark text-slate-400'}`}>
+                              <role.icon size={16} />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-xs font-black">{role.label}</p>
+                              <p className="text-[10px] text-slate-400 font-bold uppercase">{role.id.replace('_', ' ')}</p>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${formData.roles?.includes(role.id) ? 'bg-primary border-primary text-white' : 'border-slate-300 dark:border-slate-600'}`}>
+                              {formData.roles?.includes(role.id) && <Check size={12} strokeWidth={4} />}
+                            </div>
+                          </label>
+                        ))}
                       </div>
                     </div>
                  </>

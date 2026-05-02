@@ -22,6 +22,7 @@ import Library from './pages/Library';
 import BottomNav from './components/BottomNav';
 import TopHeader from './components/TopHeader';
 import MusicPlayer from './components/MusicPlayer';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 export default function App() {
   const { theme, setIsAuthReady, updateProfile } = useAppStore();
@@ -104,6 +105,7 @@ export default function App() {
         </Routes>
         <AppNav />
         <MusicPlayer />
+        <PWAInstallPrompt />
       </div>
     </BrowserRouter>
   );

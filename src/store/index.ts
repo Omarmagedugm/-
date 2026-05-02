@@ -245,6 +245,8 @@ export interface StoreOrder {
   createdAt: string;
 }
 
+export type AppRole = 'admin' | 'news_editor' | 'media_editor' | 'matches_editor' | 'store_editor' | 'layout_editor' | 'user_manager';
+
 export interface UserProfile {
   uid?: string;
   name: string;
@@ -253,7 +255,8 @@ export interface UserProfile {
   joinDate: string;
   avatar: string;
   isVerified?: boolean;
-  role?: 'user' | 'admin' | 'moderator' | 'writer';
+  role?: 'user' | 'admin' | 'moderator' | 'writer'; // Legacy support
+  roles?: AppRole[];
   tier?: 'new' | 'bronze' | 'silver' | 'gold' | 'diamond';
   bio?: string;
   email?: string;
