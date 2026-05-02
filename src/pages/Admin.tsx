@@ -479,12 +479,34 @@ export default function Admin() {
     );
   }
 
-  // Force writer to news tab if they are not admin
+  // Redirection logic based on role permissions
   useEffect(() => {
-    if (effectiveRole === 'writer' && activeTab !== 'news') {
-      setActiveTab('news');
+    if (!isTabAllowed(activeTab)) {
+      const allowedTabs = ['overview', 'news', 'media', 'matches', 'live', 'users', 'settings', 'clubs', 'polls', 'comments', 'posts', 'predictions', 'fanzone', 'history', 'news-categories', 'products', 'orders', 'layout', 'music', 'books', 'city', 'notifications', 'backup'];
+      const firstAllowed = allowedTabs.find(tab => isTabAllowed(tab));
+      if (firstAllowed) {
+        setActiveTab(firstAllowed as any);
+      }
     }
-  }, [effectiveRole, activeTab]);
+  }, [profile.roles, profile.role, isDev]);
+
+  const [userSearch, setUserSearch] = useState('');
+  const [newsTags, setNewsTags] = useState<string[]>([]);
+  const [featuredMatchId, setFeaturedMatchId] = useState<string | null>(null);
+
+  // Sync featured match and news categories/tags
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'settings', 'featured_match'), (snap) => {
+      if (snap.exists()) setFeaturedMatchId(snap.data().matchId);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    }
+  };
 
   const handleAdd = async () => {
     setLoading(true);
@@ -1042,6 +1064,16 @@ export default function Admin() {
            <span className="text-[10px] font-black uppercase tracking-widest">قائمة الإدارة</span>
          </button>
          
+         {isDev && (
+           <button 
+             onClick={handleGoBack}
+             className="h-12 w-12 bg-white dark:bg-surface-dark rounded-2xl flex items-center justify-center text-slate-600 dark:text-slate-300 border border-border-light dark:border-border-dark shadow-sm pressable active:scale-95 transition-all"
+             title="الرجوع للخلف"
+           >
+             <RotateCcw size={18} />
+           </button>
+         )}
+
          <button 
            onClick={async () => {
              try {
@@ -1095,7 +1127,7 @@ export default function Admin() {
           )}
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-6">
           {activeTab === 'fanzone' && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -1970,6 +2002,16 @@ export default function Admin() {
                     </div>
                   )}
                   <div className="flex items-center gap-1">
+                    <button 
+                      onClick={async () => {
+                        const newId = featuredMatchId === item.id ? null : item.id;
+                        await setDoc(doc(db, 'settings', 'featured_match'), { matchId: newId });
+                        toast.success(newId ? 'تم تمييز المباراة في الصفحة الرئيسية' : 'تم إلغاء تمييز المباراة');
+                      }}
+                      className={`p-1.5 rounded-lg transition-all ${featuredMatchId === item.id ? 'text-yellow-500 bg-yellow-50' : 'text-slate-400 hover:text-yellow-500'}`}
+                    >
+                      <Star size={16} fill={featuredMatchId === item.id ? 'currentColor' : 'none'} />
+                    </button>
                     <button onClick={() => handleEditMatch(item)} className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-lg transition-all"><Edit2 size={16} /></button>
                     <button onClick={() => handleDelete('matches', item.id)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all"><Trash2 size={16} /></button>
                   </div>
@@ -2083,7 +2125,25 @@ export default function Admin() {
             </div>
           )}
 
-          {activeTab === 'users' && users.map((u) => (
+          {activeTab === 'users' && (
+            <div className="mb-4 relative">
+              <input 
+                type="text" 
+                placeholder="ابحث عن عضو بالإسم أو البريد..." 
+                className="w-full p-4 pl-12 rounded-2xl border border-border-light bg-white dark:bg-card-dark dark:border-border-dark text-sm font-bold shadow-sm focus:border-primary outline-none transition-all"
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+              />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            </div>
+          )}
+
+          {activeTab === 'users' && users
+            .filter(u => 
+              u.name?.toLowerCase().includes(userSearch.toLowerCase()) || 
+              u.email?.toLowerCase().includes(userSearch.toLowerCase())
+            )
+            .map((u) => (
             <div key={u.uid} className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-5 flex flex-col gap-4 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -2174,48 +2234,94 @@ export default function Admin() {
           ))}
 
           {activeTab === 'notifications' && (
-            <div className="bg-white dark:bg-card-dark rounded-xl p-5 shadow-sm space-y-5 border border-border-light dark:border-border-dark">
-              <div className="pb-4 border-b border-border-light dark:border-border-dark">
-                 <h3 className="text-sm font-black mb-1">إرسال إشعار لحظي</h3>
-                 <p className="text-[10px] text-slate-500 font-bold">إرسال إشعارات لجميع المستخدمين أو لمستخدم محدد</p>
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-card-dark rounded-xl p-5 shadow-sm space-y-5 border border-border-light dark:border-border-dark">
+                <div className="pb-4 border-b border-border-light dark:border-border-dark flex items-center justify-between">
+                   <div>
+                     <h3 className="text-sm font-black mb-1">إرسال إشعار لحظي</h3>
+                     <p className="text-[10px] text-slate-500 font-bold">إرسال إشعارات لجميع المستخدمين أو لمستخدم محدد</p>
+                   </div>
+                   <Bell className="text-primary opacity-20" size={32} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 mb-1.5 block">عنوان الإشعار</label>
+                  <input 
+                    type="text" 
+                    value={notificationForm.title} 
+                    onChange={(e) => setNotificationForm({...notificationForm, title: e.target.value})}
+                    className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold focus:border-primary outline-none transition-colors"
+                    placeholder="مثال: عاجل - تعاقد جديد"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 mb-1.5 block">نص الإشعار</label>
+                  <textarea 
+                    value={notificationForm.body} 
+                    onChange={(e) => setNotificationForm({...notificationForm, body: e.target.value})}
+                    className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold focus:border-primary outline-none transition-colors min-h-[100px] resize-none"
+                    placeholder="محتوى الإشعار وتفاصيله..."
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 mb-1.5 block">الجمهور المستهدف (all للجميع أو UID)</label>
+                  <input 
+                    type="text" 
+                    value={notificationForm.target} 
+                    onChange={(e) => setNotificationForm({...notificationForm, target: e.target.value})}
+                    className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-mono focus:border-primary outline-none transition-colors text-left"
+                    dir="ltr"
+                  />
+                </div>
+                <button 
+                  onClick={handleSendNotification} 
+                  disabled={isSending}
+                  className="w-full bg-primary text-white py-4 rounded-2xl font-black text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform active:scale-95"
+                >
+                  {isSending ? <Loader2 className="animate-spin" size={18} /> : <Bell size={18} />}
+                  إرسال الإشعار
+                </button>
               </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-500 mb-1.5 block">عنوان الإشعار</label>
-                <input 
-                  type="text" 
-                  value={notificationForm.title} 
-                  onChange={(e) => setNotificationForm({...notificationForm, title: e.target.value})}
-                  className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold focus:border-primary outline-none transition-colors"
-                  placeholder="مثال: عاجل - تعاقد جديد"
-                />
+
+              <div className="bg-white dark:bg-card-dark rounded-xl p-5 shadow-sm border border-border-light dark:border-border-dark">
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-border-light dark:border-border-dark">
+                  <h3 className="text-sm font-black">سجل الإشعارات المرسلة</h3>
+                  <button 
+                    onClick={async () => {
+                      if (confirm('هل أنت متأكد من حذف جميع الإشعارات؟')) {
+                        const snap = await getDocs(collection(db, 'notifications'));
+                        const batch = snap.docs.map(d => deleteDoc(doc(db, 'notifications', d.id)));
+                        await Promise.all(batch);
+                        toast.success('تم حذف جميع الإشعارات');
+                      }
+                    }}
+                    className="text-[10px] font-black text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1"
+                  >
+                    <Trash2 size={12} />
+                    حذف الكل
+                  </button>
+                </div>
+                
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+                  {sentNotifications.map((n: any) => (
+                    <div key={n.id} className="p-3 bg-slate-50 dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-black truncate">{n.title}</p>
+                        <p className="text-[10px] text-slate-500 truncate">{n.body}</p>
+                        <p className="text-[8px] text-slate-400 mt-1 uppercase font-bold">{new Date(n.createdAt).toLocaleString('ar-EG')}</p>
+                      </div>
+                      <button 
+                        onClick={() => handleDelete('notifications', n.id)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-all shrink-0"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                  {sentNotifications.length === 0 && (
+                    <div className="py-8 text-center text-slate-400 font-bold text-[10px]">لا توجد إشعارات مرسلة</div>
+                  )}
+                </div>
               </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-500 mb-1.5 block">نص الإشعار</label>
-                <textarea 
-                  value={notificationForm.body} 
-                  onChange={(e) => setNotificationForm({...notificationForm, body: e.target.value})}
-                  className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold focus:border-primary outline-none transition-colors min-h-[100px] resize-none"
-                  placeholder="محتوى الإشعار وتفاصيله..."
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-500 mb-1.5 block">الجمهور المستهدف (اكتب all للجميع أو UID لمستخدم محدد)</label>
-                <input 
-                  type="text" 
-                  value={notificationForm.target} 
-                  onChange={(e) => setNotificationForm({...notificationForm, target: e.target.value})}
-                  className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-mono focus:border-primary outline-none transition-colors text-left"
-                  dir="ltr"
-                />
-              </div>
-              <button 
-                onClick={handleSendNotification} 
-                disabled={isSending}
-                className="w-full bg-primary text-white py-4 rounded-2xl font-black text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform active:scale-95"
-              >
-                {isSending ? <Loader2 className="animate-spin" size={18} /> : <Bell size={18} />}
-                إرسال الإشعار
-              </button>
             </div>
           )}
 

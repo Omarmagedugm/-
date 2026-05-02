@@ -22,7 +22,9 @@ export default function TopHeader() {
     const q1 = query(collection(db, 'notifications'), where('target', 'in', ['all', profile.uid]));
     
     const unsubscribe = onSnapshot(q1, (snap) => {
-      const notifs = snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
+      const notifs = snap.docs
+        .map(doc => ({ id: doc.id, ...(doc.data() as any) }))
+        .filter(n => !n.deletedBy?.includes(profile.uid));
       notifs.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setNotifications(notifs);
 
@@ -176,12 +178,35 @@ export default function TopHeader() {
               exit={{ opacity: 0, y: 100 }}
               className="relative w-full max-w-sm bg-white dark:bg-card-dark rounded-t-[32px] sm:rounded-[32px] p-6 shadow-2xl flex flex-col max-h-[80vh]"
             >
-              <div className="flex items-center justify-between mb-6">
-                 <div>
-                   <h3 className="text-lg font-black text-slate-800 dark:text-white uppercase leading-none">الإشعارات</h3>
-                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Notifications</p>
-                 </div>
-                 <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-lg font-black text-slate-800 dark:text-white uppercase leading-none">الإشعارات</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Notifications</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {notifications.length > 0 && (
+                        <button 
+                          onClick={async () => {
+                            if (!profile?.uid) return;
+                            if (confirm('هل تريد مسح جميع الإشعارات؟')) {
+                              try {
+                                const batch = notifications.map(n => {
+                                  const deletedBy = [...(n.deletedBy || []), profile.uid];
+                                  return updateDoc(doc(db, 'notifications', n.id), { deletedBy });
+                                });
+                                await Promise.all(batch);
+                                toast.success('تم مسح الإشعارات');
+                              } catch (e) {
+                                console.error(e);
+                                toast.error('حدث خطأ');
+                              }
+                            }
+                          }}
+                          className="text-[9px] font-black text-slate-400 hover:text-red-500 transition-colors uppercase ml-2"
+                        >
+                          مسح الكل
+                        </button>
+                      )}
                    {('Notification' in window) && Notification.permission !== 'granted' && Notification.permission !== 'denied' && (
                      <button
                        onClick={() => {
@@ -206,7 +231,7 @@ export default function TopHeader() {
                        <div 
                          key={notif.id}
                          onClick={() => markAsRead(notif.id, notif.readBy)}
-                         className={`p-4 rounded-2xl border ${!isRead ? 'border-primary/50 bg-primary/5 dark:bg-primary/10' : 'border-border-light dark:border-border-dark bg-slate-50 dark:bg-surface-dark'} flex flex-col gap-2 transition-all cursor-pointer`}
+                         className={`group relative p-4 rounded-2xl border ${!isRead ? 'border-primary/50 bg-primary/5 dark:bg-primary/10' : 'border-border-light dark:border-border-dark bg-slate-50 dark:bg-surface-dark'} flex flex-col gap-2 transition-all cursor-pointer`}
                        >
                          <div className="flex items-center gap-3">
                             <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${!isRead ? 'bg-primary text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>
@@ -216,6 +241,17 @@ export default function TopHeader() {
                                <h4 className={`text-sm font-black ${!isRead ? 'text-primary-dark dark:text-white' : 'text-slate-800 dark:text-slate-300'}`}>{notif.title}</h4>
                             </div>
                             {!isRead && <div className="w-2 h-2 rounded-full bg-accent"></div>}
+                             <button 
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 if (!profile?.uid) return;
+                                 const deletedBy = [...(notif.deletedBy || []), profile.uid];
+                                 updateDoc(doc(db, 'notifications', notif.id), { deletedBy });
+                               }}
+                               className="p-1 text-slate-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                             >
+                               <X size={14} />
+                             </button>
                          </div>
                          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed pr-11">{notif.body}</p>
                          <span className="text-[9px] font-bold text-slate-400 pr-11 opacity-60">

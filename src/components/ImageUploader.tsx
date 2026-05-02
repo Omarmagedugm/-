@@ -89,13 +89,13 @@ export default function ImageUploader({
       )}
       
       <label
-        className={buttonClassName || (iconOnly 
+        className={`relative ${buttonClassName || (iconOnly 
           ? `flex items-center justify-center transition-all ${isUploading ? 'text-primary opacity-50 cursor-not-allowed' : 'text-slate-400 hover:text-primary cursor-pointer'}` 
           : `flex items-center justify-center cursor-pointer gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all w-full max-w-xs ${
           isUploading 
             ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 cursor-not-allowed' 
             : 'bg-primary text-white hover:bg-primary-dark shadow-xl hover:shadow-primary/30'
-        }`)}
+        }`)}`}
       >
         <input 
           type="file" 
