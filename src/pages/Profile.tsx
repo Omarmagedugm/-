@@ -7,6 +7,7 @@ import { db, auth, uploadImage } from '../lib/firebase';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { updatePassword, updateProfile as updateAuthProfile } from 'firebase/auth';
 import ImageUploader from '../components/ImageUploader';
+import DigitalFanID from '../components/DigitalFanID';
 
 export default function Profile() {
   const { profile, theme, toggleTheme, users, fanPosts, predictions } = useAppStore();
@@ -272,6 +273,20 @@ export default function Profile() {
             </div>
             <span className="mt-1 text-2xl font-black text-slate-900 dark:text-white tabular-nums">{Math.max(users.length, 12)}</span>
             <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">المتابعين</span>
+          </div>
+        </motion.div>
+
+        {/* Digital Fan ID Section */}
+        <motion.div variants={itemVariants} className="flex flex-col px-4 mb-8">
+          <h3 className="mb-3 px-2 text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <span className="w-1 h-4 rounded-full bg-primary-light"></span>
+            بطاقة المشجع الرقمية
+          </h3>
+          <div className="overflow-hidden rounded-3xl bg-white p-6 shadow-sm border border-border-light/60 dark:border-border-dark dark:bg-card-dark flex justify-center">
+            <DigitalFanID 
+              username={profile.name || auth.currentUser?.displayName || 'مستخدم جديد'}
+              avatarUrl={profile.avatar || auth.currentUser?.photoURL || 'https://ui-avatars.com/api/?name=User'}
+            />
           </div>
         </motion.div>
 

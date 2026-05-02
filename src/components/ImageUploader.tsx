@@ -27,7 +27,6 @@ export default function ImageUploader({
 }: ImageUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>(previewImageUrl);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const CLOUD_NAME = 'dqj6gzwfg';
   const UPLOAD_PRESET = 'uhicj3ig';
@@ -71,15 +70,9 @@ export default function ImageUploader({
       if (onError) onError(error instanceof Error ? error.message : 'فشل الرفع');
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      // Reset the value via target to allow picking the same file again
+      e.target.value = '';
     }
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    fileInputRef.current?.click();
   };
 
   return (
@@ -95,27 +88,22 @@ export default function ImageUploader({
         </div>
       )}
       
-      <input 
-        type="file" 
-        accept="image/*" 
-        ref={fileInputRef} 
-        onChange={handleFileChange} 
-        className="hidden" 
-      />
-      
-      <motion.button
-        type="button"
-        whileTap={{ scale: 0.95 }}
-        onClick={handleClick}
-        disabled={isUploading}
+      <label
         className={buttonClassName || (iconOnly 
-          ? `flex items-center justify-center transition-all ${isUploading ? 'text-primary opacity-50 cursor-not-allowed' : 'text-slate-400 hover:text-primary'}` 
-          : `flex items-center justify-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all w-full max-w-xs ${
+          ? `flex items-center justify-center transition-all ${isUploading ? 'text-primary opacity-50 cursor-not-allowed' : 'text-slate-400 hover:text-primary cursor-pointer'}` 
+          : `flex items-center justify-center cursor-pointer gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all w-full max-w-xs ${
           isUploading 
             ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 cursor-not-allowed' 
             : 'bg-primary text-white hover:bg-primary-dark shadow-xl hover:shadow-primary/30'
         }`)}
       >
+        <input 
+          type="file" 
+          accept="image/*" 
+          onChange={handleFileChange} 
+          className="absolute w-1 h-1 opacity-0 overflow-hidden -z-10"
+          disabled={isUploading}
+        />
         {isUploading ? (
           iconOnly ? (
             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
@@ -137,7 +125,7 @@ export default function ImageUploader({
             </>
           )
         )}
-      </motion.button>
+      </label>
     </div>
   );
 }
