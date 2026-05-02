@@ -4,11 +4,15 @@ import { v4 as uuidv4 } from 'uuid';
 
 export interface HomeSection {
   id: string;
-  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget' | 'city' | 'ads' | 'advertise';
+  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget' | 'city' | 'ads' | 'advertise' | 'image';
   title?: string;
   active: boolean;
   order: number;
   htmlCode?: string;
+  imageUrl?: string;
+  link?: string;
+  spacing?: number;
+  pinned?: boolean;
 }
 
 export interface NewsItem {

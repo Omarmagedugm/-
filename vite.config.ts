@@ -77,17 +77,17 @@ export default defineConfig(({ mode }) => {
           scope: '/',
           icons: [
             {
-              src: 'https://raw.githubusercontent.com/Omarmagedugm/-/main/icon.png',
+              src: '/icon.png',
               sizes: '192x192',
               type: 'image/png',
             },
             {
-              src: 'https://raw.githubusercontent.com/Omarmagedugm/-/main/icon.png',
+              src: '/icon.png',
               sizes: '512x512',
               type: 'image/png',
             },
             {
-              src: 'https://raw.githubusercontent.com/Omarmagedugm/-/main/icon.png',
+              src: '/icon.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any maskable',

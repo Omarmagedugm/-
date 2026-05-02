@@ -63,7 +63,12 @@ import {
   Bell,
   Download,
   Database,
-  Shield
+  Shield,
+  Copy,
+  Pin,
+  Maximize2,
+  MoveVertical,
+  Minus
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import ScoreSelector from '../components/ScoreSelector';
@@ -1197,103 +1202,193 @@ export default function Admin() {
 
           {activeTab === 'layout' && (
             <div className="space-y-6">
-              <div className="bg-white dark:bg-card-dark rounded-3xl p-6 border border-border-light dark:border-border-dark shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="font-black text-sm">ترتيب البلوكات</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Arrange Home Page Blocks</p>
-                  </div>
-                  <button 
-                    onClick={async () => {
-                      setLoading(true);
-                      try {
-                        const cleanSections = homeSections.map(section => 
-                          Object.fromEntries(Object.entries(section).filter(([_, v]) => v !== undefined))
-                        );
-                        await setDoc(doc(db, 'settings', 'homeLayout'), { sections: cleanSections });
-                        alert('تم حفظ ترتيب الصفحة الرئيسية بنجاح');
-                      } catch (err) {
-                        console.error(err);
-                        alert('فشل في حفظ الترتيب');
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                    className="bg-primary text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg shadow-primary/20 flex items-center gap-2"
-                  >
-                    {loading ? <Loader2 className="animate-spin" size={14} /> : <Check size={14} />}
-                    حفظ التغييرات
-                  </button>
+              <div className="flex items-center justify-between px-2">
+                <div>
+                  <h2 className="text-xl font-black text-slate-800 dark:text-white uppercase italic tracking-tight">إدارة الصفحة الرئيسية</h2>
+                  <p className="text-[10px] font-bold text-slate-400">Home Page Mobile Optimizer</p>
                 </div>
+                <button 
+                  onClick={async () => {
+                    setLoading(true);
+                    try {
+                      const cleanSections = homeSections.map(section => 
+                        Object.fromEntries(Object.entries(section).filter(([_, v]) => v !== undefined))
+                      );
+                      await setDoc(doc(db, 'settings', 'homeLayout'), { sections: cleanSections });
+                      alert('تم حفظ التغييرات بنجاح');
+                    } catch (err) {
+                      console.error(err);
+                      alert('فشل في الحفظ');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className="bg-primary text-white px-5 py-2.5 rounded-2xl text-xs font-black shadow-lg shadow-primary/20 flex items-center gap-2 pressable"
+                >
+                  {loading ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
+                  حفظ الكل
+                </button>
+              </div>
 
+              <div className="bg-white dark:bg-card-dark rounded-[32px] p-4 border border-border-light dark:border-border-dark shadow-sm">
                 <div className="flex flex-col gap-3">
-                  {[...homeSections].sort((a,b) => a.order - b.order).map((section, index) => (
-                    <div key={section.id} className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-surface-dark border border-slate-100 dark:border-border-dark rounded-2xl group transition-all hover:bg-white dark:hover:bg-card-dark">
-                      <div className="flex flex-col gap-1">
-                        <button 
-                          disabled={index === 0}
-                          onClick={() => {
-                            const newSections = [...homeSections].sort((a,b) => a.order - b.order);
-                            const current = newSections[index];
-                            const prev = newSections[index - 1];
-                            const tempOrder = current.order;
-                            current.order = prev.order;
-                            prev.order = tempOrder;
-                            setHomeSections([...newSections]);
-                          }}
-                          className="text-slate-300 hover:text-primary disabled:opacity-0"
-                        >
-                          <span className="material-symbols-outlined !text-[18px]">expand_less</span>
-                        </button>
-                        <button 
-                          disabled={index === homeSections.length - 1}
-                          onClick={() => {
-                            const newSections = [...homeSections].sort((a,b) => a.order - b.order);
-                            const current = newSections[index];
-                            const next = newSections[index + 1];
-                            const tempOrder = current.order;
-                            current.order = next.order;
-                            next.order = tempOrder;
-                            setHomeSections([...newSections]);
-                          }}
-                          className="text-slate-300 hover:text-primary disabled:opacity-0"
-                        >
-                          <span className="material-symbols-outlined !text-[18px]">expand_more</span>
-                        </button>
-                      </div>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                           <span className="text-xs font-black capitalize">{section.type}</span>
-                           {section.title && <span className="text-[10px] text-slate-400 font-bold">({section.title})</span>}
+                  {[...homeSections].sort((a,b) => {
+                    if (a.pinned && !b.pinned) return -1;
+                    if (!a.pinned && b.pinned) return 1;
+                    return a.order - b.order;
+                  }).map((section, index) => (
+                    <div key={section.id} className={`flex flex-col gap-3 p-4 rounded-3xl border transition-all ${section.active ? 'bg-slate-50 dark:bg-surface-dark border-slate-100 dark:border-border-dark' : 'bg-slate-100/50 dark:bg-slate-800/30 opacity-60 border-dashed border-slate-200'}`}>
+                      <div className="flex items-center gap-3">
+                        <div className="flex flex-col gap-1 items-center bg-white dark:bg-card-dark p-1 rounded-xl shadow-sm border border-border-light dark:border-border-dark">
+                          <button 
+                            disabled={index === 0}
+                            onClick={() => {
+                              const sorted = [...homeSections].sort((a,b) => a.order - b.order);
+                              const idx = sorted.findIndex(s => s.id === section.id);
+                              if (idx > 0) {
+                                const current = sorted[idx];
+                                const prev = sorted[idx - 1];
+                                [current.order, prev.order] = [prev.order, current.order];
+                                setHomeSections([...sorted]);
+                              }
+                            }}
+                            className="p-1 text-slate-300 hover:text-primary disabled:opacity-0"
+                          >
+                            <ChevronDown size={14} className="rotate-180" />
+                          </button>
+                          <button 
+                            disabled={index === homeSections.length - 1}
+                            onClick={() => {
+                              const sorted = [...homeSections].sort((a,b) => a.order - b.order);
+                              const idx = sorted.findIndex(s => s.id === section.id);
+                              if (idx < sorted.length - 1) {
+                                const current = sorted[idx];
+                                const next = sorted[idx + 1];
+                                [current.order, next.order] = [next.order, current.order];
+                                setHomeSections([...sorted]);
+                              }
+                            }}
+                            className="p-1 text-slate-300 hover:text-primary disabled:opacity-0"
+                          >
+                            <ChevronDown size={14} />
+                          </button>
                         </div>
-                        <p className="text-[9px] text-slate-500 font-bold">ID: {section.id}</p>
+                        
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                             <span className="text-[10px] font-black uppercase text-slate-400">{section.type}</span>
+                             {section.pinned && <Pin size={10} className="text-accent fill-accent" />}
+                             <h4 className="text-xs font-black">{section.title || 'بدون عنوان'}</h4>
+                          </div>
+                          <p className="text-[8px] text-slate-500 font-mono">ID: {section.id.slice(0, 8)}</p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <label className="relative inline-flex items-center cursor-pointer scale-75">
+                            <input 
+                              type="checkbox" 
+                              checked={section.active} 
+                              onChange={(e) => {
+                                const newSections = homeSections.map(s => s.id === section.id ? { ...s, active: e.target.checked } : s);
+                                setHomeSections(newSections);
+                              }}
+                              className="sr-only peer" 
+                            />
+                            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                          </label>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-4">
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={section.active} 
-                            onChange={(e) => {
-                              const newSections = homeSections.map(s => s.id === section.id ? { ...s, active: e.target.checked } : s);
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-200/50 dark:border-slate-700/50">
+                        <div className="flex gap-1.5">
+                           <button 
+                            onClick={() => {
+                              const newSections = homeSections.map(s => s.id === section.id ? { ...s, pinned: !s.pinned, order: !s.pinned ? -1 : 100 } : s);
                               setHomeSections(newSections);
                             }}
-                            className="sr-only peer" 
-                          />
-                          <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
-                        </label>
+                            className={`p-2 rounded-xl border transition-all ${section.pinned ? 'bg-accent text-white border-accent' : 'bg-white dark:bg-card-dark text-slate-400 border-border-light dark:border-border-dark'}`}
+                            title="تثبيت في الأعلى"
+                          >
+                            <Pin size={12} className={section.pinned ? 'fill-current' : ''} />
+                          </button>
+                          <button 
+                            onClick={() => {
+                              const newSection = { ...section, id: uuidv4(), order: homeSections.length, pinned: false };
+                              setHomeSections([...homeSections, newSection]);
+                            }}
+                            className="p-2 bg-white dark:bg-card-dark text-slate-400 rounded-xl border border-border-light dark:border-border-dark hover:text-blue-500"
+                            title="نسخ البلوك"
+                          >
+                            <Copy size={12} />
+                          </button>
+                          {(section.type === 'widget' || section.type === 'image') && (
+                            <button 
+                              onClick={() => {
+                                const newTitle = window.prompt('تعديل العنوان', section.title || '');
+                                if (section.type === 'widget') {
+                                  const newHtml = window.prompt('تعديل كود الـ HTML', section.htmlCode || '');
+                                  if (newTitle !== null || newHtml !== null) {
+                                    setHomeSections(homeSections.map(s => s.id === section.id ? { 
+                                      ...s, 
+                                      title: newTitle !== null ? newTitle : s.title,
+                                      htmlCode: newHtml !== null ? newHtml : s.htmlCode 
+                                    } : s));
+                                  }
+                                } else if (section.type === 'image') {
+                                  const newUrl = window.prompt('تعديل رابط الصورة', section.imageUrl || '');
+                                  const newLink = window.prompt('تعديل الرابط (Link)', section.link || '');
+                                  if (newTitle !== null || newUrl !== null || newLink !== null) {
+                                    setHomeSections(homeSections.map(s => s.id === section.id ? { 
+                                      ...s, 
+                                      title: newTitle !== null ? newTitle : s.title,
+                                      imageUrl: newUrl !== null ? newUrl : s.imageUrl,
+                                      link: newLink !== null ? newLink : s.link
+                                    } : s));
+                                  }
+                                }
+                              }}
+                              className="p-2 bg-white dark:bg-card-dark text-slate-400 rounded-xl border border-border-light dark:border-border-dark"
+                            >
+                              <Edit2 size={12} />
+                            </button>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                           {/* Spacing */}
+                           <div className="flex items-center gap-1.5 bg-white dark:bg-card-dark px-2 py-1 rounded-xl border border-border-light dark:border-border-dark">
+                              <button 
+                                onClick={() => {
+                                  const sp = Math.max(0, (section.spacing || 0) - 4);
+                                  setHomeSections(homeSections.map(s => s.id === section.id ? { ...s, spacing: sp } : s));
+                                }}
+                                className="text-slate-400"
+                              >
+                                <Minus size={10} />
+                              </button>
+                              <span className="text-[9px] font-black min-w-[24px] text-center">{section.spacing || 0}</span>
+                              <button 
+                                onClick={() => {
+                                  const sp = (section.spacing || 0) + 4;
+                                  setHomeSections(homeSections.map(s => s.id === section.id ? { ...s, spacing: sp } : s));
+                                }}
+                                className="text-slate-400"
+                              >
+                                <Plus size={10} />
+                              </button>
+                           </div>
 
-                        <button 
-                          onClick={() => {
-                            if (window.confirm('هل أنت متأكد من حذف هذا البلوك؟')) {
-                              setHomeSections(homeSections.filter(s => s.id !== section.id));
-                            }
-                          }}
-                          className="text-red-400 hover:text-red-600 transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                           <button 
+                            onClick={() => {
+                              if (window.confirm('هل أنت متأكد من حذف هذا البلوك؟')) {
+                                setHomeSections(homeSections.filter(s => s.id !== section.id));
+                              }
+                            }}
+                            className="p-2 bg-red-50 text-red-500 rounded-xl"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1310,8 +1405,19 @@ export default function Admin() {
                         onChange={(e) => {
                           const widgetCode = document.getElementById('new-section-widget-code');
                           if (widgetCode) {
-                            if (e.target.value === 'widget') widgetCode.style.display = 'block';
-                            else widgetCode.style.display = 'none';
+                            if (e.target.value === 'widget') {
+                              widgetCode.style.display = 'block';
+                              const imageInputs = document.getElementById('new-section-image-inputs');
+                              if (imageInputs) imageInputs.style.display = 'none';
+                            } else if (e.target.value === 'image') {
+                              widgetCode.style.display = 'none';
+                              const imageInputs = document.getElementById('new-section-image-inputs');
+                              if (imageInputs) imageInputs.style.display = 'block';
+                            } else {
+                              widgetCode.style.display = 'none';
+                              const imageInputs = document.getElementById('new-section-image-inputs');
+                              if (imageInputs) imageInputs.style.display = 'none';
+                            }
                           }
                         }}
                       >
@@ -1324,6 +1430,7 @@ export default function Admin() {
                         <option value="live">بث مباشر متاح</option>
                         <option value="custom">مخصص (Fan Zone)</option>
                         <option value="widget">برمجية HTML مخصصة</option>
+                        <option value="image">صورة بانر </option>
                         <option value="city">طقس وتاريخ الإسكندرية</option>
                         <option value="advertise">أعلن معنا (Widget)</option>
                       </select>
@@ -1345,18 +1452,45 @@ export default function Admin() {
                         className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-[10px] font-mono dir-ltr min-h-[100px]"
                       />
                     </div>
+                    <div id="new-section-image-inputs" className="col-span-2 space-y-4" style={{ display: 'none' }}>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500">رابط الصورة (URL)</label>
+                          <input 
+                            id="new-section-image-url"
+                            type="text" 
+                            placeholder="https://..."
+                            className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-xs font-bold text-left dir-ltr"
+                          />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500">الرابط عند الضغط (اختياري)</label>
+                          <input 
+                            id="new-section-image-link"
+                            type="text" 
+                            placeholder="https://..."
+                            className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-xs font-bold text-left dir-ltr"
+                          />
+                       </div>
+                    </div>
                     <button 
                       onClick={() => {
                         const type = (document.getElementById('new-section-type') as HTMLSelectElement).value as any;
                         const title = (document.getElementById('new-section-title') as HTMLInputElement).value;
                         const htmlCode = (document.getElementById('new-section-html') as HTMLTextAreaElement).value;
+                        const imageUrl = (document.getElementById('new-section-image-url') as HTMLInputElement).value;
+                        const link = (document.getElementById('new-section-image-link') as HTMLInputElement).value;
+                        
                         const newSection = {
                           id: uuidv4(),
                           type,
                           title: title || undefined,
                           active: true,
                           order: homeSections.length,
-                          htmlCode: type === 'widget' ? htmlCode : undefined
+                          pinned: false,
+                          spacing: 16,
+                          htmlCode: type === 'widget' ? htmlCode : undefined,
+                          imageUrl: type === 'image' ? imageUrl : undefined,
+                          link: type === 'image' ? link : undefined
                         };
                         setHomeSections([...homeSections, newSection]);
                         (document.getElementById('new-section-title') as HTMLInputElement).value = '';

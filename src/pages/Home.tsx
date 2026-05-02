@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import AdvertiseWidget from '../components/AdvertiseWidget';
+import HtmlWidget from '../components/HtmlWidget';
 
 export default function Home() {
   const { news, media, matches, liveStream, profile, homeSections, cityInfo, ads } = useAppStore();
@@ -601,10 +602,38 @@ export default function Home() {
       case 'widget':
         if (!section.htmlCode) return null;
         return (
-          <motion.section key={section.id} variants={itemVariants} className="overflow-hidden rounded-2xl">
-            <div dangerouslySetInnerHTML={{ __html: section.htmlCode }} />
+          <motion.section key={section.id} variants={itemVariants} className="overflow-hidden rounded-2xl shadow-sm">
+            <HtmlWidget htmlCode={section.htmlCode} id={section.id} />
           </motion.section>
         );
+
+      case 'image':
+        if (!section.imageUrl) return null;
+        const ImageContent = (
+          <motion.section key={section.id} variants={itemVariants} className="relative overflow-hidden rounded-2xl shadow-lg border border-border-light dark:border-border-dark bg-white dark:bg-card-dark">
+            <img 
+              src={section.imageUrl} 
+              alt={section.title || "Banner"} 
+              className="w-full h-auto object-cover max-h-[400px]" 
+              loading="lazy"
+              referrerPolicy="no-referrer"
+            />
+            {section.title && (
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                 <h3 className="text-white text-sm font-black">{section.title}</h3>
+              </div>
+            )}
+          </motion.section>
+        );
+
+        if (section.link) {
+          return (
+            <a key={section.id} href={section.link} target="_blank" rel="noopener noreferrer" className="block active:scale-[0.98] transition-transform">
+              {ImageContent}
+            </a>
+          );
+        }
+        return ImageContent;
 
       case 'advertise':
         return (
@@ -938,7 +967,11 @@ export default function Home() {
     }
   };
 
-  const sortedSections = [...homeSections].sort((a, b) => a.order - b.order);
+  const sortedSections = [...homeSections].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return a.order - b.order;
+  });
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -963,9 +996,13 @@ export default function Home() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex-1 overflow-x-hidden px-4 flex flex-col gap-8 py-6"
+        className="flex-1 overflow-x-hidden px-4 flex flex-col gap-0 py-6"
       >
-        {sortedSections.map(section => renderSection(section))}
+        {sortedSections.map(section => (
+          <div key={section.id} style={{ marginBottom: `${section.spacing ?? 32}px` }}>
+            {renderSection(section)}
+          </div>
+        ))}
       </motion.main>
     </div>
   );
