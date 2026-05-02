@@ -6,6 +6,7 @@ import { Camera, X, Check, Lock, ShieldCheck, Mail, Loader2, Save, Upload, Edit2
 import { db, auth, uploadImage } from '../lib/firebase';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { updatePassword, updateProfile as updateAuthProfile } from 'firebase/auth';
+import ImageUploader from '../components/ImageUploader';
 
 export default function Profile() {
   const { profile, theme, toggleTheme, users, fanPosts, predictions } = useAppStore();
@@ -22,7 +23,6 @@ export default function Profile() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const navigate = useNavigate();
 
   // Handle auth state check
@@ -161,22 +161,6 @@ export default function Profile() {
       opacity: 1, 
       y: 0, 
       transition: { type: "spring", stiffness: 300, damping: 24 }
-    }
-  };
-
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingAvatar(true);
-    try {
-      const url = await uploadImage(file, 'avatars');
-      setEditData({ ...editData, avatar: url });
-    } catch (err) {
-      console.error(err);
-      alert('فشل في رفع الصورة');
-    } finally {
-      setUploadingAvatar(false);
     }
   };
 
@@ -457,29 +441,20 @@ export default function Profile() {
               </div>
 
               <div className="flex flex-col items-center mb-6">
-                <div className="relative group cursor-pointer">
-                  <label className="cursor-pointer">
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      onChange={handleAvatarUpload}
-                      disabled={uploadingAvatar}
+                <div className="relative group cursor-pointer h-24 w-24">
+                  <div 
+                    className="w-24 h-24 rounded-full bg-cover bg-center border-2 border-primary shadow-md relative overflow-hidden"
+                    style={{ backgroundImage: `url('${editData.avatar}')` }}
+                  />
+                  <div className="absolute -bottom-1 -right-1">
+                    <ImageUploader
+                      folderName="profile_avatars"
+                      iconOnly={true}
+                      buttonClassName="bg-primary text-white p-1.5 rounded-full shadow-lg border-2 border-white dark:border-card-dark cursor-pointer transition-transform hover:scale-110 flex items-center justify-center w-7 h-7"
+                      onUploadSuccess={(url) => setEditData({...editData, avatar: url})}
+                      onError={() => alert('فشل في رفع الصورة')}
                     />
-                    <div 
-                      className="w-24 h-24 rounded-full bg-cover bg-center border-2 border-primary shadow-md relative overflow-hidden"
-                      style={{ backgroundImage: `url('${editData.avatar}')` }}
-                    >
-                      {uploadingAvatar && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                          <Loader2 className="text-white animate-spin" size={24} />
-                        </div>
-                      )}
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 bg-primary text-white p-1.5 rounded-full shadow-lg border-2 border-white dark:border-card-dark">
-                      <Camera size={14} />
-                    </div>
-                  </label>
+                  </div>
                 </div>
                 <div className="flex gap-2 mt-4 p-2 overflow-x-auto no-scrollbar max-w-full">
                   {[

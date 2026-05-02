@@ -523,7 +523,7 @@ export default function Home() {
         const useAuto = cityInfo?.useAutoWeather ?? true;
 
         const displayCity = {
-           cityName: cityInfo?.cityName || 'الإسكندرية',
+           cityName: cityInfo?.cityName || '📍 الاسكندرية',
            temperature: (useAuto && autoWeather?.temp) ? autoWeather.temp : (cityInfo?.temperature || '25'),
            condition: (useAuto && autoWeather?.condition) ? (
              autoWeather.condition === 'sunny' ? 'صافي' :
@@ -541,7 +541,7 @@ export default function Home() {
            sunset: (useAuto && autoWeather?.sunset) ? autoWeather.sunset : (cityInfo?.sunset || '07:15 PM'),
            image: cityInfo?.image || 'https://images.unsplash.com/photo-1572214350916-571eac7bfced?q=80&w=1000&auto=format&fit=crop',
            weatherBg: cityInfo?.weatherBg || '',
-           description: cityInfo?.description || 'مدينة الإسكندرية، عروس البحر الأبيض المتوسط وعاصمة الرياضة والثقافة.'
+           description: cityInfo?.description || 'عروس البحر الأبيض المتوسط وعاصمة الرياضة والثقافة.'
         };
 
         const tempInt = parseInt(displayCity.temperature) || 25;
@@ -549,220 +549,147 @@ export default function Home() {
         let iconBg = '';
         let iconColor = '';
         let IconElement = CloudSun;
-        let tempColor = '';
         let textColor = '';
         let subtextColor = '';
 
         const cond = (useAuto && autoWeather?.condition) ? autoWeather.condition : '';
 
         if (tempInt >= 35 || cond === 'sunny' || cond === 'mostly_sunny') {
-           cardBg = 'from-sky-400 via-blue-400 to-sky-500 border-sky-300/30';
+           cardBg = 'from-sky-500 via-blue-500 to-sky-700 border-sky-400/30';
            iconBg = 'bg-yellow-300 shadow-yellow-300/20';
            iconColor = 'text-sky-900';
-           tempColor = 'text-white font-black drop-shadow-sm';
            textColor = 'text-white';
            subtextColor = 'text-sky-50';
            IconElement = Sun;
         } else if (cond === 'rainy' || cond === 'showers' || cond === 'drizzle' || displayCity.condition.includes('مطر') || displayCity.condition.includes('زخات')) {
-           cardBg = 'from-blue-700 via-blue-600 to-indigo-900 border-blue-400/30';
+           cardBg = 'from-blue-800 via-blue-700 to-indigo-900 border-blue-500/30';
            iconBg = 'bg-white shadow-blue-300/20';
            iconColor = 'text-blue-600';
-           tempColor = 'text-white';
            textColor = 'text-white';
            subtextColor = 'text-blue-100';
            IconElement = CloudRain;
-        } else if (cond === 'cloudy' || cond === 'partly_cloudy' || cond === 'foggy' || displayCity.condition.includes('غائم') || displayCity.condition.includes('صافي جزئياً')) {
-           cardBg = 'from-slate-600 via-slate-500 to-slate-700 border-slate-400/30';
+        } else if (cond === 'cloudy' || cond === 'partly_cloudy' || cond === 'foggy' || displayCity.condition.includes('غائم')) {
+           cardBg = 'from-slate-700 via-slate-600 to-slate-800 border-slate-500/30';
            iconBg = 'bg-white/20 backdrop-blur-md shadow-white/10';
            iconColor = 'text-white';
-           tempColor = 'text-slate-100';
            textColor = 'text-white';
            subtextColor = 'text-slate-200';
            IconElement = CloudSun;
         } else if (tempInt >= 25) {
-           cardBg = 'from-yellow-500 via-amber-500 to-orange-600 border-yellow-400/30';
-           iconBg = 'bg-white shadow-white/20';
-           iconColor = 'text-orange-600';
-           tempColor = 'text-white';
+           cardBg = 'from-emerald-700 via-emerald-600 to-teal-800 border-emerald-500/30';
+           iconBg = 'bg-white shadow-emerald-300/20';
+           iconColor = 'text-emerald-700';
            textColor = 'text-white';
-           subtextColor = 'text-orange-100';
-           IconElement = Sun;
-        } else if (tempInt >= 15) {
-           cardBg = 'from-cyan-600 via-cyan-500 to-cyan-700 border-cyan-400/30';
-           iconBg = 'bg-yellow-400 shadow-yellow-400/20';
-           iconColor = 'text-cyan-900';
-           tempColor = 'text-yellow-400';
-           textColor = 'text-white';
-           subtextColor = 'text-cyan-100';
+           subtextColor = 'text-emerald-100';
            IconElement = CloudSun;
         } else {
-           cardBg = 'from-indigo-600 via-blue-500 to-indigo-800 border-blue-400/30';
+           cardBg = 'from-indigo-700 via-blue-600 to-indigo-900 border-blue-500/30';
            iconBg = 'bg-white shadow-white/20';
-           iconColor = 'text-blue-900';
-           tempColor = 'text-white';
+           iconColor = 'text-indigo-600';
            textColor = 'text-white';
-           subtextColor = 'text-blue-100';
+           subtextColor = 'text-indigo-100';
            IconElement = Snowflake;
         }
 
+        const isCloudy = cond === 'cloudy' || cond === 'partly_cloudy' || cond === 'foggy' || displayCity.condition.includes('غائم');
+
         return (
-          <motion.section key={section.id} variants={itemVariants}>
-            <div className={`relative overflow-hidden rounded-[40px] shadow-2xl group transition-colors duration-1000 ${displayCity.weatherBg ? '' : `bg-gradient-to-br ${cardBg}`}`}>
-               {/* Background Image if set */}
-               {displayCity.weatherBg && (
-                 <div className="absolute inset-0 z-0">
-                   <img 
-                     src={displayCity.weatherBg} 
-                     className="w-full h-full object-cover opacity-80" 
-                     alt="Weather Background" 
-                     referrerPolicy="no-referrer"
-                   />
-                   <div className={`absolute inset-0 bg-gradient-to-br mix-blend-multiply opacity-60 ${cardBg}`}></div>
-                 </div>
-               )}
-
-               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay z-10"></div>
-               
-               <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/20 rounded-full blur-[80px] z-10"></div>
-               <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-black/10 rounded-full blur-[80px] z-10"></div>
-               
-                {/* Realistic Weather Effects */}
-                <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
-                  {/* Sunny / Clear Sky Effects */}
-                  {(tempInt >= 35 || cond === 'sunny' || cond === 'mostly_sunny' || displayCity.condition.includes('صافي')) && (
-                    <div className="absolute inset-0 overflow-hidden">
-                      {/* Realistic Sun Flare */}
-                      <motion.div 
-                        animate={{ 
-                          scale: [1, 1.2, 1],
-                          opacity: [0.2, 0.4, 0.2]
-                        }}
-                        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute -top-20 -right-20 w-96 h-96 bg-gradient-radial from-yellow-300/40 via-orange-400/10 to-transparent blur-3xl z-0"
-                      />
-                      
-                      {/* Realistic Floating Clouds Layer 1 */}
-                      <motion.div 
-                        animate={{ x: [-200, 400] }}
-                        transition={{ duration: 100, repeat: Infinity, ease: "linear" }}
-                        className="absolute top-0 left-0 w-full h-full opacity-30 mix-blend-overlay z-10"
-                        style={{ 
-                          backgroundImage: 'url("https://www.transparenttextures.com/patterns/clouds-alt.png")',
-                          backgroundSize: '800px auto'
-                        }}
-                      />
-                      
-                      {/* Realistic Floating Clouds Layer 2 */}
-                      <motion.div 
-                        animate={{ x: [400, -200] }}
-                        transition={{ duration: 150, repeat: Infinity, ease: "linear" }}
-                        className="absolute top-0 left-0 w-full h-full opacity-20 mix-blend-soft-light z-10 rotate-180"
-                        style={{ 
-                          backgroundImage: 'url("https://www.transparenttextures.com/patterns/clouds-alt.png")',
-                          backgroundSize: '1000px auto'
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {/* Realistic Rain Effects */}
-                  {(cond === 'rainy' || cond === 'showers' || cond === 'drizzle' || displayCity.condition.includes('مطر') || displayCity.condition.includes('زخات')) && (
-                    <div className="absolute inset-0">
-                      {/* Mist Layer */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 to-transparent backdrop-blur-[0.5px]"></div>
-                      
-                      {/* Rain Drops */}
-                      {[...Array(30)].map((_, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ y: -100, x: Math.random() * 100 + '%' }}
-                          animate={{ y: 800, x: `calc(${Math.random() * 100}% + 50px)` }}
-                          transition={{
-                            duration: 0.5 + Math.random() * 0.3,
-                            repeat: Infinity,
-                            ease: "linear",
-                            delay: Math.random() * 2
-                          }}
-                          className="absolute w-[1px] h-10 bg-gradient-to-b from-transparent via-white/40 to-white/10"
-                          style={{ 
-                            left: `${Math.random() * 100}%`,
-                            transform: 'rotate(15deg)'
-                          }}
-                        />
-                      ))}
-
-                      {/* Splash Effect Overlay */}
-                      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/rain.png')] opacity-20 mix-blend-screen animate-pulse"></div>
-                    </div>
-                  )}
-
-                  {/* Realistic Cloudy Effects */}
-                  {(cond === 'cloudy' || cond === 'partly_cloudy' || cond === 'foggy' || displayCity.condition.includes('غائم')) && (
-                    <div className="absolute inset-0">
-                      {/* Multiple Cloud Layers */}
-                      <motion.div 
-                        animate={{ x: [-10, 10, -10] }}
-                        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/clouds-alt.png')] opacity-30 mix-blend-overlay scale-150"
-                      />
-                      <motion.div 
-                        animate={{ x: [20, -20, 20] }}
-                        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/clouds-alt.png')] opacity-20 mix-blend-soft-light scale-110 rotate-180"
-                      />
-                      {/* Fog/Mist Overlay */}
-                      <div className="absolute inset-0 bg-white/5 backdrop-blur-[1px]"></div>
-                    </div>
-                  )}
-
-                  {/* Snow Effects */}
-                  {(cond === 'snowy' || tempInt < 15) && (
-                    <div className="absolute inset-0">
-                      {[...Array(20)].map((_, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ y: -50, x: Math.random() * 100 + '%' }}
-                          animate={{ 
-                            y: 800, 
-                            x: `calc(${Math.random() * 100}% + ${Math.random() * 100 - 50}px)`,
-                            rotate: 360
-                          }}
-                          transition={{
-                            duration: 3 + Math.random() * 5,
-                            repeat: Infinity,
-                            ease: "linear",
-                            delay: Math.random() * 5
-                          }}
-                          className="absolute text-white/40 text-xl"
-                          style={{ left: `${Math.random() * 100}%` }}
-                        >
-                          ❄️
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
+          <motion.section 
+            key={section.id} 
+            variants={itemVariants}
+            className="overflow-hidden"
+          >
+            <div className={`relative overflow-hidden rounded-[40px] bg-gradient-to-br ${cardBg} group`}>
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-overlay"></div>
+              
+              {/* Realistic Moving Clouds Effects */}
+              {isCloudy && (
+                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                  {/* Layer 1: Fast, small */}
+                  <motion.div 
+                    animate={{ x: [-200, 500] }}
+                    transition={{ duration: 45, repeat: Infinity, ease: "linear" }}
+                    className="absolute top-0 left-0 w-full h-full opacity-20 mix-blend-overlay"
+                    style={{ 
+                      backgroundImage: 'url("https://www.transparenttextures.com/patterns/clouds-alt.png")',
+                      backgroundSize: '300px auto'
+                    }}
+                  />
+                  {/* Layer 2: Medium, counter-direction */}
+                  <motion.div 
+                    animate={{ x: [500, -200] }}
+                    transition={{ duration: 75, repeat: Infinity, ease: "linear" }}
+                    className="absolute top-0 left-0 w-full h-full opacity-25 mix-blend-soft-light"
+                    style={{ 
+                      backgroundImage: 'url("https://www.transparenttextures.com/patterns/clouds-alt.png")',
+                      backgroundSize: '500px auto',
+                      scaleY: -1
+                    }}
+                  />
+                  {/* Layer 3: Slow, large, floating */}
+                  <motion.div 
+                    animate={{ 
+                      x: [-400, 400],
+                      y: [-15, 15, -15]
+                    }}
+                    transition={{ 
+                      x: { duration: 150, repeat: Infinity, ease: "linear" },
+                      y: { duration: 25, repeat: Infinity, ease: "easeInOut" }
+                    }}
+                    className="absolute top-0 left-0 w-full h-full opacity-15 mix-blend-overlay"
+                    style={{ 
+                      backgroundImage: 'url("https://www.transparenttextures.com/patterns/clouds-alt.png")',
+                      backgroundSize: '900px auto'
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-white/5 backdrop-blur-[0.2px]"></div>
                 </div>
-               
-               <div className="relative p-6 px-8 flex items-center justify-between min-h-[120px] z-20">
-                  <div className="flex items-center gap-4">
-                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-colors duration-1000 ${iconBg} ${iconColor}`}>
-                        <IconElement size={28} className="animate-pulse" />
-                     </div>
-                     <div>
-                        <h3 className={`font-black text-lg drop-shadow-md ${textColor}`}>طقس {displayCity.cityName}</h3>
-                     </div>
+              )}
+
+              <div className="relative p-5 z-10">
+                <div className="flex items-center justify-between">
+                  {/* Left Side: City & Time */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                       <div className="p-1.5 rounded-lg bg-white/20 backdrop-blur-md">
+                         <MapPin size={14} className="text-white" />
+                       </div>
+                       <h3 className={`text-lg font-black tracking-tight ${textColor}`}>{displayCity.cityName}</h3>
+                    </div>
+                    
+                    <div className={`flex flex-col gap-1 ${subtextColor} text-[10px] font-bold`}>
+                      <div className="flex items-center gap-2 opacity-80">
+                         <span className="material-symbols-outlined !text-[12px]">calendar_today</span>
+                         <span>{format(new Date(), 'EEEE d MMMM', { locale: ar })}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                         <span className="material-symbols-outlined !text-[12px] animate-pulse text-white">schedule</span>
+                         <span className="font-black tracking-wider text-white">{format(new Date(), 'p', { locale: ar })}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-left flex flex-col items-center">
-                     <div className={`flex items-center gap-1 ${textColor}`}>
-                        <span className="text-4xl font-black tabular-nums leading-none drop-shadow-lg scale-110">{displayCity.temperature}°</span>
-                     </div>
-                     <p className={`text-xs font-black uppercase tracking-tighter mt-2 ${tempColor}`}>{displayCity.condition}</p>
+
+                  {/* Right Side: Temp & Icon */}
+                  <div className="flex items-center gap-4 p-2">
+                    <div className="flex flex-col items-center">
+                      <span className={`text-3xl font-black ${textColor} leading-none tracking-tighter drop-shadow-md`}>
+                        {displayCity.temperature}°
+                      </span>
+                      <span className={`mt-1 text-[8px] font-black uppercase px-2 py-0.5 bg-white/10 ${textColor} rounded-full text-center whitespace-nowrap`}>
+                        {displayCity.condition}
+                      </span>
+                    </div>
+                    <div className={`h-12 w-12 rounded-2xl ${iconBg} flex items-center justify-center ${iconColor} shadow-xl ring-1 ring-white/30 animate-bounce-slow`}>
+                      <IconElement size={26} strokeWidth={2.5} />
+                    </div>
                   </div>
-               </div>
+                </div>
+              </div>
             </div>
           </motion.section>
         );
       }
+
 
       default:
         return null;

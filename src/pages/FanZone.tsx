@@ -37,6 +37,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import Sidebar from '../components/Sidebar';
 import ScoreSelector from '../components/ScoreSelector';
+import ImageUploader from '../components/ImageUploader';
 import { 
   doc, 
   updateDoc, 
@@ -73,7 +74,6 @@ export default function FanZone() {
   const [selectedPrediction, setSelectedPrediction] = useState<{ matchId: string; home: number; away: number } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newPost, setNewPost] = useState({ content: '', image: '', location: '', poll: null as { options: string[] } | null });
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [showLocationInput, setShowLocationInput] = useState(false);
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
@@ -115,25 +115,6 @@ export default function FanZone() {
       setPostComments([]);
     }
   }, [activeCommentPost]);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    setUploadingImage(true);
-    try {
-      const url = await uploadImage(file, 'fan_posts');
-      if (!url) throw new Error('لم يتم استلام رابط الصورة');
-      setNewPost(prev => ({ ...prev, image: url }));
-      console.log('Image uploaded successfully:', url);
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      alert(`فشل في رفع الصورة: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
-    } finally {
-      setUploadingImage(false);
-      e.target.value = ''; // Reset input to allow same file selection
-    }
-  };
   const calculateCurrentMinute = (match: any) => {
     if (!match.isTimerRunning || !match.timerStartTime) return Number(match.timerBaseMinute || 0);
     const start = new Date(match.timerStartTime).getTime();
@@ -623,10 +604,16 @@ export default function FanZone() {
             
             <div className="flex items-center justify-between mt-6 pt-4 border-t border-border-light/40 dark:border-border-dark/40 relative z-10">
               <div className="flex items-center gap-4">
-                <label className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-primary/10 text-slate-400 hover:text-primary transition-all cursor-pointer">
-                  {uploadingImage ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}><ImageIcon size={20} className="opacity-50" /></motion.div> : <ImageIcon size={20} />}
-                  <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} />
-                </label>
+                <ImageUploader 
+                  folderName="fan_posts"
+                  iconOnly={true}
+                  className="!gap-0" // override the gap-4 from the uploader container
+                  buttonClassName="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-primary/10 text-slate-400 hover:text-primary transition-all cursor-pointer"
+                  onUploadSuccess={(url) => {
+                    setNewPost(prev => ({ ...prev, image: url }));
+                  }}
+                  onError={(err) => alert(err)}
+                />
                 <button onClick={handleAddPoll} className={`flex h-10 w-10 items-center justify-center rounded-xl hover:bg-primary/10 transition-all ${newPost.poll ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:text-primary'}`}>
                   <BarChart2 size={20} />
                 </button>
@@ -654,7 +641,7 @@ export default function FanZone() {
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={handleCreatePost}
-                  disabled={isSubmitting || (!newPost.content.trim() && !newPost.image && !newPost.poll) || uploadingImage}
+                  disabled={isSubmitting || (!newPost.content.trim() && !newPost.image && !newPost.poll)}
                   className="bg-primary text-white px-8 h-10 rounded-xl text-[11px] font-black shadow-premium shadow-primary/20 disabled:opacity-50 transition-all flex items-center gap-2 uppercase tracking-widest"
                 >
                   {isSubmitting ? 'جاري...' : 'نشر'}

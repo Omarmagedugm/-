@@ -64,6 +64,7 @@ import {
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import ScoreSelector from '../components/ScoreSelector';
+import ImageUploader from '../components/ImageUploader';
 
 const handleFileUploadFn = async (
   e: React.ChangeEvent<HTMLInputElement>, 
@@ -135,11 +136,20 @@ const UploadField = ({
             </button>
           </div>
         </div>
+      ) : type === 'image' ? (
+        <div className="bg-slate-50 dark:bg-surface-dark border-2 border-dashed border-slate-200 dark:border-border-dark py-6 rounded-xl flex items-center justify-center">
+          <ImageUploader 
+            folderName={`admin_${fieldName}`}
+            onUploadSuccess={(url) => setFormData((prev: any) => ({ ...prev, [fieldName]: url }))}
+            buttonText="اختر صورة للرفع"
+            showPreview={false}
+          />
+        </div>
       ) : (
         <label className="flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-surface-dark border-2 border-dashed border-slate-200 dark:border-border-dark py-6 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all group">
           <input 
             type="file" 
-            accept={type === 'image' ? "image/*" : type === 'video' ? "video/*" : "audio/*"} 
+            accept={type === 'video' ? "video/*" : "audio/*"} 
             className="hidden" 
             onChange={(e) => handleFileUpload(e, fieldName, type)}
             disabled={uploading}
@@ -153,7 +163,7 @@ const UploadField = ({
              <span className="text-[10px] font-black text-slate-500 block">
                {uploading ? 'جاري الرفع...' : 'اضغط للرفع'}
              </span>
-             <span className="text-[8px] text-slate-400 font-bold uppercase">{type === 'image' ? 'صورة' : type === 'video' ? 'فيديو' : 'صوت'}</span>
+             <span className="text-[8px] text-slate-400 font-bold uppercase">{type === 'video' ? 'فيديو' : 'صوت'}</span>
           </div>
         </label>
       )}
@@ -341,13 +351,15 @@ export default function Admin() {
   
   // If Omar or Dev, they are always admin in UI regardless of DB role
   const effectiveRole = isDev ? 'admin' : profile.role;
+  const isWriter = effectiveRole === 'writer' || effectiveRole === 'moderator';
+  const isAdminOrWriter = effectiveRole === 'admin' || isWriter;
 
-  if (effectiveRole !== 'admin') {
+  if (!isAdminOrWriter) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-background-dark flex flex-col items-center justify-center p-6 text-center">
         <ShieldAlert size={64} className="text-red-500 mb-4" />
         <h1 className="text-2xl font-black mb-2">عذراً، لا تمتلك صلاحيات</h1>
-        <p className="text-slate-500 mb-6">هذه الصفحة مخصصة لمديري النظام فقط.</p>
+        <p className="text-slate-500 mb-6">هذه الصفحة مخصصة لمديري النظام أو المحررين فقط.</p>
         <button onClick={() => navigate('/')} className="bg-primary text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2">
           <ArrowRight size={20} />
           العودة للرئيسية
@@ -355,6 +367,13 @@ export default function Admin() {
       </div>
     );
   }
+
+  // Force writer to news tab if they are not admin
+  useEffect(() => {
+    if (effectiveRole === 'writer' && activeTab !== 'news') {
+      setActiveTab('news');
+    }
+  }, [effectiveRole, activeTab]);
 
   const handleAdd = async () => {
     setLoading(true);
@@ -2726,6 +2745,7 @@ export default function Admin() {
                         <label className="text-[10px] font-black text-slate-500 mb-1 block">الصلاحيات</label>
                         <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.role || 'user'} onChange={(e) => setFormData({...formData, role: e.target.value})}>
                           <option value="user">عضو عادي</option>
+                          <option value="writer">محرر أخبار</option>
                           <option value="moderator">مشرف</option>
                           <option value="admin">مدير نظام</option>
                         </select>

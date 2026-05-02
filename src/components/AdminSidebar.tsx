@@ -1,5 +1,6 @@
 import React from 'react';
 import { auth } from '../lib/firebase';
+import { useAppStore } from '../store';
 import { 
   LayoutDashboard, 
   Newspaper, 
@@ -29,13 +30,22 @@ interface AdminSidebarProps {
 }
 
 export default function AdminSidebar({ activeTab, setActiveTab, onClose }: AdminSidebarProps) {
+  const { profile } = useAppStore();
   const Shield = ({ size }: { size: number }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
     </svg>
   );
 
-  const tabs = [
+  const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com' || auth.currentUser?.email === 'omarmagedugm@ittihad.club';
+  const effectiveRole = isDev ? 'admin' : profile.role;
+  const isWriter = effectiveRole === 'writer' || effectiveRole === 'moderator';
+
+  const tabs = isWriter ? [
+    { title: 'المحتوى', items: [
+      { id: 'news', icon: <Newspaper size={18} />, label: 'الأخبار' },
+    ]}
+  ] : [
     { title: 'عام', items: [
       { id: 'overview', icon: <LayoutDashboard size={18} />, label: 'لوحة القيادة' },
       { id: 'layout', icon: <LayoutDashboard size={18} />, label: 'إدارة الصفحة الرئيسية' },
