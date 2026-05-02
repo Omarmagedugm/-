@@ -48,9 +48,13 @@
     min-height: inherit;
   }
 
-  .dark input.bg-slate-50, .dark textarea.bg-slate-50, .dark select.bg-slate-50,
-  .dark input.bg-white, .dark textarea.bg-white, .dark select.bg-white {
-    color: #0f172a !important; /* text-slate-900 */
+  /* Input fields in dark mode */
+  .dark input, .dark textarea, .dark select {
+    background-color: #ffffff !important;
+    color: var(--color-primary) !important;
+  }
+  .dark input::placeholder, .dark textarea::placeholder {
+    color: #94a3b8 !important; /* text-slate-400 */
   }
 }
 
