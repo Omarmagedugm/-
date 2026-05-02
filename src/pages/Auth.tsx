@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, db } from '../lib/firebase';
+import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
@@ -55,7 +55,14 @@ export default function Auth() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      let userDoc;
+      try {
+        userDoc = await getDoc(doc(db, 'users', user.uid));
+      } catch (err) {
+        handleFirestoreError(err, OperationType.GET, `users/${user.uid}`);
+        throw err;
+      }
+
       if (!userDoc.exists()) {
         const isAdmin = user.email?.toLowerCase() === 'copyrightofficialco@gmail.com';
         const userData = {
@@ -63,11 +70,18 @@ export default function Auth() {
           name: user.displayName || 'مشجع إتحادي',
           email: user.email,
           role: (isAdmin ? 'admin' : 'user') as 'user' | 'admin',
+          username: user.email?.split('@')[0].toLowerCase() || `user_${user.uid.substring(0, 5)}`,
+          tier: 'new' as 'new' | 'diamond' | 'bronze' | 'silver' | 'gold',
+          bio: 'مشجع إتحادي جديد',
           joinDate: new Date().getFullYear().toString(),
           avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'U')}&background=random`,
           stats: { predictions: 0, comments: 0, favorites: 0 }
         };
-        await setDoc(doc(db, 'users', user.uid), userData);
+        try {
+          await setDoc(doc(db, 'users', user.uid), userData);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}`);
+        }
         updateLocalProfile(userData);
       } else {
         updateLocalProfile(userDoc.data());
@@ -146,7 +160,11 @@ export default function Auth() {
           }
         };
 
-        await setDoc(doc(db, 'users', user.uid), userData);
+        try {
+          await setDoc(doc(db, 'users', user.uid), userData);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}`);
+        }
         
         // If admin, also add to admins collection for security rules
         if (isAdmin) {
@@ -162,12 +180,23 @@ export default function Auth() {
         const userCredential = await signInWithEmailAndPassword(auth, finalEmail, password);
         const user = userCredential.user;
         
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        let userDoc;
+        try {
+          userDoc = await getDoc(doc(db, 'users', user.uid));
+        } catch (err) {
+          handleFirestoreError(err, OperationType.GET, `users/${user.uid}`);
+          throw err;
+        }
+
         if (userDoc.exists()) {
           const userData = userDoc.data();
           // Ensure omarmagedugm is admin if not already set in history
           if (finalEmail.toLowerCase() === 'omarmagedugm@ittihad.club' && userData.role !== 'admin') {
-            await setDoc(doc(db, 'users', user.uid), { ...userData, role: 'admin' }, { merge: true });
+            try {
+              await setDoc(doc(db, 'users', user.uid), { ...userData, role: 'admin' }, { merge: true });
+            } catch (err) {
+              handleFirestoreError(err, OperationType.UPDATE, `users/${user.uid}`);
+            }
             try {
               await setDoc(doc(db, 'admins', user.uid), { email: finalEmail, grantedAt: new Date().toISOString() });
             } catch (e) {}

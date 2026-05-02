@@ -24,8 +24,21 @@ import TopHeader from './components/TopHeader';
 import MusicPlayer from './components/MusicPlayer';
 
 export default function App() {
-  const { theme } = useAppStore();
+  const { theme, setIsAuthReady, updateProfile } = useAppStore();
   useFirestoreSync();
+
+  useEffect(() => {
+    const unsub = auth.onAuthStateChanged((user) => {
+      if (user) {
+        // Optimistically set UID in profile so Redirector knows we are logged in
+        updateProfile({ uid: user.uid, email: user.email || '' });
+      } else {
+        updateProfile({ uid: undefined });
+      }
+      setIsAuthReady(true);
+    });
+    return unsub;
+  }, [setIsAuthReady, updateProfile]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -97,20 +110,23 @@ export default function App() {
 }
 
 function AuthRedirector() {
-  const { profile } = useAppStore();
+  const { profile, isAuthReady } = useAppStore();
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!isAuthReady) return;
+
     // If logged in and on auth page, go home
     if (profile.uid && location.pathname === '/auth') {
       navigate('/', { replace: true });
     }
-    // If not logged in and on a protected page like admin, go to auth
-    if (!profile.uid && location.pathname === '/admin') {
+    // If not logged in and on a protected page like admin or profile, go to auth
+    const protectedPaths = ['/admin', '/profile', '/bookmarks', '/store']; 
+    if (!profile.uid && protectedPaths.includes(location.pathname)) {
       navigate('/auth', { replace: true });
     }
-  }, [profile.uid, location.pathname, navigate]);
+  }, [profile.uid, location.pathname, navigate, isAuthReady]);
 
   return null;
 }

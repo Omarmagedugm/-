@@ -30,7 +30,10 @@ import {
   Zap,
   Trash2,
   Edit2,
-  Check
+  Check,
+  HelpCircle,
+  Grid,
+  Upload
 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType, uploadImage } from '../lib/firebase';
 import { format } from 'date-fns';
@@ -51,7 +54,8 @@ import {
   onSnapshot,
   arrayUnion,
   deleteDoc,
-  where
+  where,
+  setDoc
 } from 'firebase/firestore';
 
 export default function FanZone() {
@@ -83,6 +87,11 @@ export default function FanZone() {
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] = useState('');
   const [tick, setTick] = useState(0);
+  const [matchDayMoments, setMatchDayMoments] = useState<any[]>([]);
+  const [attendancePoll, setAttendancePoll] = useState<any>(null);
+  const [isPostingMoment, setIsPostingMoment] = useState(false);
+  const [momentPost, setMomentPost] = useState({ content: '', image: '' });
+  const [showMomentForm, setShowMomentForm] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setTick(t => t + 1), 1000);
@@ -109,7 +118,9 @@ export default function FanZone() {
       );
       const unsub = onSnapshot(q, (snapshot) => {
         setPostComments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      }, (error) => console.error('Error fetching comments:', error));
+      }, (error) => {
+        if (error.code !== 'permission-denied') console.error('Error fetching comments:', error);
+      });
       return unsub;
     } else {
       setPostComments([]);
@@ -131,6 +142,39 @@ export default function FanZone() {
                     matches.find(m => m.status === 'live') || 
                     matches.find(m => m.status === 'upcoming') || 
                     sortedMatches[0];
+
+  // Listen to match day moments
+  useEffect(() => {
+    if (activeTab === 'matchday' && nextMatch) {
+      const q = query(
+        collection(db, 'match_day_moments'),
+        where('matchId', '==', (nextMatch as any).id),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      );
+      return onSnapshot(q, (snapshot) => {
+        setMatchDayMoments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      }, (error) => {
+        if (error.code !== 'permission-denied') console.error('Error fetching match day moments:', error);
+      });
+    }
+  }, [activeTab, nextMatch]);
+
+  // Listen to attendance poll
+  useEffect(() => {
+    if (activeTab === 'matchday' && nextMatch) {
+      const pollId = `attendance_${(nextMatch as any).id}`;
+      return onSnapshot(doc(db, 'match_day_attendance', pollId), (docSnap) => {
+        if (docSnap.exists()) {
+          setAttendancePoll(docSnap.data());
+        } else {
+          setAttendancePoll(null);
+        }
+      }, (error) => {
+        if (error.code !== 'permission-denied') console.error('Error fetching attendance poll:', error);
+      });
+    }
+  }, [activeTab, nextMatch]);
 
   const matchPredictions = predictions.filter(p => p.matchId === nextMatch?.id);
   const totalPreds = matchPredictions.length;
@@ -505,6 +549,97 @@ export default function FanZone() {
     }
   };
 
+  const handleVoteAttendance = async (choice: 'yes' | 'no' | 'maybe') => {
+    if (!auth.currentUser || !nextMatch) return;
+    const pollId = `attendance_${(nextMatch as any).id}`;
+    const userId = auth.currentUser.uid;
+    const previousChoice = attendancePoll?.voters?.[userId];
+    
+    if (previousChoice === choice) return;
+
+    try {
+      const pollRef = doc(db, 'match_day_attendance', pollId);
+      const updates: any = {
+        [`votes.${choice}`]: increment(1),
+        [`voters.${userId}`]: choice,
+        matchId: (nextMatch as any).id
+      };
+
+      if (previousChoice) {
+        updates[`votes.${previousChoice}`] = increment(-1);
+      }
+
+      await updateDoc(pollRef, updates);
+    } catch (error: any) {
+      if (error.code === 'not-found') {
+        const pollRef = doc(db, 'match_day_attendance', pollId);
+        const initialVotes = { yes: 0, no: 0, maybe: 0 };
+        initialVotes[choice] = 1;
+        await setDoc(pollRef, {
+          matchId: (nextMatch as any).id,
+          votes: initialVotes,
+          voters: { [userId]: choice }
+        });
+      } else {
+        console.error('Error voting attendance:', error);
+      }
+    }
+  };
+
+  const handleCreateMoment = async () => {
+    if (!auth.currentUser || !nextMatch || (!momentPost.content.trim() && !momentPost.image)) return;
+    if (isPostingMoment) return;
+
+    setIsPostingMoment(true);
+    try {
+      await addDoc(collection(db, 'match_day_moments'), {
+        userId: auth.currentUser.uid,
+        userName: profile.name || 'مشجع إتحادي',
+        userAvatar: profile.avatar || '',
+        content: momentPost.content,
+        image: momentPost.image || null,
+        matchId: nextMatch.id,
+        likes: 0,
+        likedBy: [],
+        createdAt: serverTimestamp()
+      });
+      setMomentPost({ content: '', image: '' });
+      setShowMomentForm(false);
+      alert('تمت مشاركة اللحظة بنجاح!');
+    } catch (error) {
+      console.error('Error creating moment:', error);
+      alert('فشل في النشر');
+    } finally {
+      setIsPostingMoment(false);
+    }
+  };
+
+  const handleLikeMoment = async (momentId: string) => {
+    if (!auth.currentUser) return;
+    const moment = matchDayMoments.find(m => m.id === momentId);
+    if (!moment) return;
+    
+    const userId = auth.currentUser.uid;
+    const likedBy = moment.likedBy || [];
+    
+    try {
+      const momentRef = doc(db, 'match_day_moments', momentId);
+      if (likedBy.includes(userId)) {
+        await updateDoc(momentRef, {
+          likes: increment(-1),
+          likedBy: likedBy.filter((id: string) => id !== userId)
+        });
+      } else {
+        await updateDoc(momentRef, {
+          likes: increment(1),
+          likedBy: arrayUnion(userId)
+        });
+      }
+    } catch (error) {
+      console.error('Error liking moment:', error);
+    }
+  };
+
   return (
     <div className="flex-1 pb-32 flex flex-col bg-background-light dark:bg-background-dark min-h-screen text-slate-800 dark:text-white">
       <main className="p-4 space-y-8">
@@ -522,12 +657,14 @@ export default function FanZone() {
                 <img src={profile.avatar || undefined} className="w-full h-full object-cover" alt="user" referrerPolicy="no-referrer" />
               </div>
               <div className="flex-1">
-                <textarea 
-                  placeholder="بماذا تفكر يا مشجع الاتحاد؟" 
-                  className="w-full bg-transparent text-base font-bold text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none min-h-[80px] resize-none"
-                  value={newPost.content}
-                  onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                />
+                <div className="bg-slate-100/50 dark:bg-slate-900/60 rounded-[28px] border border-border-light dark:border-white/5 p-4 focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-inner backdrop-blur-sm">
+                  <textarea 
+                    placeholder="بماذا تفكر يا مشجع الاتحاد؟" 
+                    className="w-full bg-transparent text-base font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none min-h-[100px] resize-none"
+                    value={newPost.content}
+                    onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+                  />
+                </div>
                 
                 {newPost.poll && (
                   <motion.div 
@@ -1174,12 +1311,12 @@ export default function FanZone() {
                 )}
               </div>
 
-              <div className="p-4 bg-white/40 dark:bg-background-dark/40 backdrop-blur-xl border-t border-border-light dark:border-border-dark">
-                <div className="flex gap-2 bg-white dark:bg-surface-dark rounded-[24px] p-2 border border-border-light dark:border-border-dark focus-within:border-primary/50 transition-all shadow-premium">
+              <div className="p-4 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-t border-border-light dark:border-white/5">
+                <div className="flex gap-2 bg-white dark:bg-black/40 rounded-[24px] p-2 border border-border-light dark:border-white/10 focus-within:border-primary/50 transition-all shadow-premium backdrop-blur-md">
                   <input 
                     type="text" 
                     placeholder="أرسل رسالة..." 
-                    className="flex-1 bg-transparent px-5 py-2 text-xs font-bold text-slate-800 dark:text-white focus:outline-none"
+                    className="flex-1 bg-transparent px-5 py-2 text-xs font-bold text-slate-800 dark:text-white placeholder-slate-500 focus:outline-none"
                     value={chatMessage}
                     onChange={(e) => setChatMessage(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -1718,118 +1855,271 @@ export default function FanZone() {
               className="space-y-6"
             >
               <div className="glass-card rounded-[40px] p-8 border border-primary/20 shadow-premium">
-                <div className="flex flex-col items-center mb-8">
-                  <div className="flex items-center gap-2 px-3 py-1 bg-accent/20 text-accent rounded-full mb-4">
+                <div className="flex flex-col items-center mb-8 text-center">
+                  <div className="flex items-center gap-2 px-4 py-1.5 bg-accent/20 text-accent rounded-full mb-6 border border-accent/20">
                     <Zap size={14} className="animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Match Day Live</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Match Day Experience</span>
                   </div>
-                  <h2 className="text-2xl font-black text-slate-800 dark:text-white uppercase leading-none">مباريات اليوم</h2>
+                  <h2 className="text-3xl font-black text-slate-800 dark:text-white uppercase leading-none italic tracking-tighter">يوم المباراة</h2>
                 </div>
 
                 {nextMatch ? (
-                  <div className="stadium-gradient rounded-[32px] p-6 text-white mb-8 shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 blur-3xl rounded-full"></div>
-                    <div className="flex justify-center items-center gap-4 sm:gap-8 relative z-10">
-                      <div className="flex flex-col items-center w-16 sm:w-20">
-                        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-2 sm:mb-3 backdrop-blur-md border border-white/20">
-                          <img src={nextMatch.homeLogo} className="w-10 h-10 object-contain" alt="home" referrerPolicy="no-referrer" />
+                  <div className="stadium-gradient rounded-[36px] p-8 text-white mb-8 shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-1000"></div>
+                    <div className="flex justify-center items-center gap-6 sm:gap-12 relative z-10">
+                      <div className="flex flex-col items-center w-20 sm:w-24">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-3xl flex items-center justify-center mb-3 sm:mb-4 backdrop-blur-md border border-white/20 shadow-premium">
+                          <img src={nextMatch.homeLogo} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-lg" alt="home" referrerPolicy="no-referrer" />
                         </div>
-                        <span className="text-[10px] sm:text-xs font-black text-center line-clamp-1">{nextMatch.homeTeam}</span>
+                        <span className="text-[10px] sm:text-[11px] font-black text-center line-clamp-1 uppercase tracking-tight">{nextMatch.homeTeam}</span>
                       </div>
 
                       <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                        <div className={`font-black tracking-tighter tabular-nums drop-shadow-lg ${String(nextMatch.homeScore).length > 2 || String(nextMatch.awayScore).length > 2 ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'}`}>
+                        <div className={`font-black tracking-tighter tabular-nums drop-shadow-glow ${String(nextMatch.homeScore).length > 2 || String(nextMatch.awayScore).length > 2 ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-5xl'}`}>
                           {nextMatch.status === 'upcoming' ? '-- : --' : `${nextMatch.homeScore} - ${nextMatch.awayScore}`}
                         </div>
                         {nextMatch.status === 'live' && (
-                          <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 bg-red-500 rounded-full shadow-glow">
-                             <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-pulse" />
-                             <span className="text-[8px] sm:text-[10px] font-black tabular-nums">LIVE {calculateCurrentMinute(nextMatch)}'</span>
+                          <div className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 bg-red-500 rounded-full shadow-glow-red animate-pulse">
+                             <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                             <span className="text-[10px] font-black tabular-nums tracking-widest">LIVE {calculateCurrentMinute(nextMatch)}'</span>
                           </div>
                         )}
                         {nextMatch.status === 'upcoming' && (
-                           <span className="text-[8px] font-black tracking-widest opacity-60 uppercase">{format(new Date(nextMatch.date), 'dd MMM HH:mm', { locale: ar })}</span>
+                           <span className="text-[9px] font-black tracking-[0.3em] opacity-80 uppercase bg-white/10 px-3 py-1 rounded-full">{format(new Date(nextMatch.date), 'HH:mm', { locale: ar })}</span>
                         )}
                       </div>
 
-                      <div className="flex flex-col items-center w-16 sm:w-20">
-                        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-2 sm:mb-3 backdrop-blur-md border border-white/20">
-                          <img src={nextMatch.awayLogo} className="w-10 h-10 object-contain" alt="away" referrerPolicy="no-referrer" />
+                      <div className="flex flex-col items-center w-20 sm:w-24">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-3xl flex items-center justify-center mb-3 sm:mb-4 backdrop-blur-md border border-white/20 shadow-premium">
+                          <img src={nextMatch.awayLogo} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-lg" alt="away" referrerPolicy="no-referrer" />
                         </div>
-                        <span className="text-[10px] sm:text-xs font-black text-center line-clamp-1">{nextMatch.awayTeam}</span>
+                        <span className="text-[10px] sm:text-[11px] font-black text-center line-clamp-1 uppercase tracking-tight">{nextMatch.awayTeam}</span>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="py-12 border-2 border-dashed border-border-light dark:border-border-dark rounded-[32px] text-center opacity-40 mb-8">
-                     <PieChart size={48} className="mx-auto mb-4" />
-                     <p className="font-black text-sm">لا توجد مباريات نشطة اليوم</p>
+                  <div className="py-20 bg-slate-50 dark:bg-surface-dark border-2 border-dashed border-border-light dark:border-border-dark rounded-[40px] text-center opacity-40 mb-8">
+                     <Target size={48} className="mx-auto mb-4 text-slate-300" />
+                     <p className="font-black text-sm uppercase tracking-widest">لا توجد مباريات نشطة اليوم</p>
                   </div>
                 )}
                 
+                {/* Attendance Poll Section */}
+                {nextMatch && (
+                  <div className="bg-white/40 dark:bg-card-dark/40 border border-border-light dark:border-border-dark rounded-[36px] p-6 mb-8 shadow-sm">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                        <Users size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-black text-sm text-slate-800 dark:text-white uppercase leading-none italic">هل ستحضر المباراة؟</h3>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Attendance Poll</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      {(['yes', 'no', 'maybe'] as const).map((choice) => {
+                        const labels = { yes: 'نعم', no: 'لا', maybe: 'ربما' };
+                        const icons = { yes: <Check size={14} />, no: <X size={14} />, maybe: <HelpCircle size={14} /> };
+                        const colors = { yes: 'bg-primary text-white shadow-primary/20', no: 'bg-red-500 text-white shadow-red-500/20', maybe: 'bg-slate-400 text-white shadow-slate-400/20' };
+                        const isSelected = attendancePoll?.voters?.[auth.currentUser?.uid || ''] === choice;
+                        const votes = attendancePoll?.votes?.[choice] || 0;
+                        const totalVotesCount: any = Object.values(attendancePoll?.votes || {}).reduce((a: any, b: any) => Number(a) + Number(b), 0);
+                        const pct = totalVotesCount > 0 ? Math.round((votes / (totalVotesCount as number)) * 100) : 0;
+
+                        return (
+                          <button
+                            key={choice}
+                            onClick={() => handleVoteAttendance(choice)}
+                            className={`flex flex-col items-center gap-3 p-4 rounded-3xl border-2 transition-all relative overflow-hidden ${isSelected ? 'border-transparent scale-105 ' + colors[choice] : 'border-border-light dark:border-border-dark hover:border-primary/30'}`}
+                          >
+                            <span className="relative z-10">{icons[choice]}</span>
+                            <span className="text-xs font-black relative z-10 transition-colors">{labels[choice]}</span>
+                            <span className="text-[10px] font-black opacity-60 tabular-nums relative z-10 tracking-widest">%{pct}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
-                   <button onClick={() => setActiveTab('chat')} className="p-6 glass-card rounded-[32px] border border-primary/20 flex flex-col items-center gap-3 hover:bg-primary/5 transition-all shadow-premium group">
-                      <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-inner">
-                        <MessageCircle size={28} />
+                   <button onClick={() => setActiveTab('chat')} className="p-6 glass-card rounded-[32px] border border-primary/20 flex flex-col items-center gap-4 hover:bg-primary/5 transition-all shadow-premium group">
+                      <div className="w-16 h-16 bg-primary/10 rounded-[24px] flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-inner">
+                        <MessageCircle size={32} />
                       </div>
                       <div className="text-center">
-                        <span className="text-[10px] font-black uppercase text-slate-800 dark:text-white tracking-widest block">Live Chat</span>
-                        <span className="text-[8px] font-bold text-slate-400 mt-1 block">دردش مع الجمهور</span>
+                        <span className="text-[11px] font-black uppercase text-slate-800 dark:text-white tracking-widest block italic mb-1">الدردشة الحية</span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase">Live Fan Room</span>
                       </div>
                    </button>
-                   <button onClick={() => setActiveTab('all')} className="p-6 glass-card rounded-[32px] border border-accent/20 flex flex-col items-center gap-3 hover:bg-accent/5 transition-all shadow-premium group">
-                      <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center text-accent group-hover:scale-110 transition-transform shadow-inner">
-                        <Camera size={28} />
+                   <button 
+                    onClick={() => setShowMomentForm(!showMomentForm)} 
+                    className={`p-6 glass-card rounded-[32px] border flex flex-col items-center gap-4 transition-all shadow-premium group ${showMomentForm ? 'bg-accent/10 border-accent/40' : 'border-accent/20 hover:bg-accent/5'}`}
+                   >
+                      <div className={`w-16 h-16 rounded-[24px] flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner ${showMomentForm ? 'bg-accent text-white' : 'bg-accent/10 text-accent'}`}>
+                        <Camera size={32} />
                       </div>
                       <div className="text-center">
-                        <span className="text-[10px] font-black uppercase text-slate-800 dark:text-white tracking-widest block">Share Moments</span>
-                        <span className="text-[8px] font-bold text-slate-400 mt-1 block">شارك صورك</span>
+                        <span className="text-[11px] font-black uppercase text-slate-800 dark:text-white tracking-widest block italic mb-1">شارك لحظتك</span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase">Post Wall Moment</span>
                       </div>
                    </button>
                 </div>
               </div>
 
-              {nextMatch && (
-                <div className="glass-card rounded-[40px] p-8 border border-border-light/40 dark:border-border-dark/40 shadow-premium">
-                   <div className="flex items-center gap-3 mb-6">
-                      <div className="w-10 h-10 bg-yellow-500/10 rounded-2xl flex items-center justify-center text-yellow-600">
-                        <Target size={20} />
+              {/* Moment Creation Form */}
+              <AnimatePresence>
+                {showMomentForm && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                    exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                    className="glass-card rounded-[40px] p-8 border border-accent/40 shadow-2xl relative z-20 overflow-hidden bg-white/80 dark:bg-card-dark/80 backdrop-blur-2xl"
+                  >
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                    
+                    <div className="relative z-10 space-y-6">
+                      <div className="flex items-center justify-between">
+                         <div className="flex flex-col">
+                           <h3 className="font-black text-xl text-slate-800 dark:text-white uppercase italic tracking-tighter">أضف لحظتك الخاصة</h3>
+                           <span className="text-[10px] font-bold text-accent uppercase tracking-[0.2em] mt-1">Capture The Spirit</span>
+                         </div>
+                         <button 
+                           onClick={() => setShowMomentForm(false)}
+                           className="w-10 h-10 rounded-full bg-slate-100 dark:bg-surface-dark flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"
+                         >
+                           <X size={20} />
+                         </button>
                       </div>
-                      <div>
-                        <h3 className="font-black text-sm text-slate-800 dark:text-white uppercase leading-none">توقعات الجمهور</h3>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Live Crowd Sentiment</span>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Text Content Box */}
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2">
+                             <MessageSquare size={12} /> خانة التعليق
+                          </label>
+                          <div className="bg-slate-100/50 dark:bg-black/40 rounded-[24px] border border-border-light dark:border-white/10 focus-within:ring-2 focus-within:ring-accent/20 transition-all shadow-inner p-1">
+                            <textarea
+                              placeholder="ماذا يحدث في المدرج؟ أكتب تعليقك هنا..."
+                              className="w-full bg-transparent rounded-[24px] p-5 text-[15px] font-bold text-slate-800 dark:text-white focus:outline-none min-h-[160px] resize-none"
+                              value={momentPost.content}
+                              onChange={(e) => setMomentPost({ ...momentPost, content: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Image Upload Box */}
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2">
+                             <Camera size={12} /> خانة الصورة
+                          </label>
+                          <div className="h-[160px] relative">
+                             <ImageUploader 
+                              folderName="matchday_moments"
+                              onUploadSuccess={(url) => setMomentPost({ ...momentPost, image: url })}
+                              className="h-full bg-slate-50 dark:bg-surface-dark border-2 border-dashed border-accent/20 rounded-[24px] hover:border-accent/40 flex items-center justify-center transition-all overflow-hidden"
+                            />
+                            {momentPost.image && (
+                              <div className="absolute inset-0 rounded-[24px] overflow-hidden group">
+                                <img src={momentPost.image} className="w-full h-full object-cover" alt="preview" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <button onClick={() => setMomentPost({...momentPost, image: ''})} className="bg-red-500 text-white p-2 rounded-full shadow-lg">
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                   </div>
-                   <div className="flex items-center gap-1 h-2 rounded-full bg-slate-100 dark:bg-surface-dark overflow-hidden mb-4">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${homePct}%` }}
-                        className="h-full bg-primary" 
-                      />
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${drawPct}%` }}
-                        className="h-full bg-slate-400" 
-                      />
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${awayPct}%` }}
-                        className="h-full bg-accent" 
-                      />
-                   </div>
-                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-tighter">
-                      <div className="flex items-center gap-1.5 text-primary">
-                        <div className="w-2 h-2 bg-primary rounded-full" /> فوز {nextMatch.homeTeam} ({Math.round(homePct)}%)
-                      </div>
-                      <div className="flex items-center gap-1.5 text-slate-400">
-                        <div className="w-2 h-2 bg-slate-400 rounded-full" /> تعادل ({Math.round(drawPct)}%)
-                      </div>
-                      <div className="flex items-center gap-1.5 text-accent">
-                        <div className="w-2 h-2 bg-accent rounded-full" /> فوز {nextMatch.awayTeam} ({Math.round(awayPct)}%)
-                      </div>
-                   </div>
+
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleCreateMoment}
+                        disabled={isPostingMoment || (!momentPost.content.trim() && !momentPost.image)}
+                        className="w-full h-16 bg-accent text-white rounded-[24px] font-black text-lg shadow-premium flex items-center justify-center gap-3 hover:bg-black transition-all disabled:opacity-50 group overflow-hidden relative"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
+                        <span className="relative z-10">{isPostingMoment ? 'جاري المشاركة...' : 'أنشر للحائط الآن'}</span>
+                        <Upload size={22} className="relative z-10 group-hover:-translate-y-1 transition-transform" />
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Match Day Wall (Feed) */}
+              <div className="space-y-6">
+                <div className="flex items-center justify-between px-2">
+                  <div className="flex flex-col">
+                    <h3 className="text-lg font-black text-slate-800 dark:text-white leading-none italic flex items-center gap-2">
+                      <Grid size={20} className="text-accent" />
+                      جدار اللحظات
+                    </h3>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Live Match Day Feed</span>
+                  </div>
+                  <div className="bg-accent/10 px-3 py-1.5 rounded-xl text-accent font-black text-[10px] uppercase">
+                    {matchDayMoments.length} Moment
+                  </div>
                 </div>
-              )}
+
+                <div className="columns-1 sm:columns-2 gap-6 space-y-6">
+                  {matchDayMoments.length > 0 ? matchDayMoments.map((moment) => (
+                    <motion.div
+                      key={moment.id}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="break-inside-avoid glass-card rounded-[32px] p-5 border border-border-light dark:border-border-dark shadow-premium relative group transition-all hover:border-accent/30"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <img src={moment.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${moment.userId}`} className="w-10 h-10 rounded-2xl border border-border-light" alt="user" />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black text-slate-800 dark:text-white uppercase leading-none">{moment.userName}</span>
+                            <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">
+                              {moment.createdAt ? format(new Date(moment.createdAt.seconds * 1000), 'HH:mm', { locale: ar }) : 'الآن'}
+                            </span>
+                          </div>
+                        </div>
+                        <motion.button 
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleLikeMoment(moment.id)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${moment.likedBy?.includes(auth.currentUser?.uid) ? 'bg-red-500/10 text-red-500 shadow-sm' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'}`}
+                        >
+                          <Heart size={14} fill={moment.likedBy?.includes(auth.currentUser?.uid) ? 'currentColor' : 'none'} />
+                          <span className="text-[10px] font-black">{moment.likes || 0}</span>
+                        </motion.button>
+                      </div>
+
+                      {moment.content && (
+                        <div className="bg-slate-50 dark:bg-surface-dark/50 rounded-2xl p-4 mb-3 border border-border-light/20 dark:border-border-dark/20">
+                          <p className="text-[14px] font-bold text-slate-700 dark:text-slate-200 leading-relaxed italic">
+                            "{moment.content}"
+                          </p>
+                        </div>
+                      )}
+
+                      {moment.image && (
+                        <div className="rounded-[28px] overflow-hidden border-2 border-white dark:border-border-dark aspect-video sm:aspect-square relative group/img shadow-md">
+                          <img src={moment.image} className="w-full h-full object-cover transition-transform duration-1000 group-hover/img:scale-110" alt="moment" referrerPolicy="no-referrer" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end p-4">
+                             <div className="flex items-center gap-2 text-white text-[10px] font-black uppercase tracking-widest bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20">
+                               <Camera size={14} className="text-accent" /> Full Perspective
+                             </div>
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  )) : (
+                    <div className="col-span-full py-20 text-center glass-card rounded-[40px] opacity-40 border-2 border-dashed">
+                       <Zap size={48} className="mx-auto mb-4" />
+                       <p className="font-black text-sm">كن أول من يشارك لحظة في المدرج!</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

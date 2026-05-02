@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { v4 as uuidv4 } from 'uuid';
 import { toDate, formatInTimeZone, fromZonedTime } from 'date-fns-tz';
-import { db, auth, uploadImage } from '../lib/firebase';
+import { db, auth, uploadImage, handleFirestoreError, OperationType } from '../lib/firebase';
 import { 
   collection, 
   getDocs,
@@ -60,7 +60,10 @@ import {
   Thermometer,
   Phone,
   AtSign,
-  Bell
+  Bell,
+  Download,
+  Database,
+  Shield
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import ScoreSelector from '../components/ScoreSelector';
@@ -280,17 +283,65 @@ export default function Admin() {
   const { 
     news, media, matches, liveStream, users, appSettings, profile, clubs, polls, fanPosts, predictions,
     clubTitles, clubStats, historyEvents, stadiums, newsCategories,
-    products, orders, homeSections, undoStack,
+    products, orders, ads, homeSections, undoStack,
     songs, albums, playlists, books, cityInfo,
     setClubTitles, setClubStats, setHistoryEvents, setStadiums, setNewsCategories,
-    setProducts, setOrders, setHomeSections, pushToUndoStack, popFromUndoStack,
+    setProducts, setOrders, setAds, setHomeSections, pushToUndoStack, popFromUndoStack,
     setSongs, setAlbums, setPlaylists, setBooks, setCityInfo
   } = useAppStore();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'news' | 'media' | 'matches' | 'live' | 'users' | 'settings' | 'clubs' | 'polls' | 'comments' | 'posts' | 'predictions' | 'fanzone' | 'history' | 'news-categories' | 'products' | 'orders' | 'layout' | 'music' | 'books' | 'city' | 'notifications'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'news' | 'media' | 'matches' | 'live' | 'users' | 'settings' | 'clubs' | 'polls' | 'comments' | 'posts' | 'predictions' | 'fanzone' | 'history' | 'news-categories' | 'products' | 'orders' | 'layout' | 'music' | 'books' | 'city' | 'notifications' | 'backup'>('overview');
   const [showSidebar, setShowSidebar] = useState(false);
   const [historySubTab, setHistorySubTab] = useState<'stats' | 'titles' | 'timeline' | 'stadiums'>('stats');
   const [musicSubTab, setMusicSubTab] = useState<'songs' | 'albums' | 'playlists'>('songs');
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportDatabase = async () => {
+    if (!window.confirm('هل أنت متأكد من رغبتك في تحميل نسخة كاملة من قاعدة البيانات؟ قد تستغرق هذه العملية بعض الوقت.')) return;
+    
+    setIsExporting(true);
+    try {
+      const collectionsToExport = [
+        'users', 'news', 'matches', 'clubs', 'polls', 'predictions', 'fan_posts', 
+        'media', 'live_comments', 'fan_comments', 'city_info', 'settings', 'fcm_tokens', 
+        'match_day_moments', 'match_day_attendance', 'ads', 'club_titles', 
+        'club_stats', 'club_timeline', 'club_stadiums', 'songs', 'albums', 
+        'playlists', 'books', 'news_categories', 'products', 'orders', 'home_sections',
+        'notifications', 'bookmarks'
+      ];
+
+      const backupData: any = {};
+
+      for (const collName of collectionsToExport) {
+        try {
+          const snapshot = await getDocs(collection(db, collName));
+          backupData[collName] = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+        } catch (err) {
+          console.warn(`Could not export collection ${collName}:`, err);
+        }
+      }
+
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      alert('تم تحميل النسخة الاحتياطية بنجاح');
+    } catch (error) {
+      console.error('Backup error:', error);
+      alert('فشل في إنشاء النسخة الاحتياطية');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const [notificationForm, setNotificationForm] = useState({ title: '', body: '', target: 'all' });
   const [isSending, setIsSending] = useState(false);
@@ -686,12 +737,12 @@ export default function Admin() {
       const q = query(collection(db, 'live_comments'), orderBy('createdAt', 'desc'), limit(50));
       return onSnapshot(q, (snapshot) => {
         setComments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      });
+      }, (error) => handleFirestoreError(error, OperationType.LIST, 'live_comments'));
     } else if (activeTab === 'fan-comments' || activeTab === 'fanzone') {
       const q = query(collection(db, 'fan_comments'), orderBy('createdAt', 'desc'), limit(100));
       return onSnapshot(q, (snapshot) => {
         setFanComments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      });
+      }, (error) => handleFirestoreError(error, OperationType.LIST, 'fan_comments'));
     }
   }, [activeTab]);
 
@@ -1274,6 +1325,7 @@ export default function Admin() {
                         <option value="custom">مخصص (Fan Zone)</option>
                         <option value="widget">برمجية HTML مخصصة</option>
                         <option value="city">طقس وتاريخ الإسكندرية</option>
+                        <option value="advertise">أعلن معنا (Widget)</option>
                       </select>
                     </div>
                     <div className="space-y-2">
@@ -1949,6 +2001,65 @@ export default function Admin() {
                 {isSending ? <Loader2 className="animate-spin" size={18} /> : <Bell size={18} />}
                 إرسال الإشعار
               </button>
+            </div>
+          )}
+
+          {activeTab === 'backup' && (
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-col text-right px-2">
+                <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase italic tracking-tight">إدارة النظام والنسخ الاحتياطي</h3>
+                <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">System Maintenance & Data Management</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white dark:bg-card-dark p-6 rounded-3xl border border-border-light dark:border-border-dark flex flex-col items-center text-center">
+                   <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500 mb-4">
+                      <Database size={28} />
+                   </div>
+                   <h4 className="text-sm font-black mb-1">نسخة احتياطية كاملة</h4>
+                   <p className="text-[10px] font-bold text-slate-500 mb-6 leading-relaxed">
+                     تحميل ملف JSON يحتوي على كافة بيانات التطبيق من Firestore
+                   </p>
+                   <button 
+                    onClick={handleExportDatabase}
+                    disabled={isExporting}
+                    className="w-full py-3 bg-blue-500 text-white rounded-xl font-black text-[10px] flex items-center justify-center gap-2 hover:bg-blue-600 transition-colors disabled:opacity-50"
+                   >
+                     {isExporting ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
+                     تحميل النسخة الآن
+                   </button>
+                </div>
+
+                <div className="bg-white dark:bg-card-dark p-6 rounded-3xl border border-border-light dark:border-border-dark flex flex-col items-center text-center">
+                   <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-4">
+                      <LayoutDashboard size={28} />
+                   </div>
+                   <h4 className="text-sm font-black mb-1">معلومات النظام</h4>
+                   <div className="w-full space-y-2 mb-4">
+                      <div className="flex justify-between items-center bg-slate-50 dark:bg-surface-dark p-2 px-3 rounded-lg border border-border-light dark:border-white/5">
+                        <span className="text-[9px] font-black text-slate-400 uppercase">Version</span>
+                        <span className="text-[10px] font-black tabular-nums">{ADMIN_VERSION}</span>
+                      </div>
+                      <div className="flex justify-between items-center bg-slate-50 dark:bg-surface-dark p-2 px-3 rounded-lg border border-border-light dark:border-white/5">
+                        <span className="text-[9px] font-black text-slate-400 uppercase">Status</span>
+                        <span className="text-[10px] font-black text-green-500">Active</span>
+                      </div>
+                   </div>
+                   <p className="text-[9px] font-bold text-slate-400 italic">
+                     تم تصميم النظام لخدمة مشجعي نادي الاتحاد السكندري
+                   </p>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 dark:bg-amber-500/10 p-4 rounded-2xl border border-amber-200 dark:border-amber-500/20 flex gap-3 items-start text-right">
+                <Shield size={18} className="text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                   <h5 className="font-black text-amber-800 dark:text-amber-500 text-[10px] mb-0.5">تنبيه أمني</h5>
+                   <p className="text-[9px] font-bold text-amber-700 dark:text-amber-400 leading-relaxed">
+                     النسخة الاحتياطية تحتوي على بيانات حساسة. يرجى الحفاظ على الملف في مكان آمن وعدم مشاركته مع أطراف غير مصرح لها.
+                   </p>
+                </div>
+              </div>
             </div>
           )}
 

@@ -21,7 +21,8 @@ import {
   Music,
   BookOpen,
   CloudSun,
-  Bell
+  Bell,
+  Database
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -55,8 +56,8 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
     ]},
     { title: 'المحتوى', items: [
       { id: 'news', icon: <Newspaper size={18} />, label: 'الأخبار' },
-      { id: 'news-categories', icon: <Tags size={18} />, label: 'أقسام الأخبار' },
-      { id: 'products', icon: <ShoppingBag size={18} />, label: 'إدارة المتجر' },
+      {id: 'news-categories', icon: <Tags size={18} />, label: 'أقسام الأخبار'},
+      {id: 'products', icon: <ShoppingBag size={18} />, label: 'إدارة المتجر'},
       { id: 'orders', icon: <ShoppingCart size={18} />, label: 'المشتريات' },
       { id: 'media', icon: <PlayCircle size={18} />, label: 'المالتيميديا' },
       { id: 'matches', icon: <Trophy size={18} />, label: 'المباريات' },
@@ -80,6 +81,9 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
     ]},
     { title: 'البيانات', items: [
       { id: 'clubs', icon: <Shield size={18} />, label: 'قائمة الأندية' },
+    ]},
+    { title: 'النظام', items: [
+      { id: 'backup', icon: <Database size={18} />, label: 'نسخة احتياطية' },
     ]}
   ];
 

@@ -19,10 +19,11 @@ service cloud.firestore {
       );
     }
     function isWriter() {
-      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'writer' || 
-              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'moderator' ||
-              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      return isSignedIn() && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['writer', 'moderator'])
+      );
     }
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
     function isBootstrapAdmin(userId) {
@@ -37,39 +38,45 @@ service cloud.firestore {
 
     // User Profile Validation
     function isValidUser(data) {
-      return data.keys().hasAll(['uid', 'name', 'email', 'role']) &&
-             data.uid is string && data.uid.size() <= 128 &&
-             data.name is string && data.name.size() <= 100 &&
+      return data.name is string && data.name.size() <= 100 &&
              data.email is string && data.email.size() <= 100 &&
-             data.role in ['user', 'writer', 'moderator', 'admin'] &&
-             (!('avatar' in data) || (data.avatar is string && data.avatar.size() <= 500)) &&
-             (!('location' in data) || (data.location is string && data.location.size() <= 100)) &&
-             (!('joinDate' in data) || (data.joinDate is string && data.joinDate.size() <= 20));
+             (!('uid' in data) || (data.uid is string && data.uid.size() <= 128)) &&
+             (!('role' in data) || (data.role in ['user', 'writer', 'moderator', 'admin'])) &&
+             (!('avatar' in data) || (data.avatar is string && data.avatar.size() <= 5000)) &&
+             (!('location' in data) || (data.location is string && data.location.size() <= 500)) &&
+             (!('joinDate' in data) || (data.joinDate is string && data.joinDate.size() <= 100)) &&
+             (!('username' in data) || (data.username is string && data.username.size() <= 100)) &&
+             (!('tier' in data) || (data.tier is string)) &&
+             (!('bio' in data) || (data.bio is string && data.bio.size() <= 2000)) &&
+             (!('stats' in data) || (data.stats is map)) &&
+             (!('bookmarks' in data) || (data.bookmarks is list)) &&
+             (!('fcmToken' in data) || (data.fcmToken is string)) &&
+             (!('lastActive' in data) || (data.lastActive is string));
     }
 
     match /live_comments/{commentId} {
-      allow read: if true; // Allow everyone to see the chat
-      allow create: if isSignedIn() && 
-                      request.resource.data.userId == request.auth.uid &&
-                      request.resource.data.text is string;
+      allow read: if true;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['text']);
       allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
 
     match /users/{userId} {
       allow read: if true;
-      allow create: if isOwner(userId) && isValidUser(incoming()) && (incoming().role == 'user' || isBootstrapAdmin(userId));
+      allow create: if isOwner(userId) && 
+                      incoming().keys().hasAll(['name', 'email']) &&
+                      isValidUser(incoming());
       allow update: if (
         isOwner(userId) && 
-        isValidUser(incoming()) && 
-        (incoming().role == existing().role || isBootstrapAdmin(userId)) &&
-        incoming().uid == userId &&
-        incoming().email == existing().email
+        isValidUser(incoming()) &&
+        (!('role' in incoming()) || !('role' in existing()) || incoming().role == existing().role || isBootstrapAdmin(userId))
       ) || isAdmin();
+      allow delete: if isAdmin();
     }
 
     // App Settings
     match /settings/{settingId} {
-      allow read: if true; // Publicly readable for app logo/name
+      allow read: if true;
       allow write: if isAdmin();
     }
 
@@ -81,8 +88,8 @@ service cloud.firestore {
 
     // News
     function isValidNews(data) {
-      return data.title is string && data.title.size() <= 200 &&
-             (!('content' in data) || (data.content is string && data.content.size() <= 50000)) &&
+      return data.title is string && data.title.size() <= 500 &&
+             (!('content' in data) || (data.content is string && data.content.size() <= 100000)) &&
              (!('author' in data) || (data.author is string));
     }
     match /news/{newsId} {
@@ -108,14 +115,14 @@ service cloud.firestore {
       allow read: if true;
       allow create, delete: if isAdmin();
       allow update: if isSignedIn() && (
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes', 'voters', 'voterChoices'])
+        incoming().diff(existing()).affectedKeys().hasOnly(['votes', 'voters', 'voterChoices'])
       );
     }
 
     // Predictions
     match /predictions/{predictionId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
@@ -123,28 +130,21 @@ service cloud.firestore {
     // Fan Posts
     match /fan_posts/{postId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow update: if isSignedIn() && (
-        (request.resource.data.userId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'image', 'location', 'poll'])) ||
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likedBy', 'poll', 'commentsCount']))
+        (resource.data.userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['content', 'image', 'location', 'poll'])) ||
+        (incoming().diff(existing()).affectedKeys().hasOnly(['likes', 'likedBy', 'poll', 'commentsCount']))
       );
       allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
 
       match /comments/{commentId} {
         allow read: if true;
         allow create: if isSignedIn();
-        allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text']);
+        allow update: if isSignedIn() && resource.data.userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['text']);
         allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       }
     }
 
-    // Live Comments Management
-    match /live_comments/{commentId} {
-      allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text']);
-      allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-    }
     // City Info
     match /city_info/{id} {
       allow read: if true;
@@ -153,7 +153,7 @@ service cloud.firestore {
 
     match /admins/{adminId} {
       allow read: if isAdmin();
-      allow write: if false; // Only manageable through Firebase Console or specific server scripts
+      allow write: if false;
     }
 
     // Products (Store)
@@ -173,60 +173,78 @@ service cloud.firestore {
     // Bookmarks (Saved Posts)
     match /bookmarks/{bookmarkId} {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
     // Club History
-    match /club_stats/{id} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /club_titles/{id} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /club_timeline/{id} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /club_stadiums/{id} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
+    match /club_stats/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /club_titles/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /club_timeline/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /club_stadiums/{id} { allow read: if true; allow write: if isAdmin(); }
 
     // Music and Books
-    match /songs/{id} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /albums/{id} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /playlists/{id} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    // Books
-    match /books/{id} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
+    match /songs/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /albums/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /playlists/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /books/{id} { allow read: if true; allow write: if isAdmin(); }
 
     // Notifications
     match /notifications/{id} {
       allow read: if isSignedIn() && (resource.data.target == 'all' || resource.data.target == request.auth.uid);
       allow write: if isAdmin();
-      allow update: if isSignedIn() && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy']));
+      allow update: if isSignedIn() && (incoming().diff(existing()).affectedKeys().hasOnly(['readBy']));
     }
 
     // FCM Tokens
     match /fcm_tokens/{tokenId} {
       allow read: if isAdmin();
-      allow create, update: if request.resource.data.keys().hasAll(['token']) &&
-                               request.resource.data.token is string;
+      allow create: if true;
+      allow update: if isSignedIn();
       allow delete: if isAdmin();
+    }
+
+    // Match Day Moments
+    function isValidMoment(data) {
+      return data.keys().hasAll(['userId', 'matchId', 'content', 'createdAt', 'likes', 'likedBy']) &&
+             data.userId == request.auth.uid &&
+             data.content is string && data.content.size() <= 5000 &&
+             data.matchId is string &&
+             data.likes is number &&
+             data.likedBy is list;
+    }
+
+    match /match_day_moments/{momentId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidMoment(incoming());
+      allow update: if isSignedIn() && (
+        (resource.data.userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['content', 'image'])) ||
+        (incoming().diff(existing()).affectedKeys().hasOnly(['likes', 'likedBy']))
+      );
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // Match Day Attendance Polls
+    match /match_day_attendance/{pollId} {
+      allow read: if true;
+      allow create, update: if isSignedIn();
+    }
+
+    // Fan Comments (General/Standalone)
+    match /fan_comments/{commentId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    // News Categories & Layouts
+    match /news_categories/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /ads/{adId} { allow read: if true; allow write: if isAdmin(); }
+    match /home_sections/{id} { allow read: if true; allow write: if isAdmin(); }
+
+    // Global Admin Override
+    match /{document=**} {
+      allow read, write: if isAdmin();
     }
   }
 }

@@ -33,9 +33,10 @@ import {
   Dribbble
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
+import AdvertiseWidget from '../components/AdvertiseWidget';
 
 export default function Home() {
-  const { news, media, matches, liveStream, profile, homeSections, cityInfo } = useAppStore();
+  const { news, media, matches, liveStream, profile, homeSections, cityInfo, ads } = useAppStore();
   const [tick, setTick] = useState(0);
   const [selectedSport, setSelectedSport] = useState<'football' | 'basketball'>('football');
   const [autoWeather, setAutoWeather] = useState<{ temp: string, condition: string, sunrise: string, sunset: string, isDay?: boolean } | null>(null);
@@ -228,7 +229,7 @@ export default function Home() {
                   </div>
                   <div className="flex justify-between sm:justify-center items-center gap-1 sm:gap-6 py-4 sm:py-6 px-1 sm:px-4">
                     <div className="flex flex-col items-center gap-2 sm:gap-5 w-[80px] sm:w-44 group/team shrink-0 z-10">
-                      <div className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium animate-float group-hover/team:scale-110 transition-transform duration-500 ${heroMatch.status === 'upcoming' ? 'h-16 w-16 sm:h-32 sm:w-32' : 'h-14 w-14 sm:h-24 sm:w-24'}`}>
+                      <div className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium ${heroMatch.status === 'upcoming' ? 'h-20 w-20 sm:h-40 sm:w-40' : 'h-16 w-16 sm:h-32 sm:w-32'}`}>
                         <img alt={heroMatch.homeTeam} className="w-full h-full object-contain filter drop-shadow-2xl" src={heroMatch.homeLogo || undefined} referrerPolicy="no-referrer" />
                       </div>
                       <span className="text-center text-[10px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">{heroMatch.homeTeam}</span>
@@ -239,12 +240,12 @@ export default function Home() {
                         {heroMatch.status === 'upcoming' ? (
                           <div className="flex flex-col items-center w-full justify-center gap-1 sm:gap-2">
                             <div className="text-xl sm:text-3xl opacity-60">VS</div>
-                            <div className="w-full text-center font-bold text-white/90 bg-black/40 px-1 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-white/10 overflow-hidden whitespace-nowrap text-ellipsis" style={{ fontSize: "clamp(9px, 2.5vw, 12px)" }}>
+                            <div className="w-fit mx-auto text-center font-bold text-white/90 bg-black/40 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl border border-white/10 whitespace-nowrap" style={{ fontSize: "clamp(10px, 2.5vw, 13px)" }}>
                               {heroMatch.date && !isNaN(new Date(heroMatch.date).getTime()) ? format(new Date(heroMatch.date), 'EEEE d MMMM | p', { locale: ar }) : 'غير محدد'}
                             </div>
                           </div>
                         ) : (
-                          <div className={`flex items-center justify-center gap-2 sm:gap-4 tracking-widest tabular-nums ${String(heroMatch.homeScore).length > 2 || String(heroMatch.awayScore).length > 2 ? 'text-2xl sm:text-4xl' : 'text-3xl sm:text-6xl'}`}>
+                          <div className={`flex items-center justify-center gap-2 sm:gap-4 tracking-widest tabular-nums ${String(heroMatch.homeScore).length > 2 || String(heroMatch.awayScore).length > 2 ? 'text-4xl sm:text-7xl' : 'text-5xl sm:text-8xl'}`}>
                             <span>{heroMatch.homeScore}</span>
                             <span className={selectedSport === 'basketball' ? 'text-orange-400' : 'text-accent'}>:</span>
                             <span>{heroMatch.awayScore}</span>
@@ -274,7 +275,7 @@ export default function Home() {
                     </div>
                     
                     <div className="flex flex-col items-center gap-2 sm:gap-5 w-[80px] sm:w-44 group/team shrink-0 z-10">
-                      <div className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium animate-float [animation-delay:0.5s] group-hover/team:scale-110 transition-transform duration-500 ${heroMatch.status === 'upcoming' ? 'h-16 w-16 sm:h-32 sm:w-32' : 'h-14 w-14 sm:h-24 sm:w-24'}`}>
+                      <div className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium ${heroMatch.status === 'upcoming' ? 'h-20 w-20 sm:h-40 sm:w-40' : 'h-16 w-16 sm:h-32 sm:w-32'}`}>
                         <img alt={heroMatch.awayTeam} className="w-full h-full object-contain filter drop-shadow-2xl" src={heroMatch.awayLogo || undefined} referrerPolicy="no-referrer" />
                       </div>
                       <span className="text-center text-[10px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">{heroMatch.awayTeam}</span>
@@ -528,6 +529,53 @@ export default function Home() {
           </motion.section>
         );
 
+      case 'ads': {
+        const activeAds = ads.filter(a => a.active);
+        if (activeAds.length === 0) return null;
+        
+        return (
+          <motion.section key={section.id} variants={itemVariants} className="relative z-20">
+            <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 pb-2">
+              {activeAds.map((ad) => (
+                <div key={ad.id} className="flex-shrink-0 w-full group snap-center">
+                  {ad.link ? (
+                    <a 
+                      href={ad.link} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="block relative aspect-[21/9] rounded-[32px] overflow-hidden shadow-premium group-hover:shadow-2xl transition-all duration-500"
+                    >
+                      <img src={ad.image} alt={ad.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="absolute bottom-5 left-5 right-5 text-right">
+                        <h4 className="text-white text-lg font-black leading-tight drop-shadow-lg">{ad.title}</h4>
+                      </div>
+                    </a>
+                  ) : (
+                    <div className="relative aspect-[21/9] rounded-[32px] overflow-hidden shadow-premium">
+                      <img src={ad.image} alt={ad.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="absolute bottom-5 left-5 right-5 text-right">
+                        <h4 className="text-white text-lg font-black leading-tight drop-shadow-lg">{ad.title}</h4>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {activeAds.length > 1 && (
+              <div className="flex justify-center gap-1.5 mt-2">
+                {activeAds.map((_, i) => (
+                  <div key={i} className="h-1 w-4 rounded-full bg-slate-200 dark:bg-slate-700" />
+                ))}
+              </div>
+            )}
+          </motion.section>
+        );
+      }
+
+      case 'poll':
+        // Wait, the store uses 'polls' in the switch but let's check
       case 'polls':
         return (
           <motion.section key={section.id} variants={itemVariants}>
@@ -555,6 +603,13 @@ export default function Home() {
         return (
           <motion.section key={section.id} variants={itemVariants} className="overflow-hidden rounded-2xl">
             <div dangerouslySetInnerHTML={{ __html: section.htmlCode }} />
+          </motion.section>
+        );
+
+      case 'advertise':
+        return (
+          <motion.section key={section.id} variants={itemVariants}>
+            <AdvertiseWidget />
           </motion.section>
         );
 

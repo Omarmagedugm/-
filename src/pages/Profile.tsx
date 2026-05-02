@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore, UserProfile } from '../store';
 import React, { useState, useEffect } from 'react';
 import { Camera, X, Check, Lock, ShieldCheck, Mail, Loader2, Save, Upload, Edit2, Newspaper } from 'lucide-react';
-import { db, auth, uploadImage } from '../lib/firebase';
+import { db, auth, uploadImage, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { updatePassword, updateProfile as updateAuthProfile } from 'firebase/auth';
 import ImageUploader from '../components/ImageUploader';
@@ -69,7 +69,11 @@ export default function Profile() {
       };
       
       // Use setDoc with merge for robustness
-      await setDoc(doc(db, 'users', auth.currentUser.uid), docData, { merge: true });
+      try {
+        await setDoc(doc(db, 'users', auth.currentUser.uid), docData, { merge: true });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser.uid}`);
+      }
 
       // Update Auth Profile
       await updateAuthProfile(auth.currentUser, {
@@ -116,7 +120,11 @@ export default function Profile() {
       await updateEmail(auth.currentUser, newEmail);
       
       // Also update in Firestore
-      await updateDoc(doc(db, 'users', auth.currentUser.uid), { email: newEmail });
+      try {
+        await updateDoc(doc(db, 'users', auth.currentUser.uid), { email: newEmail });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser.uid}`);
+      }
       
       setShowEmailModal(false);
       setNewEmail('');

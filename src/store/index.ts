@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export interface HomeSection {
   id: string;
-  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget' | 'city';
+  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget' | 'city' | 'ads' | 'advertise';
   title?: string;
   active: boolean;
   order: number;
@@ -196,6 +196,16 @@ export interface Book {
   hidden?: boolean;
 }
 
+export interface AdBanner {
+  id: string;
+  title: string;
+  image: string;
+  link: string;
+  active: boolean;
+  order: number;
+  createdAt: string;
+}
+
 export interface StadiumItem {
   id: string;
   name: string;
@@ -275,6 +285,7 @@ interface AppState {
   newsCategories: string[];
   products: Product[];
   orders: StoreOrder[];
+  ads: AdBanner[];
   homeSections: HomeSection[];
   songs: Song[];
   albums: Album[];
@@ -283,6 +294,7 @@ interface AppState {
   cityInfo: CityInfo | null;
   currentSong: Song | null;
   isPlaying: boolean;
+  isAuthReady: boolean;
   activePlaylist: Song[];
   undoStack: { collection: string; action: 'add' | 'delete' | 'update'; data: any }[];
   setNews: (news: NewsItem[]) => void;
@@ -315,6 +327,7 @@ interface AppState {
   setNewsCategories: (categories: string[]) => void;
   setProducts: (products: Product[]) => void;
   setOrders: (orders: StoreOrder[]) => void;
+  setAds: (ads: AdBanner[]) => void;
   setHomeSections: (sections: HomeSection[]) => void;
   setSongs: (songs: Song[]) => void;
   setAlbums: (albums: Album[]) => void;
@@ -323,6 +336,7 @@ interface AppState {
   setCityInfo: (info: CityInfo | null) => void;
   setCurrentSong: (song: Song | null) => void;
   setIsPlaying: (playing: boolean) => void;
+  setIsAuthReady: (ready: boolean) => void;
   setActivePlaylist: (songs: Song[]) => void;
   pushToUndoStack: (op: { collection: string; action: 'add' | 'delete' | 'update'; data: any }) => void;
   popFromUndoStack: () => { collection: string; action: 'add' | 'delete' | 'update'; data: any } | undefined;
@@ -441,6 +455,7 @@ export const useAppStore = create<AppState>()(
       liveStream: defaultLiveStream,
       theme: 'dark',
       profile: defaultProfile,
+      isAuthReady: false,
       clubTitles: [
         { id: uuidv4(), name: 'كأس مصر', count: 6, icon: 'trophy', category: 'football' },
         { id: uuidv4(), name: 'دوري الأسكندرية', count: 27, icon: 'shield', category: 'football' },
@@ -483,6 +498,7 @@ export const useAppStore = create<AppState>()(
       newsCategories: ['أخبار الفريق', 'كرة سلة', 'ألعاب أخرى', 'تقارير', 'انتقالات'],
       products: [],
       orders: [],
+      ads: [],
       homeSections: [
         { id: 'hero', type: 'hero', active: true, order: 0 },
         { id: 'matches', type: 'matches', active: true, order: 1 },
@@ -491,6 +507,7 @@ export const useAppStore = create<AppState>()(
         { id: 'media', type: 'media', active: true, order: 3 },
         { id: 'polls', type: 'polls', active: true, order: 4 },
         { id: 'history', type: 'history', active: true, order: 5 },
+        { id: 'advertise', type: 'advertise', active: true, order: 10 },
       ],
       songs: [],
       albums: [],
@@ -541,6 +558,7 @@ export const useAppStore = create<AppState>()(
       setNewsCategories: (newsCategories) => set({ newsCategories }),
       setProducts: (products) => set({ products }),
       setOrders: (orders) => set({ orders }),
+      setAds: (ads) => set({ ads }),
       setHomeSections: (homeSections) => set({ homeSections }),
       setSongs: (songs) => set({ songs }),
       setAlbums: (albums) => set({ albums }),
@@ -549,6 +567,7 @@ export const useAppStore = create<AppState>()(
       setCityInfo: (cityInfo) => set({ cityInfo }),
       setCurrentSong: (currentSong) => set({ currentSong }),
       setIsPlaying: (isPlaying) => set({ isPlaying }),
+      setIsAuthReady: (isAuthReady) => set({ isAuthReady }),
       setActivePlaylist: (activePlaylist) => set({ activePlaylist }),
       pushToUndoStack: (op) => set((state) => ({ 
         undoStack: [op, ...state.undoStack].slice(0, 20) // Keep last 20 operations

@@ -45,6 +45,10 @@ export default function TopHeader() {
         });
       }
       initialLoadRef.current = false;
+    }, (error) => {
+      if (error.code !== 'permission-denied') {
+         console.error('Notification sync error:', error);
+      }
     });
     
     return () => unsubscribe();

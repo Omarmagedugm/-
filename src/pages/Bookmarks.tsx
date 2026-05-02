@@ -27,6 +27,11 @@ export default function Bookmarks() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setBookmarks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);
+    }, (error) => {
+      if (error.code !== 'permission-denied') {
+        console.error('Bookmarks sync error:', error);
+      }
+      setLoading(false);
     });
     return () => unsubscribe();
   }, []);

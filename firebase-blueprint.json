@@ -175,6 +175,55 @@
         "platform": { "type": "string" },
         "userAgent": { "type": "string" }
       }
+    },
+    "MatchDayMoment": {
+      "title": "Match Day Moment",
+      "description": "User shared photo and comment specifically for match day",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatar": { "type": "string" },
+        "content": { "type": "string" },
+        "image": { "type": "string" },
+        "matchId": { "type": "string" },
+        "likes": { "type": "number" },
+        "likedBy": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "MatchDayAttendance": {
+      "title": "Match Day Attendance",
+      "description": "Attendance poll for match day",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "matchId": { "type": "string" },
+        "votes": { 
+          "type": "object",
+          "properties": {
+            "yes": { "type": "number" },
+            "no": { "type": "number" },
+            "maybe": { "type": "number" }
+          }
+        },
+        "voters": { "type": "object", "description": "Mapping of userId to their choice" }
+      }
+    },
+    "AdBanner": {
+      "title": "Ad Banner",
+      "description": "Advertising space banners",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "image": { "type": "string" },
+        "link": { "type": "string" },
+        "active": { "type": "boolean" },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string" }
+      }
     }
   },
   "firestore": {
@@ -189,6 +238,9 @@
     "live_comments": { "schema": "LiveComment", "description": "Live match comments" },
     "city_info": { "schema": "CityInfo", "description": "Alexandria city and weather info" },
     "settings": { "schema": "AppSetting", "description": "Global settings" },
-    "fcm_tokens": { "schema": "FCMToken", "description": "Collection of FCM tokens" }
+    "fcm_tokens": { "schema": "FCMToken", "description": "Collection of FCM tokens" },
+    "match_day_moments": { "schema": "MatchDayMoment", "description": "Fan photos for match day" },
+    "match_day_attendance": { "schema": "MatchDayAttendance", "description": "Match day attendance polls" },
+    "ads": { "schema": "AdBanner", "description": "Advertising banners" }
   }
 }

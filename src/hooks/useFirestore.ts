@@ -6,7 +6,7 @@ import { useAppStore } from '../store';
 export function useFirestoreSync() {
   const { 
     setNews, setMedia, setMatches, setClubs, setPolls, setPredictions, setFanPosts,
-    setUsers, setSettings, updateLiveStream, updateProfile, profile, setCityInfo 
+    setUsers, setSettings, updateLiveStream, updateProfile, profile, setCityInfo, setAds 
   } = useAppStore();
 
   useEffect(() => {
@@ -91,6 +91,7 @@ export function useFirestoreSync() {
           const mergedSections = Array.from(uniqueSectionsMap.values());
           const initialSections = [
             { id: 'hero', type: 'hero', active: true, order: 0 },
+            { id: 'ads', type: 'ads', active: true, order: 0.5 },
             { id: 'matches', type: 'matches', active: true, order: 1 },
             { id: 'city', type: 'city', active: true, order: 1.5, title: 'عروس البحر المتوسط' },
             { id: 'news', type: 'news', active: true, order: 2 },
@@ -179,6 +180,13 @@ export function useFirestoreSync() {
       useAppStore.getState().setBooks(items);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'books'));
 
+    // Sync Ads
+    const adsQuery = query(collection(db, 'ads'), orderBy('order', 'asc'));
+    const unsubAds = onSnapshot(adsQuery, (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      setAds(items);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'ads'));
+
     // Sync City Info
     const unsubCityInfo = onSnapshot(doc(db, 'city_info', 'alexandria'), (docSnap) => {
       if (docSnap.exists()) {
@@ -247,9 +255,10 @@ export function useFirestoreSync() {
       unsubAlbums();
       unsubPlaylists();
       unsubBooks();
+      unsubAds();
       unsubCityInfo();
       unsubProfile();
       unsubUsers();
     };
-  }, [auth.currentUser?.uid, setNews, setMedia, setMatches, setClubs, setPolls, setPredictions, setFanPosts, setUsers, setSettings, updateLiveStream, updateProfile, profile.role, setCityInfo]);
+  }, [auth.currentUser?.uid, setNews, setMedia, setMatches, setClubs, setPolls, setPredictions, setFanPosts, setUsers, setSettings, updateLiveStream, updateProfile, profile.role, setCityInfo, setAds]);
 }
