@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAppStore, AppRole } from '../store';
@@ -454,6 +454,19 @@ export default function Admin() {
   const [editingId, setEditingId] = useState<string | null>(() => {
     return localStorage.getItem('adminDraft_editingId') || null;
   });
+  const [activeSearchField, setActiveSearchField] = useState<'home' | 'away' | null>(null);
+  const [clubSearchQuery, setClubSearchQuery] = useState('');
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setActiveSearchField(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('adminDraft_showModal', JSON.stringify(showModal));
@@ -782,6 +795,19 @@ export default function Admin() {
         } else {
           await addDoc(collection(db, 'matches'), cleanPayload(payload));
         }
+
+        // Add new clubs if they don't exist in the database
+        const checkAndAddClub = async (name: string, logo: string) => {
+          if (name && name !== 'الاتحاد' && name !== 'الفريق الخصم' && !clubs.find(c => c.name === name)) {
+            try {
+              await addDoc(collection(db, 'clubs'), { name, logo });
+            } catch (err) {
+              console.error("Error adding club automatically:", err);
+            }
+          }
+        };
+        await checkAndAddClub(payload.homeTeam, payload.homeLogo);
+        await checkAndAddClub(payload.awayTeam, payload.awayLogo);
       } else if (activeTab === 'city') {
         const payload = {
           cityName: formData.cityName || 'الإسكندرية',
@@ -3840,39 +3866,84 @@ export default function Admin() {
                       </div>
                       <div className="opacity-0 pointer-events-none">Placeholder</div>
                     </div>
-                    <datalist id="clubs-list">
-                      {clubs.map((club, idx) => <option key={idx} value={club.name} />)}
-                    </datalist>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2 relative" ref={searchRef}>
                       <div>
                         <label className="text-[10px] font-black text-slate-500 mb-1 block">الفريق المضيف</label>
-                        <input 
-                          type="text" 
-                          list="clubs-list"
-                          placeholder="الفريق المضيف" 
-                          className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" 
-                          value={formData.homeTeam || ''} 
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const matchedClub = clubs.find(c => c.name === val);
-                            setFormData({...formData, homeTeam: val, ...(matchedClub?.logo ? { homeLogo: matchedClub.logo } : {})});
-                          }} 
-                        />
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            placeholder="الفريق المضيف" 
+                            className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" 
+                            value={formData.homeTeam || ''} 
+                            onFocus={() => {
+                              setActiveSearchField('home');
+                              setClubSearchQuery(formData.homeTeam || '');
+                            }}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setClubSearchQuery(val);
+                              const matchedClub = clubs.find(c => c.name === val);
+                              setFormData({...formData, homeTeam: val, ...(matchedClub?.logo ? { homeLogo: matchedClub.logo } : {})});
+                            }} 
+                          />
+                          {activeSearchField === 'home' && clubSearchQuery.length > 0 && (
+                            <div className="absolute z-[100] top-full mt-1 left-0 right-0 bg-white dark:bg-card-dark border border-border-light dark:border-border-dark rounded-xl shadow-premium max-h-48 overflow-y-auto">
+                              {clubs.filter(c => c.name.toLowerCase().includes(clubSearchQuery.toLowerCase())).map((club) => (
+                                <button
+                                  key={club.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData({...formData, homeTeam: club.name, homeLogo: club.logo});
+                                    setActiveSearchField(null);
+                                  }}
+                                  className="w-full flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-surface-dark border-b border-border-light last:border-0"
+                                >
+                                  <img src={club.logo} className="w-6 h-6 object-contain" alt="" />
+                                  <span className="text-xs font-bold">{club.name}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div>
                         <label className="text-[10px] font-black text-slate-500 mb-1 block">الفريق الخصم</label>
-                        <input 
-                          type="text" 
-                          list="clubs-list"
-                          placeholder="الفريق الخصم" 
-                          className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" 
-                          value={formData.awayTeam || ''} 
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const matchedClub = clubs.find(c => c.name === val);
-                            setFormData({...formData, awayTeam: val, ...(matchedClub?.logo ? { awayLogo: matchedClub.logo } : {})});
-                          }} 
-                        />
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            placeholder="الفريق الخصم" 
+                            className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" 
+                            value={formData.awayTeam || ''} 
+                            onFocus={() => {
+                              setActiveSearchField('away');
+                              setClubSearchQuery(formData.awayTeam || '');
+                            }}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setClubSearchQuery(val);
+                              const matchedClub = clubs.find(c => c.name === val);
+                              setFormData({...formData, awayTeam: val, ...(matchedClub?.logo ? { awayLogo: matchedClub.logo } : {})});
+                            }} 
+                          />
+                          {activeSearchField === 'away' && clubSearchQuery.length > 0 && (
+                            <div className="absolute z-[100] top-full mt-1 left-0 right-0 bg-white dark:bg-card-dark border border-border-light dark:border-border-dark rounded-xl shadow-premium max-h-48 overflow-y-auto">
+                              {clubs.filter(c => c.name.toLowerCase().includes(clubSearchQuery.toLowerCase())).map((club) => (
+                                <button
+                                  key={club.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData({...formData, awayTeam: club.name, awayLogo: club.logo});
+                                    setActiveSearchField(null);
+                                  }}
+                                  className="w-full flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-surface-dark border-b border-border-light last:border-0"
+                                >
+                                  <img src={club.logo} className="w-6 h-6 object-contain" alt="" />
+                                  <span className="text-xs font-bold">{club.name}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                    <div className="grid grid-cols-2 gap-2">
