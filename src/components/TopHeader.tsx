@@ -1,6 +1,6 @@
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, Bell, Search, ChevronRight, X, Info, Sun, Moon } from 'lucide-react';
+import { Menu, Bell, Search, ChevronRight, X, Info, Sun, Moon, Settings } from 'lucide-react';
 import { useAppStore } from '../store';
 import { useState, useEffect, useRef } from 'react';
 import Sidebar from './Sidebar';
@@ -68,7 +68,7 @@ export default function TopHeader() {
     if (path.startsWith('/news/')) return 'تفاصيل الخبر';
     if (path === '/media') return 'ميديا الاتحاد';
     if (path === '/live') return 'البث المباشر';
-    if (path === '/matches') return 'جدول المباريات';
+    if (path === '/matches') return 'مباريات كرة القدم';
     if (path === '/profile') return 'ملفي الشخصي';
     if (path === '/fan-zone' || path === '/feed') return 'منطقة المشجعين';
     if (path === '/history') return 'تاريخ النادي';
@@ -157,6 +157,15 @@ export default function TopHeader() {
               >
                 <ChevronRight size={22} strokeWidth={2.5} />
               </motion.button>
+            )}
+            {profile?.role === 'admin' && !location.pathname.includes('/admin') && (
+              <Link 
+                to={`/admin?tab=${localStorage.getItem('lastAdminTab') || 'overview'}`}
+                className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-500 dark:text-slate-400 hover:text-primary transition-all duration-300 shadow-sm"
+                title="لوحة التحكم"
+              >
+                <Settings size={20} strokeWidth={2.5} />
+              </Link>
             )}
             <motion.button 
               id="theme-toggle-button"

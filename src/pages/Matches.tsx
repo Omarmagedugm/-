@@ -16,6 +16,7 @@ export default function Matches() {
   const [showPredictionsList, setShowPredictionsList] = useState<string | null>(null);
   const [matchPredictions, setMatchPredictions] = useState<any[]>([]);
   const [tick, setTick] = useState(0);
+  const [visibleCount, setVisibleCount] = useState<Record<string, number>>({});
   const [predictionMatchId, setPredictionMatchId] = useState<string | null>(null);
   const [homePrediction, setHomePrediction] = useState('0');
   const [awayPrediction, setAwayPrediction] = useState('0');
@@ -121,7 +122,7 @@ export default function Matches() {
   const sportSections = [
     { 
       id: 'football', 
-      title: 'مباريات كرة القدم', 
+      title: 'مباريات', 
       subtitle: 'Football Matches', 
       matches: footballMatches, 
       newestMatch: getNewestMatch(footballMatches),
@@ -319,7 +320,7 @@ export default function Matches() {
                 )}
 
                 <div className="flex flex-col gap-5 pt-4">
-                  {section.matches.map((match) => (
+                  {section.matches.slice(0, visibleCount[section.id] || 5).map((match) => (
                     <motion.div 
                       key={match.id} 
                       className={`flex flex-col glass-card p-5 rounded-[32px] border shadow-premium overflow-hidden relative group transition-all duration-300 ${match.status === 'live' ? 'border-red-500/30' : 'hover:border-primary/40 text-slate-400'}`}
@@ -469,6 +470,14 @@ export default function Matches() {
                       )}
                     </motion.div>
                   ))}
+                  {section.matches.length > (visibleCount[section.id] || 5) && (
+                    <button 
+                      onClick={() => setVisibleCount(prev => ({ ...prev, [section.id]: (prev[section.id] || 5) + 5 }))}
+                      className="w-full h-12 bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-2xl flex items-center justify-center font-black text-xs text-primary shadow-sm hover:scale-[1.02] active:scale-95 transition-all mt-2"
+                    >
+                      المزيد من المباريات
+                    </button>
+                  )}
                 </div>
               </div>
             )

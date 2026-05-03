@@ -347,6 +347,7 @@ export default function Admin() {
   
   const setActiveTab = (tab: any) => {
     setSearchParams({ tab });
+    localStorage.setItem('lastAdminTab', tab);
   };
   const [rssSources, setRssSources] = useState<any[]>([]);
   const [rssNews, setRssNews] = useState<any[]>([]);
@@ -438,10 +439,29 @@ export default function Admin() {
   const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'processing' | 'delivered'>('all');
   const [comments, setComments] = useState<any[]>([]);
   const [fanComments, setFanComments] = useState<any[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState<any>({});
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(() => {
+    const saved = localStorage.getItem('adminDraft_showModal');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [formData, setFormData] = useState<any>(() => {
+    const saved = localStorage.getItem('adminDraft_formData');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [isEditing, setIsEditing] = useState(() => {
+    const saved = localStorage.getItem('adminDraft_isEditing');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [editingId, setEditingId] = useState<string | null>(() => {
+    return localStorage.getItem('adminDraft_editingId') || null;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('adminDraft_showModal', JSON.stringify(showModal));
+    localStorage.setItem('adminDraft_formData', JSON.stringify(formData));
+    localStorage.setItem('adminDraft_isEditing', JSON.stringify(isEditing));
+    if (editingId) localStorage.setItem('adminDraft_editingId', editingId);
+    else localStorage.removeItem('adminDraft_editingId');
+  }, [showModal, formData, isEditing, editingId]);
   const [baseData, setBaseData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
