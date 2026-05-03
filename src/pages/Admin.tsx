@@ -601,6 +601,87 @@ export default function Admin() {
     setLoading(false);
   };
 
+  const SEED_MATCHES = [
+    { date: "2026-05-27T18:00:00Z", awayTeam: "البنك الأهلي", homeScore: "-", awayScore: "-", status: "upcoming" },
+    { date: "2026-05-24T18:00:00Z", awayTeam: "الإسماعيلي", homeScore: "-", awayScore: "-", status: "upcoming" },
+    { date: "2026-05-18T18:00:00Z", awayTeam: "غزل المحلة", homeScore: "-", awayScore: "-", status: "upcoming" },
+    { date: "2026-05-13T18:00:00Z", awayTeam: "طلائع الجيش", homeScore: "-", awayScore: "-", status: "upcoming" },
+    { date: "2026-05-08T18:00:00Z", awayTeam: "مودرن سبورت", homeScore: "-", awayScore: "-", status: "upcoming" },
+    { date: "2026-05-04T18:00:00Z", awayTeam: "بتروجت", homeScore: "-", awayScore: "-", status: "upcoming" },
+    { date: "2026-04-29T18:00:00Z", awayTeam: "وادي دجلة", homeScore: 1, awayScore: 4, status: "finished" },
+    { date: "2026-04-23T18:00:00Z", awayTeam: "المقاولون العرب", homeScore: 0, awayScore: 0, status: "finished" },
+    { date: "2026-04-19T18:00:00Z", awayTeam: "حرس الحدود", homeScore: 2, awayScore: 2, status: "finished" },
+    { date: "2026-04-14T18:00:00Z", awayTeam: "زد إف سي", homeScore: 2, awayScore: 1, status: "finished" },
+    { date: "2026-04-09T18:00:00Z", awayTeam: "كهرباء الإسماعيلية", homeScore: 1, awayScore: 1, status: "finished" },
+    { date: "2026-04-04T18:00:00Z", awayTeam: "الجونة", homeScore: 0, awayScore: 0, status: "finished" },
+    { date: "2026-03-22T18:00:00Z", awayTeam: "فاركو", homeScore: 1, awayScore: 1, status: "finished" },
+    { date: "2026-03-06T18:00:00Z", awayTeam: "الزمالك", homeScore: 0, awayScore: 1, status: "finished" },
+    { date: "2026-03-02T18:00:00Z", awayTeam: "غزل المحلة", homeScore: 2, awayScore: 0, status: "finished" },
+    { date: "2026-02-25T18:00:00Z", awayTeam: "بتروجت", homeScore: 0, awayScore: 1, status: "finished" },
+    { date: "2026-02-16T18:00:00Z", awayTeam: "سموحة", homeScore: 1, awayScore: 0, status: "finished" },
+    { date: "2026-02-06T18:00:00Z", awayTeam: "طلائع الجيش", homeScore: 1, awayScore: 0, status: "finished" },
+    { date: "2026-01-30T18:00:00Z", awayTeam: "حرس الحدود", homeScore: 2, awayScore: 0, status: "finished" },
+    { date: "2026-01-21T18:00:00Z", awayTeam: "سيراميكا كليوباترا", homeScore: 1, awayScore: 3, status: "finished" },
+    { date: "2025-11-23T18:00:00Z", awayTeam: "الجونة", homeScore: 0, awayScore: 2, status: "finished" },
+    { date: "2025-11-02T18:00:00Z", awayTeam: "بيراميدز", homeScore: 1, awayScore: 2, status: "finished" },
+    { date: "2025-10-27T18:00:00Z", awayTeam: "وادي دجلة", homeScore: 1, awayScore: 2, status: "finished" },
+    { date: "2025-10-22T18:00:00Z", awayTeam: "الأهلي", homeScore: 1, awayScore: 2, status: "finished" },
+    { date: "2025-10-03T18:00:00Z", awayTeam: "المقاولون العرب", homeScore: 2, awayScore: 1, status: "finished" },
+    { date: "2025-09-22T18:00:00Z", awayTeam: "زد إف سي", homeScore: 0, awayScore: 1, status: "finished" },
+    { date: "2025-09-18T18:00:00Z", awayTeam: "كهرباء الإسماعيلية", homeScore: 0, awayScore: 1, status: "finished" },
+    { date: "2025-09-12T18:00:00Z", awayTeam: "فاركو", homeScore: 0, awayScore: 0, status: "finished" },
+    { date: "2025-08-29T18:00:00Z", awayTeam: "إنبي", homeScore: 0, awayScore: 3, status: "finished" },
+    { date: "2025-08-24T18:00:00Z", awayTeam: "البنك الأهلي", homeScore: 0, awayScore: 0, status: "finished" },
+    { date: "2025-08-19T18:00:00Z", awayTeam: "الإسماعيلي", homeScore: 1, awayScore: 0, status: "finished" },
+    { date: "2025-08-14T18:00:00Z", awayTeam: "مودرن سبورت", homeScore: 1, awayScore: 2, status: "finished" },
+    { date: "2025-08-08T18:00:00Z", awayTeam: "المصري البورسعيدي", homeScore: 1, awayScore: 3, status: "finished" }
+  ];
+
+  const handleSeedMatches = async () => {
+    setLoading(true);
+    try {
+      const { addDoc, collection, getDocs, query, where } = await import('firebase/firestore');
+      const { db } = await import('../lib/firebase');
+      let added = 0;
+      for (const m of SEED_MATCHES) {
+        const q = query(
+            collection(db, 'matches'), 
+            where('homeTeam', '==', 'الاتحاد'), 
+            where('awayTeam', '==', m.awayTeam), 
+            where('date', '==', m.date.slice(0, 10))
+        );
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+          const club = clubs.find(c => c.name === m.awayTeam);
+          const homeClub = clubs.find(c => c.name === 'الاتحاد السكندري');
+          await addDoc(collection(db, 'matches'), {
+            homeTeam: 'الاتحاد',
+            awayTeam: m.awayTeam,
+            homeScore: String(m.homeScore),
+            awayScore: String(m.awayScore),
+            homeLogo: homeClub?.logo || 'https://res.cloudinary.com/dqj6gzwfg/image/upload/v1777720049/admin_homeLogo/bsxn6a8jxy6yfbyh56df.png',
+            awayLogo: club?.logo || 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e4/Al_Ahly_SC_logo.png/150px-Al_Ahly_SC_logo.png',
+            competition: 'الدوري المصري',
+            date: m.date.slice(0, 10),
+            time: "20:00",
+            stadium: 'استاد الإسكندرية',
+            channel: 'OnTime Sports',
+            status: m.status || 'finished',
+            isMatchDay: false,
+            createdAt: new Date().toISOString(),
+            sport: 'football'
+          });
+          added++;
+        }
+      }
+      toast.success(added > 0 ? `تم إضافة ${added} مباراة بنجاح` : 'المباريات موجودة مسبقاً');
+    } catch(err: any) {
+      toast.error(err.message || 'حدث خطأ');
+    }
+    setLoading(false);
+  };
+
   const handleAdd = async () => {
     setLoading(true);
     const cleanPayload = (obj: any) => JSON.parse(JSON.stringify(obj));
@@ -2200,12 +2281,21 @@ export default function Admin() {
             </div>
           )}
 
-          {activeTab === 'matches' && matches.filter(item => 
-            item.homeTeam.toLowerCase().includes(contentSearch.toLowerCase()) || 
-            item.awayTeam.toLowerCase().includes(contentSearch.toLowerCase()) ||
-            item.competition?.toLowerCase().includes(contentSearch.toLowerCase())
-          ).map((item) => (
-            <div key={item.id} className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-3 flex flex-col gap-2">
+          {activeTab === 'matches' && (
+            <div className="flex flex-col gap-3">
+              <button 
+                  onClick={handleSeedMatches} 
+                  disabled={loading}
+                  className="bg-accent/10 border border-accent/20 text-accent dark:bg-accent/20 dark:border-accent/30 py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-accent/20 transition-all mb-2"
+              >
+                 <Plus size={16} /> إضافة مباريات الاتحاد السابقة بالدوري
+              </button>
+              {matches.filter(item => 
+                item.homeTeam.toLowerCase().includes(contentSearch.toLowerCase()) || 
+                item.awayTeam.toLowerCase().includes(contentSearch.toLowerCase()) ||
+                item.competition?.toLowerCase().includes(contentSearch.toLowerCase())
+              ).map((item) => (
+                <div key={item.id} className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-3 flex flex-col gap-2">
              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="flex flex-col">
@@ -2257,6 +2347,8 @@ export default function Admin() {
               </div>
             </div>
           ))}
+          </div>
+          )}
 
           {activeTab === 'posts' && (
             <div className="flex flex-col gap-3">
