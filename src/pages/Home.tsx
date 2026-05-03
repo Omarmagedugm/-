@@ -48,6 +48,7 @@ export default function Home() {
     cityInfo,
     ads,
     appSettings,
+    newsTags,
   } = useAppStore();
   const [tick, setTick] = useState(0);
   const [selectedSport, setSelectedSport] = useState<"football" | "basketball" | "auto">(
@@ -653,8 +654,23 @@ export default function Home() {
                         referrerPolicy="no-referrer"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                      <div className="absolute top-4 left-4 h-7 px-3 bg-primary/90 backdrop-blur-md rounded-lg flex items-center justify-center text-[8px] font-black text-white uppercase tracking-widest ring-1 ring-white/20">
-                        {item.type === "rss" ? "أخبار خارجية" : "رسمي"}
+                      <div className="absolute top-4 left-4 z-20 flex gap-1.5 flex-wrap max-w-[90%]">
+                        <div className="h-7 px-3 bg-primary/90 backdrop-blur-md rounded-lg flex items-center justify-center text-[8px] font-black text-white uppercase tracking-widest ring-1 ring-white/20 shadow-premium">
+                          {item.category || (item.type === "rss" ? "أخبار خارجية" : "رسمي")}
+                        </div>
+                        {item.tagIds?.map((tagId: string) => {
+                          const tagObj = newsTags?.find((t: any) => t.id === tagId);
+                          if (!tagObj) return null;
+                          return (
+                            <div 
+                              key={tagObj.id} 
+                              className="h-7 px-3 backdrop-blur-md rounded-lg flex items-center justify-center text-[8px] font-black text-white uppercase tracking-widest ring-1 ring-white/20 shadow-premium"
+                              style={{ backgroundColor: `${tagObj.color}cc` }}
+                            >
+                              {tagObj.name}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                     <div className="p-5">

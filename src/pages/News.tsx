@@ -81,11 +81,16 @@ export default function News() {
                     <img src={featured.image} alt={featured.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" referrerPolicy="no-referrer" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
                     
-                    <div className="absolute top-4 left-4 z-20 flex gap-2">
+                    <div className="absolute top-4 left-4 z-20 flex gap-2 flex-wrap max-w-[80%]">
                       <div className="px-3 py-1 bg-accent rounded-xl text-[9px] font-black text-white shadow-glow tracking-tighter">
                         خبر مميز
                       </div>
-                      {featured.type === 'rss' && (
+                      {featured.category && (
+                        <div className="px-3 py-1 bg-primary/90 backdrop-blur-md rounded-xl text-[9px] font-black text-white shadow-premium">
+                          {featured.category}
+                        </div>
+                      )}
+                      {featured.type === 'rss' && !featured.category && (
                         <div className="px-3 py-1 bg-orange-500 rounded-xl text-[9px] font-black text-white flex items-center gap-2 shadow-premium">
                           <Rss size={10} strokeWidth={3} /> RSS
                         </div>
@@ -186,33 +191,35 @@ export default function News() {
                        </div>
                     )}
                   </div>
-                  <div className="py-2 pl-2 flex flex-col justify-between flex-1">
+                    <div className="py-2 pl-2 flex flex-col justify-between flex-1">
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[9px] font-black text-primary uppercase tracking-widest">
-                          {item.category || 'نادي الاتحاد'}
-                        </span>
-                        <div className="text-[9px] font-bold text-slate-400 flex items-center gap-1">
-                          <span className="material-symbols-outlined !text-[12px]">schedule</span>
-                          {formatDistanceToNow(new Date(item.date), { locale: ar, addSuffix: true })}
+                      <div className="flex flex-col gap-1.5 mb-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[9px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded">
+                              {item.category || 'نادي الاتحاد'}
+                            </span>
+                            {item.tagIds?.map(tagId => {
+                              const tagObj = useAppStore.getState().newsTags?.find(t => t.id === tagId);
+                              if (!tagObj) return null;
+                              return (
+                                <span key={tagObj.id} className="text-[8px] font-black px-1.5 py-0.5 rounded text-white shadow-sm" style={{ backgroundColor: tagObj.color }}>
+                                  {tagObj.name}
+                                </span>
+                              );
+                            })}
+                          </div>
+                          <div className="text-[9px] font-bold text-slate-400 flex items-center gap-1">
+                            <span className="material-symbols-outlined !text-[12px]">schedule</span>
+                            {formatDistanceToNow(new Date(item.date), { locale: ar, addSuffix: true })}
+                          </div>
                         </div>
                       </div>
                       <h4 className="text-sm font-bold text-slate-800 dark:text-white leading-relaxed line-clamp-2 group-hover:text-primary transition-colors">
                         {item.title}
                       </h4>
                     </div>
-                    <div className="flex items-center justify-between mt-2">
-                       <div className="flex flex-wrap gap-1">
-                         {item.tagIds?.map(tagId => {
-                           const tagObj = useAppStore.getState().newsTags?.find(t => t.id === tagId);
-                           if (!tagObj) return null;
-                           return (
-                             <span key={tagObj.id} className="text-[8px] font-black px-1.5 py-0.5 rounded text-white shadow-sm" style={{ backgroundColor: tagObj.color }}>
-                               {tagObj.name}
-                             </span>
-                           );
-                         })}
-                       </div>
+                    <div className="flex items-center justify-end mt-2">
                        <div className="flex items-center gap-1 text-[10px] font-black text-slate-400">
                          <span>عرض الخبر</span>
                          <ChevronRight size={10} strokeWidth={3} className="rotate-180" />

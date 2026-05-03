@@ -279,18 +279,30 @@ export default function Matches() {
                           </div>
                         </div>
 
-                        <div className="mt-10 grid grid-cols-2 gap-4">
+                        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {section.newestMatch.status === 'live' && (
+                              <motion.button 
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => navigate('/live')}
+                                className="h-12 bg-red-600 text-white font-black text-[11px] rounded-2xl flex items-center justify-center gap-2 shadow-premium animate-pulse shadow-red-500/20"
+                              >
+                                  <Play size={16} fill="white" />
+                                  البث المباشر
+                              </motion.button>
+                            )}
                             <motion.button 
                               whileTap={{ scale: 0.95 }}
-                              onClick={() => navigate(section.newestMatch.status === 'live' ? '/live' : '/news')}
-                              className="h-12 bg-white text-primary-dark font-black text-[11px] rounded-2xl flex items-center justify-center gap-2 shadow-2xl transition-all"
+                              onClick={() => navigate('/news')}
+                              className={`h-12 font-black text-[11px] rounded-2xl flex items-center justify-center gap-2 shadow-2xl transition-all ${
+                                section.newestMatch.status === 'live' 
+                                  ? 'bg-white/10 backdrop-blur-md text-white border border-white/20' 
+                                  : 'bg-white text-primary-dark'
+                              }`}
                             >
-                                <span className="material-symbols-outlined font-variation-settings-fill !text-[20px]">
-                                  {section.newestMatch.status === 'live' ? 'sensors' : 'article'}
-                                </span>
-                                {section.newestMatch.status === 'live' ? 'دخول البث' : 'تغطية المباراة'}
+                                <span className="material-symbols-outlined font-variation-settings-fill !text-[20px]">article</span>
+                                تغطية المباراة
                             </motion.button>
-                            {(section.newestMatch.status === 'finished' || section.newestMatch.status === 'live') && (
+                            {section.newestMatch.status === 'finished' && (
                               <motion.button 
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => navigate('/media')}
@@ -418,16 +430,30 @@ export default function Matches() {
                               </div>
                             )}
                          </div>
-                         <div 
-                           onClick={(e) => {
-                             e.stopPropagation();
-                             navigate(match.status === 'live' ? '/live' : '/news');
-                           }}
-                           className="h-8 px-4 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-[10px] font-black hover:bg-primary hover:text-white transition-all cursor-pointer"
-                         >
-                            عرض التغطية
-                            <ChevronRight size={12} strokeWidth={3} className="rotate-180 mr-1" />
-                         </div>
+                          <div className="flex items-center gap-2">
+                            {match.status === 'live' && (
+                              <div 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate('/live');
+                                }}
+                                className="h-8 px-3 rounded-xl bg-red-600 text-white flex items-center justify-center gap-1.5 text-[9px] font-black hover:bg-red-700 transition-all cursor-pointer shadow-glow animate-pulse"
+                              >
+                                <Play size={10} fill="currentColor" />
+                                بث مباشر
+                              </div>
+                            )}
+                            <div 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate('/news');
+                              }}
+                              className="h-8 px-3 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-[9px] font-black hover:bg-primary hover:text-white transition-all cursor-pointer"
+                            >
+                                التغطية
+                                <ChevronRight size={12} strokeWidth={3} className="rotate-180 mr-1" />
+                            </div>
+                          </div>
                       </div>
 
                       {profile?.role === 'admin' && (

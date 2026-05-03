@@ -3356,11 +3356,11 @@ export default function Admin() {
                  <>
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">عنوان الخبر</label>
-                     <input type="text" placeholder="مثلاً: الاتحاد يحقق فوزاً ثميناً" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                     <input type="text" placeholder="مثلاً: الاتحاد يحقق فوزاً ثميناً" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
                    </div>
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">محتوى الخبر</label>
-                     <textarea placeholder="اكتب تفاصيل الخبر هنا..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm min-h-[120px]" value={formData.content || ''} onChange={(e) => setFormData({...formData, content: e.target.value})} />
+                     <textarea placeholder="اكتب تفاصيل الخبر هنا..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm min-h-[120px]" value={formData.content || ''} onChange={(e) => setFormData({...formData, content: e.target.value})} />
                    </div>
                    <div className="grid grid-cols-2 gap-2">
                     <div>
@@ -3373,17 +3373,17 @@ export default function Admin() {
                     </div>
                     <div>
                       <label className="text-[10px] font-black text-slate-500 mb-1 block">مصدر الخبر</label>
-                      <input type="text" placeholder="مثلاً: الموقع الرسمي" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.author || ''} onChange={(e) => setFormData({...formData, author: e.target.value})} />
+                      <input type="text" placeholder="مثلاً: الموقع الرسمي" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.author || ''} onChange={(e) => setFormData({...formData, author: e.target.value})} />
                     </div>
                     <div>
                       <label className="text-[10px] font-black text-slate-500 mb-1 block">اسم المحرر</label>
-                      <input type="text" placeholder="مثلاً: أحمد محمد" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.editorName || ''} onChange={(e) => setFormData({...formData, editorName: e.target.value})} />
+                      <input type="text" placeholder="مثلاً: أحمد محمد" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.editorName || ''} onChange={(e) => setFormData({...formData, editorName: e.target.value})} />
                     </div>
                    </div>
                     <UploadOrUrlField label="صورة الخبر" fieldName="image" currentUrl={formData.image} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">رابط RSS (لجلب الخبر تلقائياً)</label>
-                     <input type="text" placeholder="https://..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.rssUrl || ''} onChange={(e) => setFormData({...formData, rssUrl: e.target.value})} />
+                     <input type="text" placeholder="https://..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.rssUrl || ''} onChange={(e) => setFormData({...formData, rssUrl: e.target.value})} />
                    </div>
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block mt-2">وسوم الخبر</label>
@@ -3424,7 +3424,7 @@ export default function Admin() {
                    </div>
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">اسم العضو</label>
-                     <input type="text" placeholder="الاسم الجديد" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+                     <input type="text" placeholder="الاسم الجديد" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} />
                    </div>
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">البريد الإلكتروني (للعرض فقط)</label>
@@ -3433,7 +3433,7 @@ export default function Admin() {
                     <div className="grid grid-cols-2 gap-3 mt-3">
                       <div>
                         <label className="text-[10px] font-black text-slate-500 mb-1 block">الصلاحيات الأساسية</label>
-                        <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.role || 'user'} onChange={(e) => setFormData({...formData, role: e.target.value})}>
+                        <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.role || 'user'} onChange={(e) => setFormData({...formData, role: e.target.value})}>
                           <option value="user">عضو عادي</option>
                           <option value="writer">محرر بسيط</option>
                           <option value="moderator">مشرف</option>
@@ -3442,7 +3442,7 @@ export default function Admin() {
                       </div>
                       <div>
                         <label className="text-[10px] font-black text-slate-500 mb-1 block">الرتبة (Tier)</label>
-                        <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.tier || 'new'} onChange={(e) => setFormData({...formData, tier: e.target.value})}>
+                        <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.tier || 'new'} onChange={(e) => setFormData({...formData, tier: e.target.value})}>
                           <option value="new">عضو جديد (New)</option>
                           <option value="bronze">عضو برونزي (Bronze)</option>
                           <option value="silver">عضو فضي (Silver)</option>
@@ -3499,12 +3499,12 @@ export default function Admin() {
                  <>
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">العنوان</label>
-                     <input type="text" placeholder="مثلاً: أهداف مباراة الأمس" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                     <input type="text" placeholder="مثلاً: أهداف مباراة الأمس" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
                    </div>
                    <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-[10px] font-black text-slate-500 mb-1 block">النوع</label>
-                      <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.type || 'video'} onChange={(e) => setFormData({...formData, type: e.target.value})}>
+                      <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.type || 'video'} onChange={(e) => setFormData({...formData, type: e.target.value})}>
                          <option value="video">فيديو</option>
                          <option value="photo">صورة</option>
                       </select>
@@ -3512,7 +3512,7 @@ export default function Admin() {
                     {formData.type === 'video' && (
                       <div>
                         <label className="text-[10px] font-black text-slate-500 mb-1 block">المصدر</label>
-                        <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.source || 'upload'} onChange={(e) => setFormData({...formData, source: e.target.value})}>
+                        <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.source || 'upload'} onChange={(e) => setFormData({...formData, source: e.target.value})}>
                           <option value="upload">رفع فيديو</option>
                           <option value="youtube">رابط يوتيوب</option>
                           <option value="embed">تضمين (Embed URL)</option>
@@ -3527,7 +3527,7 @@ export default function Admin() {
                       <input 
                         type="text" 
                         placeholder="https://www.youtube.com/watch?v=..." 
-                        className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-mono text-left dir-ltr" 
+                        className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-mono text-left dir-ltr" 
                         value={formData.url || ''} 
                         onChange={(e) => {
                           const url = e.target.value;
@@ -3551,7 +3551,7 @@ export default function Admin() {
                       <input 
                         type="text" 
                         placeholder="https://..." 
-                        className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-mono text-left dir-ltr" 
+                        className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-mono text-left dir-ltr" 
                         value={formData.url || ''} 
                         onChange={(e) => setFormData({...formData, url: e.target.value})} 
                       />
@@ -3572,7 +3572,7 @@ export default function Admin() {
                         <UploadOrUrlField label="صورة الغلاف (Thumbnail)" fieldName="thumbnailUrl" currentUrl={formData.thumbnailUrl} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                         <div>
                           <label className="text-[10px] font-black text-slate-500 mb-1 block">المدة (مثلاً 05:20)</label>
-                          <input type="text" placeholder="00:00" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.duration || ''} onChange={(e) => setFormData({...formData, duration: e.target.value})} />
+                          <input type="text" placeholder="00:00" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.duration || ''} onChange={(e) => setFormData({...formData, duration: e.target.value})} />
                         </div>
                      </>
                    )}
@@ -3583,31 +3583,31 @@ export default function Admin() {
                   <>
                     <div>
                       <label className="text-[10px] font-black text-slate-500 mb-1 block">اسم المدينة</label>
-                      <input type="text" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.cityName || ''} onChange={(e) => setFormData({...formData, cityName: e.target.value})} />
+                      <input type="text" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.cityName || ''} onChange={(e) => setFormData({...formData, cityName: e.target.value})} />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                        <div>
                          <label className="text-[10px] font-black text-slate-500 mb-1 block">درجة الحرارة</label>
-                         <input type="text" placeholder="مثلاً: 25" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.temperature || ''} onChange={(e) => setFormData({...formData, temperature: e.target.value})} />
+                         <input type="text" placeholder="مثلاً: 25" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.temperature || ''} onChange={(e) => setFormData({...formData, temperature: e.target.value})} />
                        </div>
                        <div>
                          <label className="text-[10px] font-black text-slate-500 mb-1 block">حالة الطقس</label>
-                         <input type="text" placeholder="مثلاً: صافي / غائم جزئياً" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.condition || ''} onChange={(e) => setFormData({...formData, condition: e.target.value})} />
+                         <input type="text" placeholder="مثلاً: صافي / غائم جزئياً" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.condition || ''} onChange={(e) => setFormData({...formData, condition: e.target.value})} />
                        </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                        <div>
                          <label className="text-[10px] font-black text-slate-500 mb-1 block">وقت الشروق</label>
-                         <input type="text" placeholder="06:30 AM" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-black tabular-nums" value={formData.sunrise || ''} onChange={(e) => setFormData({...formData, sunrise: e.target.value})} />
+                         <input type="text" placeholder="06:30 AM" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-black tabular-nums" value={formData.sunrise || ''} onChange={(e) => setFormData({...formData, sunrise: e.target.value})} />
                        </div>
                        <div>
                          <label className="text-[10px] font-black text-slate-500 mb-1 block">وقت الغروب</label>
-                         <input type="text" placeholder="07:15 PM" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-black tabular-nums" value={formData.sunset || ''} onChange={(e) => setFormData({...formData, sunset: e.target.value})} />
+                         <input type="text" placeholder="07:15 PM" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-black tabular-nums" value={formData.sunset || ''} onChange={(e) => setFormData({...formData, sunset: e.target.value})} />
                        </div>
                     </div>
                     <div>
                       <label className="text-[10px] font-black text-slate-500 mb-1 block">وصف للمدينة</label>
-                      <textarea className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm min-h-[100px]" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                      <textarea className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm min-h-[100px]" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} />
                     </div>
                     <UploadOrUrlField label="صورة الغلاف للمدينة" fieldName="image" currentUrl={formData.image} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                     <UploadOrUrlField label="خلفية بطاقة الطقس" fieldName="weatherBg" currentUrl={formData.weatherBg} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
@@ -3629,7 +3629,7 @@ export default function Admin() {
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="text-[10px] font-black text-slate-500 mb-1 block">الرياضة</label>
-                        <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.sport || 'football'} onChange={(e) => setFormData({...formData, sport: e.target.value})}>
+                        <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.sport || 'football'} onChange={(e) => setFormData({...formData, sport: e.target.value})}>
                            <option value="football">كرة قدم</option>
                            <option value="basketball">كرة سلة</option>
                         </select>
@@ -3639,11 +3639,11 @@ export default function Admin() {
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="text-[10px] font-black text-slate-500 mb-1 block">الفريق المضيف</label>
-                        <input type="text" placeholder="الفريق المضيف" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.homeTeam || ''} onChange={(e) => setFormData({...formData, homeTeam: e.target.value})} />
+                        <input type="text" placeholder="الفريق المضيف" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.homeTeam || ''} onChange={(e) => setFormData({...formData, homeTeam: e.target.value})} />
                       </div>
                       <div>
                         <label className="text-[10px] font-black text-slate-500 mb-1 block">الفريق الخصم</label>
-                        <input type="text" placeholder="الفريق الخصم" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.awayTeam || ''} onChange={(e) => setFormData({...formData, awayTeam: e.target.value})} />
+                        <input type="text" placeholder="الفريق الخصم" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.awayTeam || ''} onChange={(e) => setFormData({...formData, awayTeam: e.target.value})} />
                       </div>
                     </div>
                    <div className="grid grid-cols-2 gap-2">
@@ -3660,7 +3660,7 @@ export default function Admin() {
                        <input 
                          type="text" 
                          placeholder="0" 
-                         className="w-full p-3 rounded-xl border border-border-light bg-slate-50 text-sm font-bold" 
+                         className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" 
                          value={formData.homeScore ?? ''} 
                          onChange={(e) => setFormData({...formData, homeScore: e.target.value})} 
                        />
@@ -3670,7 +3670,7 @@ export default function Admin() {
                        <input 
                          type="text" 
                          placeholder="0" 
-                         className="w-full p-3 rounded-xl border border-border-light bg-slate-50 text-sm font-bold" 
+                         className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" 
                          value={formData.awayScore ?? ''} 
                          onChange={(e) => setFormData({...formData, awayScore: e.target.value})} 
                        />
@@ -3679,7 +3679,7 @@ export default function Admin() {
                    <div className="grid grid-cols-2 gap-2">
                      <div>
                        <label className="text-[10px] font-black text-slate-500 mb-1 block">الحالة</label>
-                       <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 text-sm font-bold" value={formData.status || 'upcoming'} onChange={(e) => setFormData({...formData, status: e.target.value})}>
+                       <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.status || 'upcoming'} onChange={(e) => setFormData({...formData, status: e.target.value})}>
                           <option value="upcoming">قادمة</option>
                           <option value="live">مباشر</option>
                           <option value="finished">منتهية</option>
@@ -3690,7 +3690,7 @@ export default function Admin() {
                        <input 
                          type="number" 
                          placeholder="0" 
-                         className="w-full p-3 rounded-xl border border-border-light bg-slate-50 text-sm font-bold" 
+                         className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" 
                          value={formData.timerBaseMinute || 0} 
                          onChange={(e) => setFormData({...formData, timerBaseMinute: e.target.value})} 
                        />
@@ -3699,16 +3699,16 @@ export default function Admin() {
                    <div className="grid grid-cols-2 gap-2">
                      <div>
                        <label className="text-[10px] font-black text-slate-500 mb-1 block">البطولة</label>
-                       <input type="text" placeholder="البطولة" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 text-sm" value={formData.competition || ''} onChange={(e) => setFormData({...formData, competition: e.target.value})} />
+                       <input type="text" placeholder="البطولة" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.competition || ''} onChange={(e) => setFormData({...formData, competition: e.target.value})} />
                      </div>
                      <div>
                        <label className="text-[10px] font-black text-slate-500 mb-1 block">الملعب</label>
-                       <input type="text" placeholder="الملعب" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 text-sm" value={formData.stadium || ''} onChange={(e) => setFormData({...formData, stadium: e.target.value})} />
+                       <input type="text" placeholder="الملعب" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.stadium || ''} onChange={(e) => setFormData({...formData, stadium: e.target.value})} />
                      </div>
                    </div>
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">تاريخ ووقت المباراة (بتوقيت مصر)</label>
-                     <input type="datetime-local" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 text-sm" value={formData.date && !isNaN(new Date(formData.date).getTime()) ? formatInTimeZone(new Date(formData.date), 'Africa/Cairo', 'yyyy-MM-dd\'T\'HH:mm') : ''} onChange={(e) => setFormData({...formData, date: e.target.value ? fromZonedTime(e.target.value, 'Africa/Cairo').toISOString() : ''})} />
+                     <input type="datetime-local" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.date && !isNaN(new Date(formData.date).getTime()) ? formatInTimeZone(new Date(formData.date), 'Africa/Cairo', 'yyyy-MM-dd\'T\'HH:mm') : ''} onChange={(e) => setFormData({...formData, date: e.target.value ? fromZonedTime(e.target.value, 'Africa/Cairo').toISOString() : ''})} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                        <div className="flex items-center gap-3 p-4 bg-slate-100/50 dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-border-dark group cursor-pointer hover:bg-primary/5 hover:border-primary/20 transition-all">
                           <input 
@@ -3741,61 +3741,61 @@ export default function Admin() {
                        </div>
                     </div>
                    </div>
-                 </>
-               )}
-
-               {activeTab === 'clubs' && (
-                  <>
-                    <div>
-                      <label className="text-[10px] font-black text-slate-500 mb-1 block">اسم النادي</label>
-                      <input type="text" placeholder="مثلاً: نادي الاتحاد" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} />
-                    </div>
-                    <div>
-                     <UploadField label="شعار النادي" fieldName="logo" currentUrl={formData.logo} uploading={uploading} handleFileUpload={handleFileUpload} setFormData={setFormData} />
-
-                    </div>
                   </>
                 )}
 
-                 {activeTab === 'polls' && (
+                {activeTab === 'clubs' && (
                    <>
                      <div>
-                       <label className="text-[10px] font-black text-slate-500 mb-1 block">سؤال الاستطلاع</label>
-                       <input type="text" placeholder="مثلاً: من هو أفضل لاعب هذا الشهر؟" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.question || ''} onChange={(e) => setFormData({...formData, question: e.target.value})} />
+                       <label className="text-[10px] font-black text-slate-500 mb-1 block">اسم النادي</label>
+                       <input type="text" placeholder="مثلاً: نادي الاتحاد" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} />
                      </div>
                      <div>
-                       <label className="text-[10px] font-black text-slate-500 mb-1 block uppercase">خيارات الاستطلاع</label>
-                       <div className="space-y-2">
-                         {(Array.isArray(formData.options) ? formData.options : ['', '']).map((option: string, idx: number) => (
-                            <div key={idx} className="flex gap-2">
-                              <div className="flex flex-col gap-1 flex-1">
-                                <label className="text-[8px] font-bold text-slate-400 uppercase px-1">الخيار {idx + 1}</label>
-                                <input 
-                                  type="text" 
-                                  placeholder={`الخيار ${idx + 1}`}
-                                  className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" 
-                                  value={option} 
-                                  onChange={(e) => {
-                                    const newOptions = [...(formData.options || ['', ''])];
-                                    newOptions[idx] = e.target.value;
-                                    setFormData({...formData, options: newOptions});
-                                  }} 
-                                />
-                              </div>
-                              <div className="w-20">
-                                <label className="text-[8px] font-bold text-slate-400 uppercase px-1">الأصوات</label>
-                                <input 
-                                  type="number" 
-                                  className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-black text-primary text-center" 
-                                  value={formData.votes?.[idx] || 0} 
-                                  onChange={(e) => {
-                                    const newVotes = { ...(formData.votes || {}) };
-                                    newVotes[idx] = Number(e.target.value);
-                                    setFormData({...formData, votes: newVotes});
-                                  }}
-                                />
-                              </div>
-                              {((formData.options?.length || 0) > 2) && (
+                      <UploadField label="شعار النادي" fieldName="logo" currentUrl={formData.logo} uploading={uploading} handleFileUpload={handleFileUpload} setFormData={setFormData} />
+
+                     </div>
+                   </>
+                 )}
+
+                  {activeTab === 'polls' && (
+                    <>
+                      <div>
+                        <label className="text-[10px] font-black text-slate-500 mb-1 block">سؤال الاستطلاع</label>
+                        <input type="text" placeholder="مثلاً: من هو أفضل لاعب هذا الشهر؟" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.question || ''} onChange={(e) => setFormData({...formData, question: e.target.value})} />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-slate-500 mb-1 block uppercase">خيارات الاستطلاع</label>
+                        <div className="space-y-2">
+                          {(Array.isArray(formData.options) ? formData.options : ['', '']).map((option: string, idx: number) => (
+                             <div key={idx} className="flex gap-2">
+                               <div className="flex flex-col gap-1 flex-1">
+                                 <label className="text-[8px] font-bold text-slate-400 uppercase px-1">الخيار {idx + 1}</label>
+                                 <input 
+                                   type="text" 
+                                   placeholder={`الخيار ${idx + 1}`}
+                                   className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" 
+                                   value={option || ''} 
+                                   onChange={(e) => {
+                                     const newOptions = [...(formData.options || ['', ''])];
+                                     newOptions[idx] = e.target.value;
+                                     setFormData({...formData, options: newOptions});
+                                   }} 
+                                 />
+                               </div>
+                               <div className="w-20">
+                                 <label className="text-[8px] font-bold text-slate-400 uppercase px-1">الأصوات</label>
+                                 <input 
+                                   type="number" 
+                                   className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-black text-primary text-center" 
+                                   value={formData.votes?.[idx] || 0} 
+                                   onChange={(e) => {
+                                     const newVotes = { ...(formData.votes || {}) };
+                                     newVotes[idx] = Number(e.target.value);
+                                     setFormData({...formData, votes: newVotes});
+                                   }}
+                                 />
+                               </div>
+                               {((formData.options?.length || 0) > 2) && (
                                 <button 
                                   onClick={() => {
                                     const newOptions = [...(formData.options || [])];
@@ -3829,7 +3829,7 @@ export default function Admin() {
                           checked={formData.active ?? true} 
                           onChange={(e) => setFormData({...formData, active: e.target.checked})}
                         />
-                        <label htmlFor="pollActive" className="text-xs font-bold font-sans">تفعيل الاستطلاع ليظهر للمشجعين</label>
+                        <label htmlFor="pollActive" className="text-xs font-bold font-sans dark:text-white">تفعيل الاستطلاع ليظهر للمشجعين</label>
                      </div>
                    </>
                  )}
@@ -3839,7 +3839,7 @@ export default function Admin() {
                      <div>
                        <label className="text-[10px] font-black text-slate-500 mb-1 block">المباراة</label>
                        <select 
-                        className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold"
+                        className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold"
                         value={formData.matchId || ''}
                         onChange={(e) => setFormData({...formData, matchId: e.target.value})}
                        >
@@ -3852,20 +3852,20 @@ export default function Admin() {
                      <div className="grid grid-cols-2 gap-2">
                        <div>
                          <label className="text-[10px] font-black text-slate-500 mb-1 block">أهداف الفريق 1</label>
-                         <input type="number" placeholder="0" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.homeScore ?? ''} onChange={(e) => setFormData({...formData, homeScore: Number(e.target.value)})} />
+                         <input type="number" placeholder="0" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.homeScore ?? ''} onChange={(e) => setFormData({...formData, homeScore: Number(e.target.value)})} />
                        </div>
                        <div>
                          <label className="text-[10px] font-black text-slate-500 mb-1 block">أهداف الفريق 2</label>
-                         <input type="number" placeholder="0" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.awayScore ?? ''} onChange={(e) => setFormData({...formData, awayScore: Number(e.target.value)})} />
+                         <input type="number" placeholder="0" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.awayScore ?? ''} onChange={(e) => setFormData({...formData, awayScore: Number(e.target.value)})} />
                        </div>
                      </div>
                      <div>
                        <label className="text-[10px] font-black text-slate-500 mb-1 block">اسم المتوقع</label>
-                       <input type="text" placeholder="مثلاً: محمد علي" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.userName || ''} onChange={(e) => setFormData({...formData, userName: e.target.value})} />
+                       <input type="text" placeholder="مثلاً: محمد علي" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.userName || ''} onChange={(e) => setFormData({...formData, userName: e.target.value})} />
                      </div>
                      <div>
                        <label className="text-[10px] font-black text-slate-500 mb-1 block">البريد الإلكتروني (اختياري)</label>
-                       <input type="email" placeholder="email@example.com" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.userEmail || ''} onChange={(e) => setFormData({...formData, userEmail: e.target.value})} />
+                       <input type="email" placeholder="email@example.com" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.userEmail || ''} onChange={(e) => setFormData({...formData, userEmail: e.target.value})} />
                      </div>
                    </>
                  )}
