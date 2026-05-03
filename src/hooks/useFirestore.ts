@@ -70,6 +70,13 @@ export function useFirestoreSync() {
       }
     }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/newsCategories'));
 
+    // Sync News Tags
+    const unsubNewsTags = onSnapshot(doc(db, 'settings', 'newsTags'), (docSnap) => {
+      if (docSnap.exists()) {
+        useAppStore.getState().setNewsTags(docSnap.data().tags || []);
+      }
+    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/newsTags'));
+
     // Sync Live Stream
     const unsubLive = onSnapshot(doc(db, 'settings', 'liveStream'), (docSnap) => {
       if (docSnap.exists()) {
@@ -243,6 +250,7 @@ export function useFirestoreSync() {
       unsubMedia();
       unsubSettings();
       unsubNewsCategories();
+      unsubNewsTags();
       unsubLive();
       unsubHomeLayout();
       unsubHistoryStats();

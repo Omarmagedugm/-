@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAppStore, AppRole } from '../store';
 import { v4 as uuidv4 } from 'uuid';
@@ -71,7 +71,8 @@ import {
   MoveVertical,
   Minus,
   Search,
-  Calendar
+  Calendar,
+  Zap
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import ScoreSelector from '../components/ScoreSelector';
@@ -328,7 +329,12 @@ export default function Admin() {
     setSongs, setAlbums, setPlaylists, setBooks, setCityInfo
   } = useAppStore();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'news' | 'media' | 'matches' | 'live' | 'users' | 'settings' | 'clubs' | 'polls' | 'comments' | 'posts' | 'predictions' | 'fanzone' | 'history' | 'news-categories' | 'products' | 'orders' | 'layout' | 'music' | 'books' | 'city' | 'notifications' | 'backup' | 'rss'>('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get('tab') as any) || 'overview';
+  
+  const setActiveTab = (tab: any) => {
+    setSearchParams({ tab });
+  };
   const [rssSources, setRssSources] = useState<any[]>([]);
   const [rssNews, setRssNews] = useState<any[]>([]);
   const [backups, setBackups] = useState<any[]>([]);
@@ -429,6 +435,25 @@ export default function Admin() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showModal]);
+
+  const handleEditItem = (item: any) => {
+    setFormData({ ...item });
+    setBaseData({ ...item });
+    setIsEditing(true);
+    setEditingId(item.id);
+    setShowModal(true);
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, type: 'image' | 'video' | 'audio' = 'image') => {
     handleFileUploadFn(e, fieldName, activeTab, setUploading, setFormData, type);
   };
@@ -439,11 +464,8 @@ export default function Admin() {
       const list = editCategory === 'news' ? news : editCategory === 'media' ? media : matches;
       const item = list.find((i: any) => i.id === editId);
       if (item) {
-        setFormData({ ...item });
-        setIsEditing(true);
-        setEditingId(editId);
+        handleEditItem(item);
         setActiveTab(editCategory as any);
-        setShowModal(true);
       }
     }
   }, [location.state, news, media, matches]);
@@ -527,6 +549,7 @@ export default function Admin() {
   }, [profile.roles, profile.role, isDev]);
 
   const [userSearch, setUserSearch] = useState('');
+  const [contentSearch, setContentSearch] = useState('');
   const [newsTags, setNewsTags] = useState<string[]>([]);
   const [featuredMatchId, setFeaturedMatchId] = useState<string | null>(null);
 
@@ -546,6 +569,7 @@ export default function Admin() {
 
   const handleAdd = async () => {
     setLoading(true);
+    const cleanPayload = (obj: any) => JSON.parse(JSON.stringify(obj));
     try {
       if (activeTab === 'news') {
         const payload = {
@@ -557,13 +581,14 @@ export default function Admin() {
           author: formData.author || 'الموقع الرسمي',
           editorName: formData.editorName || '',
           type: formData.rssUrl ? 'rss' : 'manual',
-          rssUrl: formData.rssUrl || ''
+          rssUrl: formData.rssUrl || '',
+          tagIds: formData.tagIds || []
         };
         
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'news', editingId), payload);
+          await updateDoc(doc(db, 'news', editingId), cleanPayload(payload));
         } else {
-          await addDoc(collection(db, 'news'), payload);
+          await addDoc(collection(db, 'news'), cleanPayload(payload));
         }
       } else if (activeTab === 'media') {
         const payload = {
@@ -579,14 +604,10 @@ export default function Admin() {
           likes: isEditing ? (formData.likes || []) : []
         };
 
-        const cleanPayload = Object.fromEntries(
-          Object.entries(payload).filter(([_, v]) => v !== undefined)
-        );
-
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'media', editingId), cleanPayload);
+          await updateDoc(doc(db, 'media', editingId), cleanPayload(payload));
         } else {
-          await addDoc(collection(db, 'media'), cleanPayload);
+          await addDoc(collection(db, 'media'), cleanPayload(payload));
         }
       } else if (activeTab === 'users') {
         const payload = {
@@ -597,7 +618,7 @@ export default function Admin() {
         };
 
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'users', editingId), payload);
+          await updateDoc(doc(db, 'users', editingId), cleanPayload(payload));
         }
       } else if (activeTab === 'matches') {
         const payload = {
@@ -617,13 +638,14 @@ export default function Admin() {
           timerBaseMinute: Number(formData.timerBaseMinute || 0),
           isTimerRunning: formData.isTimerRunning || false,
           isMatchDay: formData.isMatchDay || false,
+          featured: formData.featured || false,
           sport: formData.sport || 'football'
         };
 
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'matches', editingId), payload);
+          await updateDoc(doc(db, 'matches', editingId), cleanPayload(payload));
         } else {
-          await addDoc(collection(db, 'matches'), payload);
+          await addDoc(collection(db, 'matches'), cleanPayload(payload));
         }
       } else if (activeTab === 'city') {
         const payload = {
@@ -658,9 +680,9 @@ export default function Admin() {
           logo: formData.logo || ''
         };
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'clubs', editingId), payload);
+          await updateDoc(doc(db, 'clubs', editingId), cleanPayload(payload));
         } else {
-          await addDoc(collection(db, 'clubs'), payload);
+          await addDoc(collection(db, 'clubs'), cleanPayload(payload));
         }
       } else if (activeTab === 'polls') {
         const options = (Array.isArray(formData.options) 
@@ -677,9 +699,9 @@ export default function Admin() {
           createdAt: isEditing ? formData.createdAt : new Date().toISOString()
         };
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'polls', editingId), payload);
+          await updateDoc(doc(db, 'polls', editingId), cleanPayload(payload));
         } else {
-          await addDoc(collection(db, 'polls'), payload);
+          await addDoc(collection(db, 'polls'), cleanPayload(payload));
         }
       } else if (activeTab === 'predictions') {
         const payload = {
@@ -692,14 +714,18 @@ export default function Admin() {
           createdAt: isEditing ? formData.createdAt : new Date().toISOString()
         };
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'predictions', editingId), payload);
+          await updateDoc(doc(db, 'predictions', editingId), cleanPayload(payload));
         } else {
-          await addDoc(collection(db, 'predictions'), payload);
+          await addDoc(collection(db, 'predictions'), cleanPayload(payload));
         }
       } else if (activeTab === 'news-categories') {
         const categories = formData.categories || newsCategories;
         await setDoc(doc(db, 'settings', 'newsCategories'), { list: categories });
         setNewsCategories(categories);
+      } else if (activeTab === 'news-tags') {
+        const tags = formData.tags || useAppStore.getState().newsTags;
+        await setDoc(doc(db, 'settings', 'newsTags'), { tags });
+        useAppStore.getState().setNewsTags(tags);
       } else if (activeTab === 'products') {
         const payload = {
           name: formData.name || '',
@@ -710,9 +736,9 @@ export default function Admin() {
           stock: Number(formData.stock || 0)
         };
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'products', editingId), payload);
+          await updateDoc(doc(db, 'products', editingId), cleanPayload(payload));
         } else {
-          await addDoc(collection(db, 'products'), payload);
+          await addDoc(collection(db, 'products'), cleanPayload(payload));
         }
       } else if (activeTab === 'history') {
         if (historySubTab === 'stats') {
@@ -725,9 +751,9 @@ export default function Admin() {
           if (isEditing && editingId) {
             const oldData = clubStats.find(s => s.id === editingId);
             if (oldData) pushToUndoStack({ collection: 'club_stats', action: 'update', data: { ...oldData } });
-            await updateDoc(doc(db, 'club_stats', editingId), payload);
+            await updateDoc(doc(db, 'club_stats', editingId), cleanPayload(payload));
           } else {
-            const res = await addDoc(collection(db, 'club_stats'), payload);
+            const res = await addDoc(collection(db, 'club_stats'), cleanPayload(payload));
             pushToUndoStack({ collection: 'club_stats', action: 'add', data: { id: res.id } });
           }
         } else if (historySubTab === 'titles') {
@@ -741,9 +767,9 @@ export default function Admin() {
           if (isEditing && editingId) {
             const oldData = clubTitles.find(t => t.id === editingId);
             if (oldData) pushToUndoStack({ collection: 'club_titles', action: 'update', data: { ...oldData } });
-            await updateDoc(doc(db, 'club_titles', editingId), payload);
+            await updateDoc(doc(db, 'club_titles', editingId), cleanPayload(payload));
           } else {
-            const res = await addDoc(collection(db, 'club_titles'), payload);
+            const res = await addDoc(collection(db, 'club_titles'), cleanPayload(payload));
             pushToUndoStack({ collection: 'club_titles', action: 'add', data: { id: res.id } });
           }
         } else if (historySubTab === 'timeline') {
@@ -756,9 +782,9 @@ export default function Admin() {
           if (isEditing && editingId) {
             const oldData = historyEvents.find(e => e.id === editingId);
             if (oldData) pushToUndoStack({ collection: 'club_timeline', action: 'update', data: { ...oldData } });
-            await updateDoc(doc(db, 'club_timeline', editingId), payload);
+            await updateDoc(doc(db, 'club_timeline', editingId), cleanPayload(payload));
           } else {
-            const res = await addDoc(collection(db, 'club_timeline'), payload);
+            const res = await addDoc(collection(db, 'club_timeline'), cleanPayload(payload));
             pushToUndoStack({ collection: 'club_timeline', action: 'add', data: { id: res.id } });
           }
         } else if (historySubTab === 'stadiums') {
@@ -772,9 +798,9 @@ export default function Admin() {
           if (isEditing && editingId) {
             const oldData = stadiums.find(s => s.id === editingId);
             if (oldData) pushToUndoStack({ collection: 'club_stadiums', action: 'update', data: { ...oldData } });
-            await updateDoc(doc(db, 'club_stadiums', editingId), payload);
+            await updateDoc(doc(db, 'club_stadiums', editingId), cleanPayload(payload));
           } else {
-            const res = await addDoc(collection(db, 'club_stadiums'), payload);
+            const res = await addDoc(collection(db, 'club_stadiums'), cleanPayload(payload));
             pushToUndoStack({ collection: 'club_stadiums', action: 'add', data: { id: res.id } });
           }
         }
@@ -791,9 +817,9 @@ export default function Admin() {
             createdAt: new Date().toISOString()
           };
           if (isEditing && editingId) {
-            await updateDoc(doc(db, 'songs', editingId), payload);
+            await updateDoc(doc(db, 'songs', editingId), cleanPayload(payload));
           } else {
-            await addDoc(collection(db, 'songs'), payload);
+            await addDoc(collection(db, 'songs'), cleanPayload(payload));
           }
         } else if (musicSubTab === 'albums') {
           const payload = {
@@ -804,9 +830,9 @@ export default function Admin() {
             hidden: formData.hidden || false
           };
           if (isEditing && editingId) {
-            await updateDoc(doc(db, 'albums', editingId), payload);
+            await updateDoc(doc(db, 'albums', editingId), cleanPayload(payload));
           } else {
-            await addDoc(collection(db, 'albums'), payload);
+            await addDoc(collection(db, 'albums'), cleanPayload(payload));
           }
         } else if (musicSubTab === 'playlists') {
           const payload = {
@@ -816,9 +842,9 @@ export default function Admin() {
             hidden: formData.hidden || false
           };
           if (isEditing && editingId) {
-            await updateDoc(doc(db, 'playlists', editingId), payload);
+            await updateDoc(doc(db, 'playlists', editingId), cleanPayload(payload));
           } else {
-            await addDoc(collection(db, 'playlists'), payload);
+            await addDoc(collection(db, 'playlists'), cleanPayload(payload));
           }
         }
       } else if (activeTab === 'books') {
@@ -832,9 +858,9 @@ export default function Admin() {
           hidden: formData.hidden || false
         };
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'books', editingId), payload);
+          await updateDoc(doc(db, 'books', editingId), cleanPayload(payload));
         } else {
-          await addDoc(collection(db, 'books'), payload);
+          await addDoc(collection(db, 'books'), cleanPayload(payload));
         }
       }
 
@@ -843,9 +869,9 @@ export default function Admin() {
       setFormData({});
       setIsEditing(false);
       setEditingId(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('حدث خطأ أثناء الحفظ');
+      alert('حدث خطأ أثناء الحفظ: ' + (err?.message || err));
     } finally {
       setLoading(false);
     }
@@ -1113,16 +1139,6 @@ export default function Admin() {
            <Menu size={18} />
            <span className="text-[10px] font-black uppercase tracking-widest">قائمة الإدارة</span>
          </button>
-         
-         {isDev && (
-           <button 
-             onClick={handleGoBack}
-             className="h-12 w-12 bg-white dark:bg-surface-dark rounded-2xl flex items-center justify-center text-slate-600 dark:text-slate-300 border border-border-light dark:border-border-dark shadow-sm pressable active:scale-95 transition-all"
-             title="الرجوع للخلف"
-           >
-             <RotateCcw size={18} />
-           </button>
-         )}
 
          <button 
            onClick={async () => {
@@ -1149,6 +1165,7 @@ export default function Admin() {
             {activeTab === 'overview' ? 'لوحة التحكم' :
              activeTab === 'news' ? 'إدارة الأخبار' : 
              activeTab === 'news-categories' ? 'إدارة أقسام الأخبار' :
+             activeTab === 'news-tags' ? 'إدارة وسوم الأخبار' :
              activeTab === 'fanzone' ? 'إدارة منطقة الجماهير' :
              activeTab === 'media' ? 'إدارة الميديا' : 
              activeTab === 'matches' ? 'إدارة المباريات' : 
@@ -1344,14 +1361,12 @@ export default function Admin() {
                   onClick={async () => {
                     setLoading(true);
                     try {
-                      const cleanSections = homeSections.map(section => 
-                        Object.fromEntries(Object.entries(section).filter(([_, v]) => v !== undefined))
-                      );
+                      const cleanSections = homeSections.map(section => JSON.parse(JSON.stringify(section)));
                       await setDoc(doc(db, 'settings', 'homeLayout'), { sections: cleanSections });
                       alert('تم حفظ التغييرات بنجاح');
-                    } catch (err) {
+                    } catch (err: any) {
                       console.error(err);
-                      alert('فشل في الحفظ');
+                      alert('فشل في الحفظ: ' + (err?.message || err));
                     } finally {
                       setLoading(false);
                     }
@@ -1792,6 +1807,84 @@ export default function Admin() {
             </div>
           )}
 
+          {activeTab === 'news-tags' && (
+            <div className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                  <Tags size={20} />
+                </div>
+                <div>
+                   <h3 className="font-black text-sm">وسوم الأخبار</h3>
+                   <p className="text-[10px] font-bold text-slate-400">الوسوم الافتراضية: مباشر, عاجل, رائج, هام، إلخ</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-6">
+                {useAppStore.getState().newsTags?.map((tag, i) => (
+                  <div key={tag.id} className="flex items-center gap-2 bg-slate-50 dark:bg-surface-dark px-3 py-2 rounded-xl border border-slate-100 dark:border-border-dark group">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} />
+                    <span className="text-xs font-bold" style={{ color: tag.color }}>{tag.name}</span>
+                    <button 
+                      onClick={() => {
+                        const tags = [...useAppStore.getState().newsTags];
+                        const updatedName = prompt('تعديل اسم الوسم:', tag.name);
+                        const updatedColor = prompt('لون الوسم (HEX):', tag.color);
+                        if (updatedName && updatedName.trim() !== '') {
+                          tags[i] = { ...tag, name: updatedName.trim(), color: updatedColor || tag.color };
+                          setDoc(doc(db, 'settings', 'newsTags'), { tags });
+                        }
+                      }}
+                      className="text-blue-400 hover:text-blue-600 transition-colors opacity-0 group-hover:opacity-100 mr-2"
+                    >
+                      <Edit2 size={12} />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (confirm('هل أنت متأكد من حذف هذا الوسم؟')) {
+                          const tags = useAppStore.getState().newsTags.filter((_, idx) => idx !== i);
+                          setDoc(doc(db, 'settings', 'newsTags'), { tags });
+                        }
+                      }}
+                      className="text-red-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 ml-1"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2 items-center">
+                <input 
+                  type="color" 
+                  id="new-tag-color"
+                  defaultValue="#3B82F6"
+                  className="w-12 h-10 rounded-xl cursor-pointer"
+                />
+                <input 
+                  type="text" 
+                  id="new-tag-name"
+                  placeholder="اسم الوسم الجديد..." 
+                  className="flex-1 p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-xs font-bold" 
+                />
+                <button 
+                  onClick={() => {
+                    const nameInput = document.getElementById('new-tag-name') as HTMLInputElement;
+                    const colorInput = document.getElementById('new-tag-color') as HTMLInputElement;
+                    if (nameInput.value.trim()) {
+                      const tags = [...(useAppStore.getState().newsTags || [])];
+                      tags.push({ id: uuidv4(), name: nameInput.value.trim(), color: colorInput.value });
+                      setDoc(doc(db, 'settings', 'newsTags'), { tags });
+                      nameInput.value = '';
+                    }
+                  }}
+                  className="bg-primary text-white px-4 py-2 rounded-xl font-bold text-xs"
+                >
+                  إضافة
+                </button>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'products' && (
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
@@ -1949,9 +2042,39 @@ export default function Admin() {
             </div>
           )}
 
+          {/* Content Search Bar for applicable tabs */}
+          {['news', 'media', 'matches', 'products', 'books', 'music'].includes(activeTab) && (
+            <div className="mb-6">
+               <div className="relative group">
+                  <div className="absolute inset-y-0 right-4 flex items-center text-slate-400 group-focus-within:text-primary transition-colors">
+                     <Search size={18} />
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="ابحث في المحتوى..." 
+                    className="w-full pr-12 pl-4 py-4 rounded-2xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-border-dark text-sm font-bold focus:border-primary outline-none transition-all shadow-sm"
+                    value={contentSearch}
+                    onChange={(e) => setContentSearch(e.target.value)}
+                  />
+                  {contentSearch && (
+                    <button 
+                      onClick={() => setContentSearch('')} 
+                      className="absolute inset-y-0 left-4 flex items-center text-slate-400 hover:text-red-500 transition-colors"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+               </div>
+            </div>
+          )}
+
           {activeTab === 'news' && (
             <div className="grid grid-cols-1 gap-6">
-              {news.map((item) => (
+              {news.filter(item => 
+                item.title.toLowerCase().includes(contentSearch.toLowerCase()) || 
+                item.content?.toLowerCase().includes(contentSearch.toLowerCase()) ||
+                item.category?.toLowerCase().includes(contentSearch.toLowerCase())
+              ).map((item) => (
                 <div key={item.id} className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-6 flex flex-col gap-4 shadow-sm hover:shadow-xl transition-all duration-300 group">
                   <div className="flex items-center gap-4">
                         <div className="relative overflow-hidden rounded-2xl">
@@ -1988,7 +2111,9 @@ export default function Admin() {
 
           {activeTab === 'media' && (
             <div className="grid grid-cols-1 gap-6">
-              {media.map((item) => (
+              {media.filter(item => 
+                item.title.toLowerCase().includes(contentSearch.toLowerCase())
+              ).map((item) => (
                 <div key={item.id} className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-6 flex flex-col gap-4 shadow-sm hover:shadow-xl transition-all duration-300 group">
                   <div className="flex items-center gap-4">
                     <div className="relative w-24 h-16 rounded-2xl overflow-hidden flex-shrink-0">
@@ -2018,12 +2143,7 @@ export default function Admin() {
                     </div>
                     <div className="flex items-center gap-2">
                       <button 
-                        onClick={() => {
-                          setFormData({ ...item });
-                          setIsEditing(true);
-                          setEditingId(item.id);
-                          setShowModal(true);
-                        }} 
+                        onClick={() => handleEditItem(item)} 
                         className="p-3 text-blue-500 bg-blue-500/5 hover:bg-blue-500/10 rounded-2xl transition-all"
                       >
                         <Edit2 size={18} />
@@ -2038,7 +2158,11 @@ export default function Admin() {
             </div>
           )}
 
-          {activeTab === 'matches' && matches.map((item) => (
+          {activeTab === 'matches' && matches.filter(item => 
+            item.homeTeam.toLowerCase().includes(contentSearch.toLowerCase()) || 
+            item.awayTeam.toLowerCase().includes(contentSearch.toLowerCase()) ||
+            item.competition?.toLowerCase().includes(contentSearch.toLowerCase())
+          ).map((item) => (
             <div key={item.id} className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-3 flex flex-col gap-2">
              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -2153,12 +2277,7 @@ export default function Admin() {
                       </div>
                       <div className="flex items-center gap-1">
                         <button 
-                          onClick={() => {
-                            setFormData({ ...p });
-                            setIsEditing(true);
-                            setEditingId(p.id);
-                            setShowModal(true);
-                          }}
+                          onClick={() => handleEditItem(p)}
                           className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-md transition-all"
                         >
                           <Edit2 size={14} />
@@ -2223,7 +2342,7 @@ export default function Admin() {
                       <div className="absolute inset-y-0 right-4 flex items-center text-slate-400"><Search size={18} /></div>
                       <input 
                         type="text" 
-                        placeholder="ابحث عن عضو بالإسم أو البريدي..." 
+                        placeholder="ابحث عن عضو بالإسم أو البريد..." 
                         className="w-full pr-12 pl-4 py-4 rounded-2xl bg-slate-50 dark:bg-surface-dark border border-slate-100 dark:border-border-dark text-sm font-bold focus:border-primary outline-none transition-all"
                         value={userSearch}
                         onChange={(e) => setUserSearch(e.target.value)}
@@ -2269,12 +2388,7 @@ export default function Admin() {
                     </div>
                     <div className="flex items-center gap-2">
                       <button 
-                        onClick={() => {
-                          setFormData({ ...member, roles: member.roles || [] });
-                          setIsEditing(true);
-                          setEditingId(member.uid!);
-                          setShowModal(true);
-                        }}
+                        onClick={() => handleEditItem({...member, id: member.uid, roles: member.roles || []})}
                         className="p-2.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all"
                       >
                         <Shield size={18} />
@@ -2358,24 +2472,34 @@ export default function Admin() {
                   </button>
                 </div>
                 
-                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                   {sentNotifications.map((n: any) => (
-                    <div key={n.id} className="p-3 bg-slate-50 dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between gap-3">
+                    <div key={n.id} className="p-4 bg-white dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark flex items-center justify-between gap-4 group hover:shadow-md transition-all">
+                      <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-card-dark flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                        <Bell size={18} />
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-black truncate">{n.title}</p>
-                        <p className="text-[10px] text-slate-500 truncate">{n.body}</p>
-                        <p className="text-[8px] text-slate-400 mt-1 uppercase font-bold">{new Date(n.createdAt).toLocaleString('ar-EG')}</p>
+                        <h4 className="text-xs font-black truncate text-slate-800 dark:text-white mb-0.5">{n.title}</h4>
+                        <p className="text-[10px] text-slate-500 font-bold truncate">{n.body}</p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="text-[8px] text-slate-400 font-black uppercase tracking-wider">{new Date(n.createdAt).toLocaleDateString('ar-EG')}</span>
+                          <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                          <span className="text-[8px] font-black text-primary uppercase">MEMBER: {n.target || 'ALL'}</span>
+                        </div>
                       </div>
                       <button 
                         onClick={() => handleDelete('notifications', n.id)}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-all shrink-0"
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all shrink-0"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   ))}
                   {sentNotifications.length === 0 && (
-                    <div className="py-8 text-center text-slate-400 font-bold text-[10px]">لا توجد إشعارات مرسلة</div>
+                    <div className="py-20 text-center bg-slate-50/50 dark:bg-surface-dark/50 rounded-[28px] border-2 border-dashed border-slate-200 dark:border-border-dark">
+                       <Bell className="mx-auto text-slate-300 mb-2" size={40} />
+                       <p className="text-slate-400 font-black text-xs uppercase tracking-widest">لا توجد إشعارات مرسلة</p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -2540,12 +2664,7 @@ export default function Admin() {
                     </div>
                   <div className="flex items-center gap-1">
                     <button 
-                      onClick={() => {
-                        setFormData({ ...club });
-                        setIsEditing(true);
-                        setEditingId(club.id);
-                        setShowModal(true);
-                      }} 
+                      onClick={() => handleEditItem(club)} 
                       className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-lg transition-all"
                     >
                       <Edit2 size={16} />
@@ -2576,12 +2695,7 @@ export default function Admin() {
                     </div>
                     <div className="flex items-center gap-1">
                       <button 
-                        onClick={() => {
-                          setFormData({ ...poll });
-                          setIsEditing(true);
-                          setEditingId(poll.id);
-                          setShowModal(true);
-                        }} 
+                        onClick={() => handleEditItem(poll)} 
                         className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-lg transition-all"
                       >
                         <Edit2 size={16} />
@@ -2679,7 +2793,7 @@ export default function Admin() {
                       <button onClick={() => handleToggleVisibility('club_stats', item)} className="p-2 text-slate-400 hover:text-primary transition-all">
                         {item.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
-                      <button onClick={() => { setFormData({...item}); setIsEditing(true); setEditingId(item.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
+                      <button onClick={() => handleEditItem(item)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
                       <button onClick={() => handleDelete('club_stats', item.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
                     </div>
                   </div>
@@ -2855,7 +2969,7 @@ export default function Admin() {
                            </div>
                         </div>
                         <div className="flex items-center gap-1">
-                           <button onClick={() => { setFormData({...song}); setIsEditing(true); setEditingId(song.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all"><Edit2 size={16} /></button>
+                          <button onClick={() => handleEditItem(song)} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all"><Edit2 size={16} /></button>
                            <button onClick={() => handleDelete('songs', song.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"><Trash2 size={16} /></button>
                         </div>
                      </div>
@@ -2876,7 +2990,7 @@ export default function Admin() {
                            </div>
                         </div>
                         <div className="flex items-center gap-1">
-                           <button onClick={() => { setFormData({...album}); setIsEditing(true); setEditingId(album.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all"><Edit2 size={16} /></button>
+                          <button onClick={() => handleEditItem(album)} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all"><Edit2 size={16} /></button>
                            <button onClick={() => handleDelete('albums', album.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"><Trash2 size={16} /></button>
                         </div>
                      </div>
@@ -2897,7 +3011,7 @@ export default function Admin() {
                            </div>
                         </div>
                         <div className="flex items-center gap-1">
-                           <button onClick={() => { setFormData({...playlist}); setIsEditing(true); setEditingId(playlist.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all"><Edit2 size={16} /></button>
+                          <button onClick={() => handleEditItem(playlist)} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all"><Edit2 size={16} /></button>
                            <button onClick={() => handleDelete('playlists', playlist.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"><Trash2 size={16} /></button>
                         </div>
                      </div>
@@ -2921,7 +3035,7 @@ export default function Admin() {
                         <h4 className="font-black text-xs mb-1 truncate">{book.title}</h4>
                         <p className="text-[10px] text-slate-400 font-bold mb-2">{book.author}</p>
                         <div className="flex gap-2">
-                           <button onClick={() => { setFormData({...book}); setIsEditing(true); setEditingId(book.id); setShowModal(true); }} className="flex-1 bg-slate-50 dark:bg-surface-dark py-2 rounded-lg text-[10px] font-black text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all">تعديل</button>
+                          <button onClick={() => handleEditItem(book)} className="flex-1 bg-slate-50 dark:bg-surface-dark py-2 rounded-lg text-[10px] font-black text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all">تعديل</button>
                            <button onClick={() => handleDelete('books', book.id)} className="px-3 bg-slate-50 dark:bg-surface-dark py-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"><Trash2 size={14} /></button>
                         </div>
                      </div>
@@ -3221,6 +3335,28 @@ export default function Admin() {
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">رابط RSS (لجلب الخبر تلقائياً)</label>
                      <input type="text" placeholder="https://..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" value={formData.rssUrl || ''} onChange={(e) => setFormData({...formData, rssUrl: e.target.value})} />
                    </div>
+                   <div>
+                     <label className="text-[10px] font-black text-slate-500 mb-1 block mt-2">وسوم الخبر</label>
+                     <div className="flex flex-wrap gap-2">
+                       {useAppStore.getState().newsTags?.map((tag: any) => (
+                         <label key={tag.id} className="cursor-pointer flex items-center gap-1 bg-slate-50 dark:bg-surface-dark px-3 py-1.5 rounded-xl border border-slate-100 dark:border-border-dark group active:scale-95 transition-transform">
+                           <input 
+                             type="checkbox" 
+                             checked={formData.tagIds?.includes(tag.id) || false}
+                             onChange={(e) => {
+                               const currentTags = formData.tagIds || [];
+                               if (e.target.checked) setFormData({...formData, tagIds: [...currentTags, tag.id]});
+                               else setFormData({...formData, tagIds: currentTags.filter((id: any) => id !== tag.id)});
+                             }}
+                             className="hidden"
+                           />
+                           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} />
+                           <span className={`text-xs font-bold ${formData.tagIds?.includes(tag.id) ? 'text-primary' : 'text-slate-500 dark:text-slate-400'}`}>{tag.name}</span>
+                           {formData.tagIds?.includes(tag.id) && <Check size={12} className="text-primary ml-1" />}
+                         </label>
+                       ))}
+                     </div>
+                   </div>
                  </>
                )}
 
@@ -3262,6 +3398,7 @@ export default function Admin() {
                           <option value="silver">عضو فضي (Silver)</option>
                           <option value="gold">عضو ذهبي (Gold)</option>
                           <option value="diamond">عضو ماسي (Diamond)</option>
+                          <option value="premium">عضو ملكي (Premium)</option>
                         </select>
                       </div>
                     </div>
@@ -3522,15 +3659,36 @@ export default function Admin() {
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">تاريخ ووقت المباراة (بتوقيت مصر)</label>
                      <input type="datetime-local" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 text-sm" value={formData.date && !isNaN(new Date(formData.date).getTime()) ? formatInTimeZone(new Date(formData.date), 'Africa/Cairo', 'yyyy-MM-dd\'T\'HH:mm') : ''} onChange={(e) => setFormData({...formData, date: e.target.value ? fromZonedTime(e.target.value, 'Africa/Cairo').toISOString() : ''})} />
-                    <div className="flex items-center gap-2 mt-4 bg-primary/5 p-3 rounded-xl border border-primary/10">
-                       <input 
-                         type="checkbox" 
-                         id="isMatchDay" 
-                         className="w-4 h-4 rounded border-border-light text-primary focus:ring-primary"
-                         checked={formData.isMatchDay || false} 
-                         onChange={(e) => setFormData({...formData, isMatchDay: e.target.checked})}
-                       />
-                       <label htmlFor="isMatchDay" className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-tighter cursor-pointer">Set as Match Day</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                       <div className="flex items-center gap-3 p-4 bg-slate-100/50 dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-border-dark group cursor-pointer hover:bg-primary/5 hover:border-primary/20 transition-all">
+                          <input 
+                            type="checkbox" 
+                            id="matchFeatured" 
+                            className="w-5 h-5 rounded-lg border-border-light text-primary focus:ring-primary h-5 w-5"
+                            checked={formData.featured || false} 
+                            onChange={(e) => setFormData({...formData, featured: e.target.checked})}
+                          />
+                          <label htmlFor="matchFeatured" className="flex-1 cursor-pointer">
+                             <p className="text-xs font-black text-slate-800 dark:text-white">تمييز المباراة (Featured)</p>
+                             <p className="text-[9px] text-slate-500 font-bold uppercase">Show in prominent hero slider</p>
+                          </label>
+                          <Star size={18} className={formData.featured ? 'text-yellow-500 fill-current' : 'text-slate-300'} />
+                       </div>
+
+                       <div className="flex items-center gap-3 p-4 bg-slate-100/50 dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-border-dark group cursor-pointer hover:bg-accent/5 hover:border-accent/20 transition-all">
+                          <input 
+                            type="checkbox" 
+                            id="isMatchDay" 
+                            className="w-5 h-5 rounded-lg border-border-light text-accent focus:ring-accent h-5 w-5"
+                            checked={formData.isMatchDay || false} 
+                            onChange={(e) => setFormData({...formData, isMatchDay: e.target.checked})}
+                          />
+                          <label htmlFor="isMatchDay" className="flex-1 cursor-pointer">
+                             <p className="text-xs font-black text-slate-800 dark:text-white">جعلها مباراة اليوم (Match Day)</p>
+                             <p className="text-[9px] text-slate-500 font-bold uppercase">Activate match-day specific UI</p>
+                          </label>
+                          <Zap size={18} className={formData.isMatchDay ? 'text-accent fill-current' : 'text-slate-300'} />
+                       </div>
                     </div>
                    </div>
                  </>
@@ -3664,7 +3822,11 @@ export default function Admin() {
             </div>
 
             <button 
-              onClick={handleAdd} 
+              onClick={() => {
+                if (window.confirm(isEditing ? 'هل أنت متأكد من حفظ التعديلات؟' : 'هل أنت متأكد من الإضافة؟')) {
+                  handleAdd();
+                }
+              }} 
               disabled={loading}
               className="w-full bg-primary text-white py-4 rounded-2xl font-black text-sm mt-6 flex items-center justify-center gap-2"
             >

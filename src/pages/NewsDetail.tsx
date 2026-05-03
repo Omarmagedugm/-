@@ -98,7 +98,21 @@ export default function NewsDetail() {
           </div>
 
           <div className="p-6">
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-snug mb-6">{article.title}</h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-snug mb-4">{article.title}</h1>
+            
+            {(article.tagIds && article.tagIds.length > 0) && (
+              <div className="flex flex-wrap gap-2 mb-6">
+                 {article.tagIds.map(tagId => {
+                   const tagObj = useAppStore.getState().newsTags?.find(t => t.id === tagId);
+                   if (!tagObj) return null;
+                   return (
+                     <span key={tagObj.id} className="text-[10px] font-black px-2.5 py-1 rounded-lg text-white shadow-sm" style={{ backgroundColor: tagObj.color }}>
+                       {tagObj.name}
+                     </span>
+                   );
+                 })}
+              </div>
+            )}
 
             <div className="flex items-center justify-between py-4 border-y border-border-light dark:border-border-dark mb-6">
              <div className="flex items-center gap-2">

@@ -90,6 +90,15 @@ export default function News() {
                           <Rss size={10} strokeWidth={3} /> RSS
                         </div>
                       )}
+                      {featured.tagIds?.map(tagId => {
+                        const tagObj = useAppStore.getState().newsTags?.find(t => t.id === tagId);
+                        if (!tagObj) return null;
+                        return (
+                          <div key={tagObj.id} className="px-3 py-1 rounded-xl text-[9px] font-black text-white shadow-premium" style={{ backgroundColor: tagObj.color }}>
+                            {tagObj.name}
+                          </div>
+                        );
+                      })}
                     </div>
                     
                     <div className="absolute bottom-6 left-6 right-6 z-20">
@@ -131,7 +140,7 @@ export default function News() {
                             {item.title}
                            </h4>
                         </div>
-                        <div className="flex items-center gap-3 mt-2">
+                        <div className="flex items-center gap-3 mt-2 flex-wrap">
                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest">
                             {formatDistanceToNow(new Date(item.date), { locale: ar, addSuffix: true })}
                            </span>
@@ -141,6 +150,15 @@ export default function News() {
                                NEWS
                              </div>
                            )}
+                           {item.tagIds?.map(tagId => {
+                             const tagObj = useAppStore.getState().newsTags?.find(t => t.id === tagId);
+                             if (!tagObj) return null;
+                             return (
+                               <span key={tagObj.id} className="text-[9px] font-black px-2 py-0.5 rounded-md text-white shadow-sm" style={{ backgroundColor: tagObj.color }}>
+                                 {tagObj.name}
+                               </span>
+                             );
+                           })}
                         </div>
                       </div>
                     </Link>
@@ -183,9 +201,22 @@ export default function News() {
                         {item.title}
                       </h4>
                     </div>
-                    <div className="flex items-center gap-1 text-[10px] font-black text-slate-400 mt-2">
-                      <span>عرض الخبر</span>
-                      <ChevronRight size={10} strokeWidth={3} className="rotate-180" />
+                    <div className="flex items-center justify-between mt-2">
+                       <div className="flex flex-wrap gap-1">
+                         {item.tagIds?.map(tagId => {
+                           const tagObj = useAppStore.getState().newsTags?.find(t => t.id === tagId);
+                           if (!tagObj) return null;
+                           return (
+                             <span key={tagObj.id} className="text-[8px] font-black px-1.5 py-0.5 rounded text-white shadow-sm" style={{ backgroundColor: tagObj.color }}>
+                               {tagObj.name}
+                             </span>
+                           );
+                         })}
+                       </div>
+                       <div className="flex items-center gap-1 text-[10px] font-black text-slate-400">
+                         <span>عرض الخبر</span>
+                         <ChevronRight size={10} strokeWidth={3} className="rotate-180" />
+                       </div>
                     </div>
                   </div>
                 </Link>

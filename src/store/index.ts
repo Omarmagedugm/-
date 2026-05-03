@@ -15,6 +15,12 @@ export interface HomeSection {
   pinned?: boolean;
 }
 
+export interface NewsTag {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface NewsItem {
   id: string;
   title: string;
@@ -27,6 +33,7 @@ export interface NewsItem {
   editorName?: string;
   rssUrl?: string;
   rssSource?: string;
+  tagIds?: string[];
 }
 
 export interface MediaItem {
@@ -291,6 +298,7 @@ interface AppState {
   historyEvents: HistoryEvent[];
   stadiums: StadiumItem[];
   newsCategories: string[];
+  newsTags: NewsTag[];
   products: Product[];
   orders: StoreOrder[];
   ads: AdBanner[];
@@ -333,6 +341,7 @@ interface AppState {
   setHistoryEvents: (events: HistoryEvent[]) => void;
   setStadiums: (stadiums: StadiumItem[]) => void;
   setNewsCategories: (categories: string[]) => void;
+  setNewsTags: (tags: NewsTag[]) => void;
   setProducts: (products: Product[]) => void;
   setOrders: (orders: StoreOrder[]) => void;
   setAds: (ads: AdBanner[]) => void;
@@ -504,6 +513,11 @@ export const useAppStore = create<AppState>()(
         { id: uuidv4(), name: 'إستاد الشاطبي', type: 'ملعب الشاطبي 1914', desc: 'أسسه أنجلو بولاناكي في 1914، وهو أول ملعب في العالم يرفع على ساريته العلم الأوليمبي وكان ذلك في 5 إبريل عام 1914، واستمر عليه الاتحاد حتى يومنا هذا معقلاً لزعيم الثغر.', imageUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&q=80' },
       ],
       newsCategories: ['أخبار الفريق', 'كرة سلة', 'ألعاب أخرى', 'تقارير', 'انتقالات'],
+      newsTags: [
+        { id: '1', name: 'مباشر', color: '#ef4444' },
+        { id: '2', name: 'عاجل', color: '#eab308' },
+        { id: '3', name: 'رائج', color: '#22c55e' },
+      ],
       products: [],
       orders: [],
       ads: [],
@@ -564,6 +578,7 @@ export const useAppStore = create<AppState>()(
       setHistoryEvents: (historyEvents) => set({ historyEvents }),
       setStadiums: (stadiums) => set({ stadiums }),
       setNewsCategories: (newsCategories) => set({ newsCategories }),
+      setNewsTags: (newsTags) => set({ newsTags }),
       setProducts: (products) => set({ products }),
       setOrders: (orders) => set({ orders }),
       setAds: (ads) => set({ ads }),

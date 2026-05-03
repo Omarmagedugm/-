@@ -127,6 +127,16 @@ export default function TopHeader() {
           </div>
 
           <div className="flex items-center gap-2">
+            {profile?.role === 'admin' && location.pathname.includes('/admin') && (
+              <motion.button 
+                whileTap={{ scale: 0.9 }}
+                onClick={() => navigate(-1)}
+                className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-500 dark:text-slate-400 hover:text-primary transition-all duration-300 shadow-sm"
+                title="رجوع للصفحة السابقة"
+              >
+                <ChevronRight size={22} strokeWidth={2.5} />
+              </motion.button>
+            )}
             <motion.button 
               id="theme-toggle-button"
               whileTap={{ scale: 0.9 }}

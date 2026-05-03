@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAppStore, AppRole } from '../store';
 import { 
   LayoutDashboard, 
@@ -66,6 +67,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
     { title: 'المحتوى', items: [
       { id: 'news', icon: <Newspaper size={18} />, label: 'الأخبار', show: isAdmin || hasRole('news_editor') },
       { id: 'news-categories', icon: <Tags size={18} />, label: 'أقسام الأخبار', show: isAdmin || hasRole('news_editor') },
+      { id: 'news-tags', icon: <Tags size={18} />, label: 'وسوم الأخبار', show: isAdmin || hasRole('news_editor') },
       { id: 'products', icon: <ShoppingBag size={18} />, label: 'إدارة المتجر', show: isAdmin || hasRole('store_editor') },
       { id: 'orders', icon: <ShoppingCart size={18} />, label: 'المشتريات', show: isAdmin || hasRole('store_editor') },
       { id: 'media', icon: <PlayCircle size={18} />, label: 'المالتيميديا', show: isAdmin || hasRole('media_editor') },
@@ -96,14 +98,66 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
     ]}
   ];
 
-  const tabs = allTabs.map(group => ({
-    ...group,
-    items: group.items.filter(item => item.show)
-  })).filter(group => group.items.length > 0);
+  const [sidebarOrder, setSidebarOrder] = useState<string[]>([]);
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+
+  useEffect(() => {
+    getDoc(doc(db, 'settings', 'sidebar_order')).then(snap => {
+      if (snap.exists() && snap.data().order) {
+        setSidebarOrder(snap.data().order);
+      }
+    });
+  }, []);
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedItemId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    // Small delay to allow the drag image to be captured before we grey out the dragged item
+    setTimeout(() => {
+      const el = document.getElementById(`sidebar-item-${id}`);
+      if (el) el.style.opacity = '0.5';
+    }, 0);
+  };
+
+  const handleDragEnd = (e: React.DragEvent, id: string) => {
+    setDraggedItemId(null);
+    const el = document.getElementById(`sidebar-item-${id}`);
+    if (el) el.style.opacity = '1';
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    if (!draggedItemId || draggedItemId === targetId) return;
+
+    const currentOrder = sidebarOrder.length > 0 ? sidebarOrder : flatItems.map(i => i.id);
+    const draggedIndex = currentOrder.indexOf(draggedItemId);
+    const targetIndex = currentOrder.indexOf(targetId);
+
+    if (draggedIndex !== -1 && targetIndex !== -1) {
+      const newOrder = [...currentOrder];
+      newOrder.splice(draggedIndex, 1);
+      newOrder.splice(targetIndex, 0, draggedItemId);
+      setSidebarOrder(newOrder);
+      await setDoc(doc(db, 'settings', 'sidebar_order'), { order: newOrder });
+    }
+  };
+
+  const flatItems = allTabs.flatMap(group => group.items).filter(item => item.show);
+  
+  const sortedItems = [...flatItems].sort((a, b) => {
+    if (sidebarOrder.length > 0) {
+      const aIdx = sidebarOrder.indexOf(a.id);
+      const bIdx = sidebarOrder.indexOf(b.id);
+      if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+      if (aIdx !== -1) return -1;
+      if (bIdx !== -1) return 1;
+    }
+    return 0;
+  });
 
   return (
     <div className="w-64 bg-white dark:bg-card-dark border-l border-border-light dark:border-border-dark flex flex-col h-full overflow-y-auto no-scrollbar py-6">
-      <div className="px-6 mb-8">
+      <div className="px-6 mb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
             <LayoutDashboard size={24} />
@@ -115,35 +169,35 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
         </div>
       </div>
 
-      <div className="flex flex-col gap-8 px-4">
-        {tabs.map((group, idx) => (
-          <div key={idx} className="flex flex-col gap-1">
-            <p className="px-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">{group.title}</p>
-            <div className="flex flex-col gap-1">
-              {group.items.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id as any);
-                    if (onClose) onClose();
-                  }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-bold text-sm ${
-                    activeTab === item.id 
-                      ? 'bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20' 
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-surface-dark pressable'
-                  }`}
-                >
-                  <span className={activeTab === item.id ? 'text-primary' : 'text-slate-400'}>
-                    {item.icon}
-                  </span>
-                  {item.label}
-                  {activeTab === item.id && (
-                    <div className="mr-auto w-1.5 h-1.5 rounded-full bg-primary shadow-glow"></div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
+      <div className="flex flex-col gap-1 px-4">
+        {isAdmin && <p className="text-[9px] font-bold text-slate-400 mb-2 px-2 text-center">يمكنك سحب وإفلات العناصر لترتيبها</p>}
+        {sortedItems.map((item) => (
+          <button
+            key={item.id}
+            id={`sidebar-item-${item.id}`}
+            draggable={isAdmin}
+            onDragStart={(e) => handleDragStart(e, item.id)}
+            onDragEnd={(e) => handleDragEnd(e, item.id)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => handleDrop(e, item.id)}
+            onClick={() => {
+              setActiveTab(item.id as any);
+              if (onClose) onClose();
+            }}
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-bold text-sm ${
+              activeTab === item.id 
+                ? 'bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20' 
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-surface-dark pressable'
+            } ${draggedItemId === item.id ? 'opacity-50' : ''}`}
+          >
+            <span className={activeTab === item.id ? 'text-primary' : 'text-slate-400'}>
+              {item.icon}
+            </span>
+            {item.label}
+            {activeTab === item.id && (
+              <div className="mr-auto w-1.5 h-1.5 rounded-full bg-primary shadow-glow"></div>
+            )}
+          </button>
         ))}
       </div>
 

@@ -27,8 +27,24 @@ import MusicPlayer from './components/MusicPlayer';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 export default function App() {
-  const { theme, setIsAuthReady, updateProfile } = useAppStore();
   useFirestoreSync();
+  const { theme, setIsAuthReady, updateProfile } = useAppStore();
+
+  useEffect(() => {
+    // We already have testConnection in firebase.ts which logs to console.
+    // Let's add a global listener for firebase errors
+    const handleFirebaseError = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.code === 'unavailable') {
+        toast.error('عذراً، تعذر الاتصال بخادم البيانات. يرجى التحقق من اتصالك بالإنترنت.', {
+          id: 'firestore-unavailable',
+          duration: 5000
+        });
+      }
+    };
+    window.addEventListener('firestore-error', handleFirebaseError);
+    return () => window.removeEventListener('firestore-error', handleFirebaseError);
+  }, []);
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged((user) => {

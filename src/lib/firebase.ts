@@ -32,6 +32,13 @@ export function handleFirestoreError(error: any, operationType: OperationType, p
   const isRead = operationType === OperationType.LIST || operationType === OperationType.GET;
   const isUnavailable = errCode === 'unavailable' || errCode === 'deadline-exceeded';
 
+  // Dispatch global event for UI notifications
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('firestore-error', { 
+      detail: { code: errCode, message: error?.message, path, operationType } 
+    }));
+  }
+
   const errInfo: FirestoreErrorInfo = {
     error: error?.message || errCode || String(error),
     authInfo: {
@@ -114,6 +121,20 @@ const initializeMessaging = async () => {
 
 // Start initialization
 initializeMessaging();
+
+async function testConnection() {
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+    console.log('Firestore connection verified.');
+  } catch (error) {
+    if (error instanceof Error && (error.message.includes('the client is offline') || error.message.includes('unavailable'))) {
+      console.error("Please check your Firebase configuration or internet connection. Firestore is unavailable.");
+    } else {
+      console.warn("Firestore connection test completed with status:", error);
+    }
+  }
+}
+testConnection();
 
 export const messaging = messagingInstance;
 

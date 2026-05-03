@@ -4,7 +4,7 @@ import { ar } from 'date-fns/locale';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
-import { ChevronRight, Calendar, Trophy, MapPin, Edit2, Play, Users, Send, Target, X, FileText } from 'lucide-react';
+import { ChevronRight, Calendar, Trophy, MapPin, Edit2, Play, Users, Send, Target, X, FileText, Dribbble } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, query, where, getDocs, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import ScoreSelector from '../components/ScoreSelector';
@@ -133,7 +133,7 @@ export default function Matches() {
       subtitle: 'Basketball Matches', 
       matches: basketballMatches, 
       newestMatch: getNewestMatch(basketballMatches),
-      icon: <div className="text-[#ea580c]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-dribbble"><circle cx="12" cy="12" r="10"/><path d="M19.13 5.09C15.22 9.14 10 10.44 2.25 10.94"/><path d="M21.75 12.84c-6.62-1.41-12.14 1-16.38 6.32"/><path d="M8.56 2.75c4.37 6 6 9.42 8 17.72"/></svg></div> 
+      icon: <Dribbble size={16} className="text-[#ea580c]" /> 
     }
   ].filter(section => selectedSport === 'all' || section.id === selectedSport);
 
@@ -229,7 +229,7 @@ export default function Matches() {
                       <div className="relative p-6">
                         <div className="flex items-center justify-between mb-8">
                           <div className="flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-xl text-[9px] font-black text-white ring-1 ring-white/20 uppercase tracking-widest">
-                            <Trophy size={10} className="text-accent" />
+                            {section.id === 'basketball' ? <Dribbble size={10} className="text-orange-400" /> : <Trophy size={10} className="text-accent" />}
                             {section.newestMatch.competition}
                           </div>
                           <div className="flex flex-col items-end">
@@ -321,7 +321,7 @@ export default function Matches() {
                       <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-2 px-2 py-0.5 bg-slate-100 dark:bg-surface-dark rounded-lg text-[8px] font-black text-slate-500 uppercase tracking-tighter">
-                            <Trophy size={10} />
+                            {match.sport === 'basketball' ? <Dribbble size={10} className="text-orange-500" /> : <Trophy size={10} />}
                             {match.competition}
                           </div>
                           {match.isMatchDay && (
