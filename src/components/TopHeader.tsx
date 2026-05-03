@@ -15,7 +15,16 @@ export default function TopHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [imageError, setImageError] = useState(false);
   const initialLoadRef = useRef(true);
+
+  const lightLogo = appSettings?.headerLogoLight || appSettings?.appLogo;
+  const darkLogo = appSettings?.headerLogoDark || appSettings?.appLogo;
+  const currentLogo = theme === 'dark' ? darkLogo : lightLogo;
+
+  useEffect(() => {
+    setImageError(false);
+  }, [currentLogo]);
 
   useEffect(() => {
     if (!profile?.uid) return;
@@ -123,28 +132,19 @@ export default function TopHeader() {
           )}
 
           <div className="flex flex-col items-center justify-center">
-            {(() => {
-               const lightLogo = appSettings?.headerLogoLight || appSettings?.appLogo;
-               const darkLogo = appSettings?.headerLogoDark || appSettings?.appLogo;
-               const currentLogo = theme === 'dark' ? darkLogo : lightLogo;
-               
-               if (currentLogo) {
-                 return (
-                   <img 
-                     src={currentLogo} 
-                     alt={title} 
-                     className="h-12 sm:h-16 w-auto max-w-[160px] sm:max-w-[200px] object-contain drop-shadow-sm transition-all duration-300" 
-                     referrerPolicy="no-referrer" 
-                   />
-                 );
-               } else {
-                 return (
-                   <h1 className="text-sm font-black tracking-tight text-primary-dark dark:text-white uppercase line-clamp-1 max-w-[180px] text-center">
-                     {title}
-                   </h1>
-                 );
-               }
-            })()}
+            {currentLogo && !imageError ? (
+              <img 
+                src={currentLogo} 
+                alt={title} 
+                className="h-14 sm:h-20 w-auto max-w-[180px] sm:max-w-[240px] object-contain drop-shadow-sm transition-all duration-300" 
+                referrerPolicy="no-referrer"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <h1 className="text-sm font-black tracking-tight text-primary-dark dark:text-white uppercase line-clamp-1 max-w-[180px] text-center">
+                {appSettings?.logoText || title}
+              </h1>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
