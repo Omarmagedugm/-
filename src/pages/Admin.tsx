@@ -237,7 +237,20 @@ const UploadOrUrlField = ({
     <div className="space-y-2 bg-slate-50/50 dark:bg-white/5 p-3 rounded-2xl border border-slate-100 dark:border-white/5">
       <div className="flex items-center justify-between mb-2">
         <label className="text-[10px] font-black text-slate-500 uppercase tracking-tighter block">{label}</label>
-        <div className="flex gap-1 bg-white dark:bg-surface-dark p-1 rounded-lg border border-slate-200 dark:border-border-dark">
+        <div className="flex gap-1 bg-white dark:bg-surface-dark p-1 rounded-lg border border-slate-200 dark:border-border-dark flex-wrap justify-end">
+          {(fieldName === 'homeLogo' || fieldName === 'awayLogo') && (
+            <button
+              type="button"
+              onClick={() => {
+                setInternalMode('url');
+                setFormData({ ...formData, [fieldName]: 'https://res.cloudinary.com/dqj6gzwfg/image/upload/v1777720049/admin_homeLogo/bsxn6a8jxy6yfbyh56df.png' });
+              }}
+              className="text-[8px] font-black px-2.5 py-1 rounded-md transition-all text-green-600 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 dark:text-green-400"
+              title="لوجو الاتحاد السكندري"
+            >
+              اتحاد
+            </button>
+          )}
           <button 
             type="button"
             onClick={() => setInternalMode('upload')}
@@ -567,6 +580,27 @@ export default function Admin() {
     }
   };
 
+  const EGYPTIAN_CLUBS = ["الأهلي", "الزمالك", "بيراميدز", "المصري البورسعيدي", "سيراميكا كليوباترا", "إنبي", "فاركو", "مودرن سبورت", "سموحة", "الإسماعيلي", "البنك الأهلي", "طلائع الجيش", "الاتحاد السكندري", "المقاولون العرب", "زد إف سي", "الجونة", "وادي دجلة", "حرس الحدود", "بتروجت", "كهرباء الإسماعيلية"];
+
+  const handleSeedClubs = async () => {
+    setLoading(true);
+    try {
+      const { addDoc, collection } = await import('firebase/firestore');
+      const { db } = await import('../lib/firebase');
+      let added = 0;
+      for (const clubName of EGYPTIAN_CLUBS) {
+        if (!clubs.find(c => c.name === clubName)) {
+            await addDoc(collection(db, 'clubs'), { name: clubName, logo: '' });
+            added++;
+        }
+      }
+      toast.success(added > 0 ? `تم إضافة ${added} نادي بنجاح` : 'جميع الأندية موجوة مسبقاً');
+    } catch(err: any) {
+      toast.error(err.message || 'حدث خطأ');
+    }
+    setLoading(false);
+  };
+
   const handleAdd = async () => {
     setLoading(true);
     const cleanPayload = (obj: any) => JSON.parse(JSON.stringify(obj));
@@ -624,7 +658,7 @@ export default function Admin() {
         const payload = {
           homeTeam: formData.homeTeam || 'الاتحاد',
           awayTeam: formData.awayTeam || 'الفريق الخصم',
-          homeLogo: formData.homeLogo || 'https://upload.wikimedia.org/wikipedia/ar/thumb/0/0e/Al_Ittihad_Alexandria_Club_Logo.svg/512px-Al_Ittihad_Alexandria_Club_Logo.svg.png',
+          homeLogo: formData.homeLogo || 'https://res.cloudinary.com/dqj6gzwfg/image/upload/v1777720049/admin_homeLogo/bsxn6a8jxy6yfbyh56df.png',
           awayLogo: formData.awayLogo || 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e4/Al_Ahly_SC_logo.png/150px-Al_Ahly_SC_logo.png',
           homeScore: formData.homeScore !== undefined && formData.homeScore !== null ? String(formData.homeScore) : (formData.status === 'upcoming' ? '-' : '0'),
           awayScore: formData.awayScore !== undefined && formData.awayScore !== null ? String(formData.awayScore) : (formData.status === 'upcoming' ? '-' : '0'),
@@ -2751,6 +2785,13 @@ export default function Admin() {
 
           {activeTab === 'clubs' && (
             <div className="flex flex-col gap-3">
+              <button 
+                  onClick={handleSeedClubs} 
+                  disabled={loading}
+                  className="bg-accent/10 border border-accent/20 text-accent dark:bg-accent/20 dark:border-accent/30 py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-accent/20 transition-all mb-2"
+              >
+                 <Plus size={16} /> إضافة أندية الدوري المصري تلقائياً
+              </button>
               {clubs.map((club) => (
                   <div key={club.id} className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -3687,14 +3728,39 @@ export default function Admin() {
                       </div>
                       <div className="opacity-0 pointer-events-none">Placeholder</div>
                     </div>
+                    <datalist id="clubs-list">
+                      {clubs.map((club, idx) => <option key={idx} value={club.name} />)}
+                    </datalist>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="text-[10px] font-black text-slate-500 mb-1 block">الفريق المضيف</label>
-                        <input type="text" placeholder="الفريق المضيف" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.homeTeam || ''} onChange={(e) => setFormData({...formData, homeTeam: e.target.value})} />
+                        <input 
+                          type="text" 
+                          list="clubs-list"
+                          placeholder="الفريق المضيف" 
+                          className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" 
+                          value={formData.homeTeam || ''} 
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const matchedClub = clubs.find(c => c.name === val);
+                            setFormData({...formData, homeTeam: val, ...(matchedClub?.logo ? { homeLogo: matchedClub.logo } : {})});
+                          }} 
+                        />
                       </div>
                       <div>
                         <label className="text-[10px] font-black text-slate-500 mb-1 block">الفريق الخصم</label>
-                        <input type="text" placeholder="الفريق الخصم" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.awayTeam || ''} onChange={(e) => setFormData({...formData, awayTeam: e.target.value})} />
+                        <input 
+                          type="text" 
+                          list="clubs-list"
+                          placeholder="الفريق الخصم" 
+                          className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" 
+                          value={formData.awayTeam || ''} 
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const matchedClub = clubs.find(c => c.name === val);
+                            setFormData({...formData, awayTeam: val, ...(matchedClub?.logo ? { awayLogo: matchedClub.logo } : {})});
+                          }} 
+                        />
                       </div>
                     </div>
                    <div className="grid grid-cols-2 gap-2">
@@ -3802,7 +3868,7 @@ export default function Admin() {
                        <input type="text" placeholder="مثلاً: نادي الاتحاد" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} />
                      </div>
                      <div>
-                      <UploadField label="شعار النادي" fieldName="logo" currentUrl={formData.logo} uploading={uploading} handleFileUpload={handleFileUpload} setFormData={setFormData} />
+                      <UploadOrUrlField label="شعار النادي" fieldName="logo" currentUrl={formData.logo} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
 
                      </div>
                    </>
