@@ -117,9 +117,10 @@ export default function Home() {
   const recentMedia = media.slice(0, 5);
   
   const sportMatches = matches.filter(m => m.sport === selectedSport || (!m.sport && selectedSport === 'football'));
+  const featuredMatch = sportMatches.find(m => m.featured === true);
   const liveMatch = sportMatches.find(m => m.status === 'live');
-  const heroMatch = liveMatch || sportMatches.find(m => m.status === 'upcoming') || sportMatches[0];
-  const upcomingMatches = sportMatches.filter(m => m.status === 'upcoming').slice(0, 3);
+  const heroMatch = liveMatch || featuredMatch || sportMatches.find(m => m.status === 'upcoming') || sportMatches[0];
+  const upcomingMatches = sportMatches.filter(m => m.status === 'upcoming' && m.id !== heroMatch?.id).slice(0, 3);
   
   // High-level admin check
   const isOmar = auth.currentUser?.email === 'omarmagedugm@ittihad.club';
@@ -764,7 +765,7 @@ export default function Home() {
             variants={itemVariants}
             className="overflow-hidden"
           >
-            <div className={`relative overflow-hidden rounded-[40px] bg-gradient-to-br ${cardBg} shadow-2xl transition-all duration-1000 border`}>
+            <div className={`relative overflow-hidden rounded-[40px] bg-gradient-to-br ${cardBg} shadow-2xl transition-all duration-700 border hover:shadow-[0_20px_50px_rgba(0,0,0,0.2)] hover:scale-[1.02]`}>
               {/* Optional Background Image */}
               {displayCity.weatherBg && (
                 <div className="absolute inset-0 z-0">

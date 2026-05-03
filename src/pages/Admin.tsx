@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAppStore, AppRole } from '../store';
 import { v4 as uuidv4 } from 'uuid';
 import { toDate, formatInTimeZone, fromZonedTime } from 'date-fns-tz';
@@ -68,7 +69,9 @@ import {
   Pin,
   Maximize2,
   MoveVertical,
-  Minus
+  Minus,
+  Search,
+  Calendar
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import ScoreSelector from '../components/ScoreSelector';
@@ -118,66 +121,86 @@ const UploadField = ({
   uploading: boolean,
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, type: 'image' | 'video' | 'audio') => void,
   setFormData: (data: any) => void
-}) => (
-  <div className="space-y-2">
-    {label && <label className="text-[10px] font-black text-slate-500 mb-1 block">{label}</label>}
-    <div className="flex flex-col gap-2">
-      {currentUrl && currentUrl.trim() !== '' ? (
-        <div className="relative w-full h-32 rounded-xl overflow-hidden border border-border-light dark:border-border-dark group flex items-center justify-center bg-slate-900 shadow-inner">
-          {type === 'image' ? (
-            <img src={currentUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-          ) : type === 'video' ? (
-            <video src={currentUrl} className="w-full h-full object-cover" />
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              <Music size={32} className="text-primary" />
-              <span className="text-[10px] font-bold text-white uppercase px-4 truncate w-full text-center">Audio File</span>
+}) => {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  return (
+    <div className="space-y-2">
+      {label && <label className="text-[10px] font-black text-slate-500 mb-1 block uppercase tracking-wider">{label}</label>}
+      <div className="flex flex-col gap-2">
+        {currentUrl && currentUrl.trim() !== '' ? (
+          <div className="relative w-full h-40 rounded-2xl overflow-hidden border border-border-light dark:border-border-dark group flex items-center justify-center bg-slate-900 shadow-xl">
+            {type === 'image' ? (
+              <img src={currentUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            ) : type === 'video' ? (
+              <video src={currentUrl} className="w-full h-full object-cover" controls />
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                <Music size={40} className="text-primary" />
+                <span className="text-[10px] font-bold text-white uppercase px-6 truncate w-full text-center bg-black/40 py-1 rounded-full backdrop-blur-md">Audio File</span>
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-sm">
+              <button 
+                type="button"
+                onClick={() => setFormData((prev: any) => ({ ...prev, [fieldName]: '' }))}
+                className="bg-red-500 text-white p-3 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all"
+              >
+                <Trash2 size={20} />
+              </button>
             </div>
-          )}
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <button 
-              type="button"
-              onClick={() => setFormData((prev: any) => ({ ...prev, [fieldName]: '' }))}
-              className="bg-red-500 text-white p-2 rounded-full shadow-lg hover:scale-110 transition-transform"
-            >
-              <Trash2 size={16} />
-            </button>
           </div>
-        </div>
-      ) : type === 'image' ? (
-        <div className="bg-slate-50 dark:bg-surface-dark border-2 border-dashed border-slate-200 dark:border-border-dark py-6 rounded-xl flex items-center justify-center">
-          <ImageUploader 
-            folderName={`admin_${fieldName}`}
-            onUploadSuccess={(url) => setFormData((prev: any) => ({ ...prev, [fieldName]: url }))}
-            buttonText="اختر صورة للرفع"
-            showPreview={false}
-          />
-        </div>
-      ) : (
-        <label className="flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-surface-dark border-2 border-dashed border-slate-200 dark:border-border-dark py-6 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all group">
-          <input 
-            type="file" 
-            accept={type === 'video' ? "video/*" : "audio/*"} 
-            className="absolute inset-0 opacity-0 cursor-pointer" 
-            onChange={(e) => handleFileUpload(e, fieldName, type)}
-            disabled={uploading}
-          />
-          {uploading ? (
-            <Loader2 className="animate-spin text-primary" size={24} />
-          ) : (
-            <Plus size={24} className="text-slate-400 group-hover:text-primary transition-colors" />
-          )}
-          <div className="text-center">
-             <span className="text-[10px] font-black text-slate-500 block">
-               {uploading ? 'جاري الرفع...' : 'اضغط للرفع'}
-             </span>
-             <span className="text-[8px] text-slate-400 font-bold uppercase">{type === 'video' ? 'فيديو' : 'صوت'}</span>
+        ) : (
+          <div className="space-y-4">
+            <input 
+              type="file" 
+              ref={fileInputRef}
+              accept={type === 'video' ? "video/*" : type === 'audio' ? "audio/*" : "image/*"} 
+              className="hidden" 
+              onChange={(e) => handleFileUpload(e, fieldName, type)}
+              disabled={uploading}
+            />
+            
+            {type === 'image' ? (
+              <div className="bg-slate-50 dark:bg-surface-dark border-2 border-dashed border-slate-200 dark:border-border-dark py-10 rounded-2xl flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all group">
+                <ImageUploader 
+                  folderName={`admin_${fieldName}`}
+                  onUploadSuccess={(url) => setFormData((prev: any) => ({ ...prev, [fieldName]: url }))}
+                  buttonText={uploading ? "جاري الرفع..." : "اختر صورة للرفع"}
+                  showPreview={false}
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="w-full flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-surface-dark border-2 border-dashed border-slate-200 dark:border-border-dark py-10 rounded-2xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all group relative overflow-hidden"
+              >
+                {uploading ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="animate-spin text-primary" size={28} />
+                    <span className="text-[10px] font-black text-slate-500 uppercase">جاري الرفع...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-primary group-hover:scale-110 transition-all shadow-sm">
+                      <Plus size={24} />
+                    </div>
+                    <div className="text-center">
+                       <span className="text-[11px] font-black text-slate-700 dark:text-slate-300 block">اضغط لرفع ملف {type === 'video' ? 'فيديو' : 'صوت'}</span>
+                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">MP4, MP3, WAV</span>
+                    </div>
+                  </>
+                )}
+              </button>
+            )}
           </div>
-        </label>
-      )}
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const UploadOrUrlField = ({ 
   label, 
@@ -305,11 +328,23 @@ export default function Admin() {
     setSongs, setAlbums, setPlaylists, setBooks, setCityInfo
   } = useAppStore();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'news' | 'media' | 'matches' | 'live' | 'users' | 'settings' | 'clubs' | 'polls' | 'comments' | 'posts' | 'predictions' | 'fanzone' | 'history' | 'news-categories' | 'products' | 'orders' | 'layout' | 'music' | 'books' | 'city' | 'notifications' | 'backup'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'news' | 'media' | 'matches' | 'live' | 'users' | 'settings' | 'clubs' | 'polls' | 'comments' | 'posts' | 'predictions' | 'fanzone' | 'history' | 'news-categories' | 'products' | 'orders' | 'layout' | 'music' | 'books' | 'city' | 'notifications' | 'backup' | 'rss'>('overview');
+  const [rssSources, setRssSources] = useState<any[]>([]);
+  const [rssNews, setRssNews] = useState<any[]>([]);
+  const [backups, setBackups] = useState<any[]>([]);
+  const [sentNotifications, setSentNotifications] = useState<any[]>([]);
   const [showSidebar, setShowSidebar] = useState(false);
   const [historySubTab, setHistorySubTab] = useState<'stats' | 'titles' | 'timeline' | 'stadiums'>('stats');
   const [musicSubTab, setMusicSubTab] = useState<'songs' | 'albums' | 'playlists'>('songs');
   const [isExporting, setIsExporting] = useState(false);
+
+  useEffect(() => {
+    const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(20));
+    const unsub = onSnapshot(q, (snapshot) => {
+      setSentNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    return () => unsub();
+  }, []);
 
   const handleExportDatabase = async () => {
     if (!window.confirm('هل أنت متأكد من رغبتك في تحميل نسخة كاملة من قاعدة البيانات؟ قد تستغرق هذه العملية بعض الوقت.')) return;
@@ -388,6 +423,7 @@ export default function Admin() {
   const [formData, setFormData] = useState<any>({});
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [baseData, setBaseData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
@@ -1017,8 +1053,19 @@ export default function Admin() {
     return Number(match.timerBaseMinute || 0) + elapsed;
   };
 
+  const openEditModal = (data: any, id: string) => {
+    const freshData = { ...data };
+    setFormData(freshData);
+    setBaseData(freshData);
+    setIsEditing(true);
+    setEditingId(id);
+    setShowModal(true);
+  };
+
   const handleEditMatch = (match: any) => {
-    setFormData({ ...match });
+    const data = { ...match };
+    setFormData(data);
+    setBaseData(data);
     setIsEditing(true);
     setEditingId(match.id);
     setActiveTab('matches');
@@ -1026,18 +1073,21 @@ export default function Admin() {
   };
 
   const handleEditNews = (item: any) => {
-    setFormData({ ...item, image: item.image || item.imageUrl });
+    const data = { ...item, image: item.image || item.imageUrl };
+    setFormData(data);
+    setBaseData(data);
     setIsEditing(true);
     setEditingId(item.id);
     setShowModal(true);
   };
 
   const openAddModal = () => {
+    let initialData = {};
     if (activeTab === 'polls') {
-      setFormData({ options: ['', ''], active: true });
-    } else {
-      setFormData({});
+      initialData = { options: ['', ''], active: true };
     }
+    setFormData(initialData);
+    setBaseData(initialData);
     setIsEditing(false);
     setEditingId(null);
     setShowModal(true);
@@ -1208,12 +1258,7 @@ export default function Admin() {
                     </div>
                   </div>
                   <button 
-                    onClick={() => {
-                      if (cityInfo) setFormData({ ...cityInfo });
-                      else setFormData({});
-                      setIsEditing(true);
-                      setShowModal(true);
-                    }}
+                    onClick={() => openEditModal(cityInfo || {}, 'cityInfo')}
                     className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg shadow-primary/20 flex items-center gap-2 transition-all pressable"
                   >
                     <Edit2 size={14} />
@@ -1595,83 +1640,87 @@ export default function Admin() {
           )}
 
           {activeTab === 'overview' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white dark:bg-card-dark p-4 rounded-2xl border border-border-light dark:border-border-dark flex flex-col gap-1 shadow-sm">
-                   <div className="bg-primary/10 w-8 h-8 rounded-lg flex items-center justify-center text-primary mb-1">
-                     <UsersIcon size={18} />
-                   </div>
-                   <span className="text-2xl font-black">{users.length}</span>
-                   <span className="text-[10px] font-bold text-slate-500 uppercase">عضو مسجل</span>
-                </div>
-                <div className="bg-white dark:bg-card-dark p-4 rounded-2xl border border-border-light dark:border-border-dark flex flex-col gap-1 shadow-sm">
-                   <div className="bg-blue-500/10 w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 mb-1">
-                     <Newspaper size={18} />
-                   </div>
-                   <span className="text-2xl font-black">{news.length}</span>
-                   <span className="text-[10px] font-bold text-slate-500 uppercase">خبر منشور</span>
-                </div>
-                <div className="bg-white dark:bg-card-dark p-4 rounded-2xl border border-border-light dark:border-border-dark flex flex-col gap-1 shadow-sm">
-                   <div className="bg-orange-500/10 w-8 h-8 rounded-lg flex items-center justify-center text-orange-500 mb-1">
-                     <MessageSquare size={18} />
-                   </div>
-                   <span className="text-2xl font-black">{fanPosts.length}</span>
-                   <span className="text-[10px] font-bold text-slate-500 uppercase">منشور جماهير</span>
-                </div>
-                <div className="bg-white dark:bg-card-dark p-4 rounded-2xl border border-border-light dark:border-border-dark flex flex-col gap-1 shadow-sm">
-                   <div className="bg-green-500/10 w-8 h-8 rounded-lg flex items-center justify-center text-green-500 mb-1">
-                     <BarChart3 size={18} />
-                   </div>
-                   <span className="text-2xl font-black">{predictions.length}</span>
-                   <span className="text-[10px] font-bold text-slate-500 uppercase">توقعات مباريات</span>
-                </div>
+            <div className="space-y-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                 <div className="bg-white dark:bg-card-dark p-6 rounded-[32px] border border-border-light dark:border-border-dark flex flex-col gap-2 shadow-sm hover:shadow-xl transition-all duration-300">
+                    <div className="bg-primary/10 w-12 h-12 rounded-2xl flex items-center justify-center text-primary mb-2">
+                       <UsersIcon size={24} />
+                    </div>
+                    <span className="text-3xl font-black">{users.length}</span>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">عضو مسجل</span>
+                 </div>
+                 <div className="bg-white dark:bg-card-dark p-6 rounded-[32px] border border-border-light dark:border-border-dark flex flex-col gap-2 shadow-sm hover:shadow-xl transition-all duration-300">
+                    <div className="bg-blue-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-blue-500 mb-2">
+                       <Newspaper size={24} />
+                    </div>
+                    <span className="text-3xl font-black">{news.length}</span>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">خبر منشور</span>
+                 </div>
+                 <div className="bg-white dark:bg-card-dark p-6 rounded-[32px] border border-border-light dark:border-border-dark flex flex-col gap-2 shadow-sm hover:shadow-xl transition-all duration-300">
+                    <div className="bg-orange-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-orange-500 mb-2">
+                       <MessageSquare size={24} />
+                    </div>
+                    <span className="text-3xl font-black">{fanPosts.length}</span>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">منشور جماهير</span>
+                 </div>
+                 <div className="bg-white dark:bg-card-dark p-6 rounded-[32px] border border-border-light dark:border-border-dark flex flex-col gap-2 shadow-sm hover:shadow-xl transition-all duration-300">
+                    <div className="bg-green-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-green-500 mb-2">
+                       <BarChart3 size={24} />
+                    </div>
+                    <span className="text-3xl font-black">{predictions.length}</span>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">توقعات مباريات</span>
+                 </div>
               </div>
 
-              <div className="bg-white dark:bg-card-dark rounded-2xl border border-border-light dark:border-border-dark p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-sm flex items-center gap-2">
-                    <Activity size={16} className="text-primary" />
-                    النشاط الأخير
-                  </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-card-dark rounded-[32px] border border-border-light dark:border-border-dark p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-black text-base flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary"><Activity size={18} /></div>
+                      النشاط الأخير
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    {(([...news, ...media, ...fanPosts] as any[])
+                      .sort((a, b) => new Date(b.date || b.createdAt || 0).getTime() - new Date(a.date || a.createdAt || 0).getTime())
+                      .slice(0, 5) as any[])
+                      .map((item, i) => (
+                        <div key={i} className="flex items-center gap-4 pb-4 border-b border-slate-50 dark:border-border-dark last:border-0 last:pb-0">
+                          <div className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-surface-dark flex items-center justify-center flex-shrink-0 text-slate-400">
+                             {item.title ? <Newspaper size={18} /> : <MessageSquare size={18} />}
+                          </div>
+                          <div className="flex-1">
+                             <p className="text-xs font-black line-clamp-1">{item.title || item.content}</p>
+                             <p className="text-[10px] text-slate-400 font-bold mt-0.5">{new Date(item.date || item.createdAt || 0).toLocaleString('ar-EG')}</p>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  {(([...news, ...media, ...fanPosts] as any[])
-                    .sort((a, b) => new Date(b.date || b.createdAt || 0).getTime() - new Date(a.date || a.createdAt || 0).getTime())
-                    .slice(0, 5) as any[])
-                    .map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 pb-3 border-b border-slate-50 dark:border-border-dark last:border-0 last:pb-0">
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-surface-dark flex items-center justify-center flex-shrink-0 text-slate-500">
-                           {item.title ? <Newspaper size={14} /> : <MessageSquare size={14} />}
+
+                <div className="bg-white dark:bg-card-dark rounded-[32px] border border-border-light dark:border-border-dark p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-black text-base flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500"><UserPlus size={18} /></div>
+                      أحدث الأعضاء
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-5 gap-3">
+                    {users.slice(0, 5).map((u, i) => (
+                      <div key={i} className="flex flex-col items-center gap-2 group cursor-pointer">
+                        <div className="relative">
+                          {u.avatar && u.avatar.trim() !== '' ? (
+                            <img src={u.avatar} className="w-12 h-12 rounded-2xl border-2 border-white dark:border-border-dark shadow-md group-hover:scale-110 transition-transform" referrerPolicy="no-referrer" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-surface-dark flex items-center justify-center text-slate-300 group-hover:bg-primary/10 group-hover:text-primary transition-all shadow-md">
+                              <UsersIcon size={20} />
+                            </div>
+                          )}
                         </div>
-                        <div className="flex-1">
-                           <p className="text-xs font-bold line-clamp-1">{item.title || item.content}</p>
-                           <p className="text-[9px] text-slate-400 font-bold">{new Date(item.date || item.createdAt || 0).toLocaleString('ar-EG')}</p>
-                        </div>
+                        <span className="text-[9px] font-black truncate w-full text-center text-slate-500 group-hover:text-primary transition-colors">{u.name.split(' ')[0]}</span>
                       </div>
                     ))}
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-card-dark rounded-2xl border border-border-light dark:border-border-dark p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-sm flex items-center gap-2">
-                    <UserPlus size={16} className="text-blue-500" />
-                    أحدث الأعضاء
-                  </h3>
-                </div>
-                <div className="grid grid-cols-5 gap-2">
-                  {users.slice(0, 5).map((u, i) => (
-                    <div key={i} className="flex flex-col items-center gap-1">
-                      {u.avatar && u.avatar.trim() !== '' ? (
-                        <img src={u.avatar} className="w-10 h-10 rounded-full border border-slate-100" referrerPolicy="no-referrer" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
-                          <UsersIcon size={16} className="text-slate-400" />
-                        </div>
-                      )}
-                      <span className="text-[8px] font-bold truncate w-full text-center">{u.name.split(' ')[0]}</span>
-                    </div>
-                  ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1771,7 +1820,7 @@ export default function Admin() {
                        <span className="text-[9px] bg-slate-100 dark:bg-surface-dark px-2 py-0.5 rounded-lg text-slate-500 font-bold">{product.category}</span>
                     </div>
                     <div className="flex gap-1">
-                      <button onClick={() => { setFormData({...product}); setIsEditing(true); setEditingId(product.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
+                      <button onClick={() => openEditModal(product, product.id)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
                       <button onClick={() => handleDelete('products', product.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
                     </div>
                   </div>
@@ -1900,71 +1949,94 @@ export default function Admin() {
             </div>
           )}
 
-          {activeTab === 'news' && news.map((item) => (
-            <div key={item.id} className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-3 flex flex-col gap-2">
-              <div className="flex items-center gap-3">
-                    {item.image && item.image.trim() !== '' ? (
-                      <img src={item.image} alt="" className="w-12 h-12 rounded-lg object-cover" referrerPolicy="no-referrer" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center">
-                        <Newspaper size={20} className="text-slate-300" />
+          {activeTab === 'news' && (
+            <div className="grid grid-cols-1 gap-6">
+              {news.map((item) => (
+                <div key={item.id} className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-6 flex flex-col gap-4 shadow-sm hover:shadow-xl transition-all duration-300 group">
+                  <div className="flex items-center gap-4">
+                        <div className="relative overflow-hidden rounded-2xl">
+                          {item.image && item.image.trim() !== '' ? (
+                            <img src={item.image} alt="" className="w-20 h-20 object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                          ) : (
+                            <div className="w-20 h-20 bg-slate-100 dark:bg-surface-dark flex items-center justify-center">
+                              <Newspaper size={32} className="text-slate-300" />
+                            </div>
+                          )}
+                        </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                         <h3 className="font-black text-base line-clamp-2 leading-tight text-slate-800 dark:text-white">{item.title}</h3>
+                         {item.type === 'rss' && <div className="bg-orange-500/10 text-orange-500 p-1 rounded-lg"><Rss size={12} /></div>}
                       </div>
-                    )}
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                     <h3 className="font-bold text-sm line-clamp-1 leading-tight">{item.title}</h3>
-                     {item.type === 'rss' && <Rss size={10} className="text-orange-500" />}
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                          <Calendar size={12} />
+                          {new Date(item.date).toLocaleDateString('ar-EG')}
+                        </span>
+                        <span className="text-[10px] font-black uppercase px-2 py-1 bg-slate-100 dark:bg-surface-dark text-slate-500 rounded-lg">{item.category || 'أخبار'}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleEditNews(item)} className="p-3 text-blue-500 bg-blue-500/5 hover:bg-blue-500/10 rounded-2xl transition-all"><Edit2 size={18} /></button>
+                      <button onClick={() => handleDelete('news', item.id)} className="p-3 text-red-500 bg-red-500/5 hover:bg-red-500/10 rounded-2xl transition-all"><Trash2 size={18} /></button>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-slate-500">{new Date(item.date).toLocaleDateString('ar-EG')}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => handleEditNews(item)} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-lg transition-all"><Edit2 size={16} /></button>
-                  <button onClick={() => handleDelete('news', item.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all"><Trash2 size={16} /></button>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
+          )}
 
-          {activeTab === 'media' && media.map((item) => (
-            <div key={item.id} className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-3 flex flex-col gap-2">
-              <div className="flex items-center gap-3">
-                <div className="relative w-16 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                  {item.thumbnailUrl && item.thumbnailUrl.trim() !== '' ? (
-                    <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                  ) : (
-                    <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-                      <PlayCircle size={24} className="text-slate-300" />
+          {activeTab === 'media' && (
+            <div className="grid grid-cols-1 gap-6">
+              {media.map((item) => (
+                <div key={item.id} className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-6 flex flex-col gap-4 shadow-sm hover:shadow-xl transition-all duration-300 group">
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-24 h-16 rounded-2xl overflow-hidden flex-shrink-0">
+                      {item.thumbnailUrl && item.thumbnailUrl.trim() !== '' ? (
+                        <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                          <PlayCircle size={32} className="text-slate-300" />
+                        </div>
+                      )}
+                      {item.type === 'video' && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                           <PlayCircle size={20} className="text-white drop-shadow-lg" />
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {item.type === 'video' && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                       <PlayCircle size={14} className="text-white" />
+                    <div className="flex-1">
+                      <h3 className="font-black text-base line-clamp-1 leading-tight text-slate-800 dark:text-white mb-1">{item.title}</h3>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-black uppercase px-2 py-1 bg-slate-100 dark:bg-surface-dark text-slate-500 rounded-lg">
+                          {item.type === 'video' ? 'فيديو' : 'صورة'}
+                        </span>
+                        <span className="text-xs font-bold text-slate-400">
+                          {new Date(item.date).toLocaleDateString('ar-EG')}
+                        </span>
+                      </div>
                     </div>
-                  )}
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => {
+                          setFormData({ ...item });
+                          setIsEditing(true);
+                          setEditingId(item.id);
+                          setShowModal(true);
+                        }} 
+                        className="p-3 text-blue-500 bg-blue-500/5 hover:bg-blue-500/10 rounded-2xl transition-all"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                      <button onClick={() => handleDelete('media', item.id)} className="p-3 text-red-500 bg-red-500/5 hover:bg-red-500/10 rounded-2xl transition-all">
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-sm line-clamp-1 leading-tight">{item.title}</h3>
-                  <span className="text-[10px] text-slate-500">{item.type === 'video' ? 'فيديو' : 'صورة'} • {new Date(item.date).toLocaleDateString('ar-EG')}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button 
-                    onClick={() => {
-                      setFormData({ ...item });
-                      setIsEditing(true);
-                      setEditingId(item.id);
-                      setShowModal(true);
-                    }} 
-                    className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-lg transition-all"
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                  <button onClick={() => handleDelete('media', item.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all">
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
+          )}
 
           {activeTab === 'matches' && matches.map((item) => (
             <div key={item.id} className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-3 flex flex-col gap-2">
@@ -2126,112 +2198,97 @@ export default function Admin() {
           )}
 
           {activeTab === 'users' && (
-            <div className="mb-4 relative">
-              <input 
-                type="text" 
-                placeholder="ابحث عن عضو بالإسم أو البريد..." 
-                className="w-full p-4 pl-12 rounded-2xl border border-border-light bg-white dark:bg-card-dark dark:border-border-dark text-sm font-bold shadow-sm focus:border-primary outline-none transition-all"
-                value={userSearch}
-                onChange={(e) => setUserSearch(e.target.value)}
-              />
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            </div>
-          )}
+            <div className="flex flex-col gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                 <div className="bg-white dark:bg-card-dark p-6 rounded-[32px] border border-border-light dark:border-border-dark shadow-sm">
+                    <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center"><UsersIcon size={24} /></div>
+                       <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">إجمالي الأعضاء</p>
+                          <h4 className="text-xl font-black">{users.length}</h4>
+                       </div>
+                    </div>
+                 </div>
+                 <div className="bg-white dark:bg-card-dark p-6 rounded-[32px] border border-border-light dark:border-border-dark shadow-sm">
+                    <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 rounded-2xl bg-accent/10 text-accent flex items-center justify-center"><Star size={24} /></div>
+                       <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">الأعضاء بريميوم</p>
+                          <h4 className="text-xl font-black">{users.filter(u => u.tier === 'premium').length}</h4>
+                       </div>
+                    </div>
+                 </div>
+                 <div className="bg-white dark:bg-card-dark p-6 rounded-[32px] border border-border-light dark:border-border-dark shadow-sm flex-1 md:col-span-2">
+                    <div className="relative h-full flex items-center">
+                      <div className="absolute inset-y-0 right-4 flex items-center text-slate-400"><Search size={18} /></div>
+                      <input 
+                        type="text" 
+                        placeholder="ابحث عن عضو بالإسم أو البريدي..." 
+                        className="w-full pr-12 pl-4 py-4 rounded-2xl bg-slate-50 dark:bg-surface-dark border border-slate-100 dark:border-border-dark text-sm font-bold focus:border-primary outline-none transition-all"
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                      />
+                    </div>
+                 </div>
+              </div>
 
-          {activeTab === 'users' && users
-            .filter(u => 
-              u.name?.toLowerCase().includes(userSearch.toLowerCase()) || 
-              u.email?.toLowerCase().includes(userSearch.toLowerCase())
-            )
-            .map((u) => (
-            <div key={u.uid} className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-5 flex flex-col gap-4 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    {u.avatar && u.avatar.trim() !== '' ? (
-                      <img src={u.avatar} className="w-14 h-14 rounded-full border-2 border-slate-100 dark:border-border-dark" referrerPolicy="no-referrer" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-card-dark border-2 border-slate-100 dark:border-border-dark flex items-center justify-center">
-                        <UsersIcon size={24} className="text-slate-400" />
+              <div className="grid grid-cols-1 gap-4">
+                {users
+                  .filter(u => 
+                    u.name?.toLowerCase().includes(userSearch.toLowerCase()) || 
+                    u.email?.toLowerCase().includes(userSearch.toLowerCase())
+                  )
+                  .map(member => (
+                  <div key={member.uid} className="bg-white dark:bg-card-dark p-4 rounded-[28px] border border-border-light dark:border-border-dark flex items-center justify-between group hover:shadow-xl transition-all duration-300">
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        {member.avatar ? (
+                          <img src={member.avatar} className="w-14 h-14 rounded-2xl object-cover ring-2 ring-primary/20" referrerPolicy="no-referrer" />
+                        ) : (
+                          <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400"><UsersIcon size={24} /></div>
+                        )}
+                        {member.role === 'admin' && (
+                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white"><Shield size={10} /></div>
+                        )}
                       </div>
-                    )}
-                    {u.role === 'admin' && (
-                      <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-[8px] font-black px-1.5 py-0.5 rounded-lg border-2 border-white shadow-sm">ADMIN</div>
-                    )}
-                  </div>
-                  <div>
-                    <h4 className="text-base font-black leading-tight flex items-center gap-1.5">
-                      {u.name}
-                      {u.isVerified && <Check size={14} className="text-blue-500" strokeWidth={3} />}
-                    </h4>
-                    <p className="text-[10px] text-slate-500 font-bold mb-1">{u.email}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                       <span className={`text-[8px] font-black px-2 py-0.5 rounded-lg ${u.role === 'admin' ? 'bg-red-500/10 text-red-500' : 'bg-slate-100 text-slate-500'}`}>
-                         {u.role === 'admin' ? 'مدير عام' : 'عضو'}
-                       </span>
-                       {u.roles?.map(roleId => {
-                         const role = APP_ROLES.find(r => r.id === roleId);
-                         return (
-                           <span key={roleId} className="text-[8px] font-black px-2 py-0.5 rounded-lg bg-primary/10 text-primary uppercase">
-                             {role?.label || roleId}
+                      <div>
+                        <h4 className="font-black text-sm text-slate-800 dark:text-white flex items-center gap-2">
+                          {member.name}
+                          {member.tier === 'premium' && <Star size={12} className="text-yellow-500 fill-current" />}
+                        </h4>
+                        <p className="text-[10px] font-bold text-slate-400">{member.email}</p>
+                        <div className="flex gap-1.5 mt-1.5">
+                           <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${member.role === 'admin' ? 'bg-accent/10 text-accent' : 'bg-primary/10 text-primary'}`}>
+                             {member.role === 'admin' ? 'مدير' : 'عضو'}
                            </span>
-                         );
-                       })}
+                           {member.roles?.slice(0, 2).map(r => (
+                             <span key={r} className="px-2 py-0.5 rounded-lg text-[8px] font-black bg-slate-100 dark:bg-surface-dark text-slate-500 uppercase">{r}</span>
+                           ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => {
+                          setFormData({ ...member, roles: member.roles || [] });
+                          setIsEditing(true);
+                          setEditingId(member.uid!);
+                          setShowModal(true);
+                        }}
+                        className="p-2.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all"
+                      >
+                        <Shield size={18} />
+                      </button>
+                      <button onClick={() => handleDelete('users', member.uid!)} className="p-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all">
+                        <Trash2 size={18} />
+                      </button>
                     </div>
                   </div>
-                </div>
-                <div className="flex gap-1.5">
-                   <button 
-                    title="تعديل الرتب والصلاحيات"
-                    onClick={() => {
-                      setFormData({ ...u, roles: u.roles || [] });
-                      setIsEditing(true);
-                      setEditingId(u.uid!);
-                      setShowModal(true);
-                    }}
-                    className="w-10 h-10 flex items-center justify-center text-blue-500 bg-blue-50 dark:bg-blue-500/10 rounded-2xl transition-all hover:scale-105 active:scale-95"
-                   >
-                     <Shield size={20} />
-                   </button>
-                   <button 
-                    onClick={() => handleDelete('users', u.uid!)} 
-                    className="w-10 h-10 flex items-center justify-center text-red-500 bg-red-50 dark:bg-red-500/10 rounded-2xl transition-all hover:scale-105 active:scale-95"
-                   >
-                     <Trash2 size={20} />
-                   </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-border-dark">
-                <div className="flex items-center gap-4">
-                  <div className="flex flex-col">
-                    <span className="text-[8px] font-black text-slate-400 uppercase">Tier</span>
-                    <span className="text-[10px] font-black text-slate-700 dark:text-white uppercase tracking-tighter">{u.tier || 'new'}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[8px] font-black text-slate-400 uppercase">Member Since</span>
-                    <span className="text-[10px] font-black text-slate-700 dark:text-white uppercase tracking-tighter">{u.joinDate}</span>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2">
-                   {u.uid !== auth.currentUser?.uid && (
-                     <button 
-                      onClick={async () => {
-                        const newRole = u.role === 'admin' ? 'user' : 'admin';
-                        if (confirm(`هل تريد ${newRole === 'admin' ? 'ترقية' : 'تخفيض'} ${u.name} لجعلة مدير عام؟`)) {
-                          await updateDoc(doc(db, 'users', u.uid!), { role: newRole });
-                        }
-                      }}
-                      className="text-[9px] font-black px-3 py-1.5 rounded-xl border border-slate-200 dark:border-border-dark text-slate-500 hover:bg-slate-50 dark:hover:bg-surface-dark transition-all"
-                     >
-                        تبديل الإدارة العامة
-                     </button>
-                   )}
-                </div>
+                ))}
+                {users.length === 0 && <div className="py-20 text-center bg-white dark:bg-card-dark rounded-[32px] border-2 border-dashed border-slate-200 text-slate-400 font-bold">لا يوجد أعضاء مضافون</div>}
               </div>
             </div>
-          ))}
+          )}
 
           {activeTab === 'notifications' && (
             <div className="space-y-6">
@@ -2646,7 +2703,7 @@ export default function Admin() {
                       <button onClick={() => handleToggleVisibility('club_titles', item)} className="p-2 text-slate-400 hover:text-primary transition-all">
                         {item.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
-                      <button onClick={() => { setFormData({...item}); setIsEditing(true); setEditingId(item.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
+                      <button onClick={() => openEditModal(item, item.id)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
                       <button onClick={() => handleDelete('club_titles', item.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
                     </div>
                   </div>
@@ -2670,7 +2727,7 @@ export default function Admin() {
                       <button onClick={() => handleToggleVisibility('club_timeline', item)} className="p-2 text-slate-400 hover:text-primary transition-all">
                         {item.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
-                      <button onClick={() => { setFormData({...item}); setIsEditing(true); setEditingId(item.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
+                      <button onClick={() => openEditModal(item, item.id)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
                       <button onClick={() => handleDelete('club_timeline', item.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
                     </div>
                   </div>
@@ -2698,7 +2755,7 @@ export default function Admin() {
                       <button onClick={() => handleToggleVisibility('club_stadiums', item)} className="p-2 text-slate-400 hover:text-primary transition-all">
                         {item.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
-                      <button onClick={() => { setFormData({...item}); setIsEditing(true); setEditingId(item.id); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
+                      <button onClick={() => openEditModal(item, item.id)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
                       <button onClick={() => handleDelete('club_stadiums', item.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
                     </div>
                   </div>
@@ -2893,16 +2950,31 @@ export default function Admin() {
                   'استطلاع'
                 }
               </h3>
-              <button 
-                onClick={() => {
-                  setShowModal(false);
-                  setIsEditing(false);
-                  setEditingId(null);
-                }} 
-                className="p-1 text-slate-400 hover:text-slate-900 transition-colors"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-2">
+                {isEditing && (
+                  <button 
+                    onClick={() => {
+                      if (window.confirm('هل تريد استرجاع البيانات الأصلية؟')) {
+                        setFormData({ ...baseData });
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-surface-dark text-slate-500 text-[10px] font-black hover:bg-slate-200 transition-all border border-border-light dark:border-border-dark"
+                  >
+                    <RotateCcw size={12} />
+                    استرجاع
+                  </button>
+                )}
+                <button 
+                  onClick={() => {
+                    setShowModal(false);
+                    setIsEditing(false);
+                    setEditingId(null);
+                  }} 
+                  className="p-1 text-slate-400 hover:text-slate-900 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4 max-h-[60vh] overflow-y-auto px-1 no-scrollbar text-right">

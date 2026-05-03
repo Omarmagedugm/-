@@ -60,6 +60,7 @@ export interface MatchItem {
   timerStartTime?: string | null;
   timerBaseMinute?: number;
   sport: 'football' | 'basketball';
+  featured?: boolean;
 }
 
 export interface CityInfo {
@@ -257,7 +258,7 @@ export interface UserProfile {
   isVerified?: boolean;
   role?: 'user' | 'admin' | 'moderator' | 'writer'; // Legacy support
   roles?: AppRole[];
-  tier?: 'new' | 'bronze' | 'silver' | 'gold' | 'diamond';
+  tier?: 'new' | 'bronze' | 'silver' | 'gold' | 'diamond' | 'premium';
   bio?: string;
   email?: string;
   stats: {
