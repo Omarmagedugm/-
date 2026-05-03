@@ -287,6 +287,8 @@ interface AppState {
   appSettings: {
     appName: string;
     appLogo: string;
+    headerLogoLight?: string;
+    headerLogoDark?: string;
     logoType?: 'image' | 'text';
     logoText?: string;
     defaultSport?: 'football' | 'basketball' | 'auto';
@@ -467,6 +469,8 @@ export const useAppStore = create<AppState>()(
       appSettings: {
         appName: 'قناة الاتحاد السكندري',
         appLogo: 'https://upload.wikimedia.org/wikipedia/ar/thumb/0/0e/Al_Ittihad_Alexandria_Club_Logo.svg/1024px-Al_Ittihad_Alexandria_Club_Logo.svg.png',
+        headerLogoLight: '',
+        headerLogoDark: '',
         logoType: 'image',
         logoText: 'الاتحاد السكندري',
         defaultSport: 'auto'

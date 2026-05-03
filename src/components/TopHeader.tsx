@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 export default function TopHeader() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, theme, toggleTheme } = useAppStore();
+  const { profile, theme, toggleTheme, appSettings } = useAppStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -100,7 +100,7 @@ export default function TopHeader() {
 
   return (
     <>
-      <header id="global-header" className="sticky top-0 z-40 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 py-3">
+      <header id="global-header" className="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between max-w-md mx-auto">
           {isHome ? (
             <motion.button 
@@ -122,8 +122,29 @@ export default function TopHeader() {
             </motion.button>
           )}
 
-          <div className="flex flex-col items-center">
-            <h1 className="text-sm font-black tracking-tight text-primary-dark dark:text-white uppercase line-clamp-1 max-w-[180px] text-center">{title}</h1>
+          <div className="flex flex-col items-center justify-center">
+            {(() => {
+               const lightLogo = appSettings?.headerLogoLight || appSettings?.appLogo;
+               const darkLogo = appSettings?.headerLogoDark || appSettings?.appLogo;
+               const currentLogo = theme === 'dark' ? darkLogo : lightLogo;
+               
+               if (currentLogo) {
+                 return (
+                   <img 
+                     src={currentLogo} 
+                     alt={title} 
+                     className="h-12 sm:h-16 w-auto max-w-[160px] sm:max-w-[200px] object-contain drop-shadow-sm transition-all duration-300" 
+                     referrerPolicy="no-referrer" 
+                   />
+                 );
+               } else {
+                 return (
+                   <h1 className="text-sm font-black tracking-tight text-primary-dark dark:text-white uppercase line-clamp-1 max-w-[180px] text-center">
+                     {title}
+                   </h1>
+                 );
+               }
+            })()}
           </div>
 
           <div className="flex items-center gap-2">
