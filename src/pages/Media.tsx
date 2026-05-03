@@ -3,7 +3,7 @@ import { useAppStore } from '../store';
 import { ar } from 'date-fns/locale';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Play, Image as ImageIcon, Video, Radio, Clock, Eye, X, ChevronRight, Calendar, Download, Heart } from 'lucide-react';
 
 export default function Media() {
@@ -11,6 +11,17 @@ export default function Media() {
   const [activeTab, setActiveTab] = useState<'all' | 'photo' | 'video'>('all');
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (selectedVideo || selectedPhoto) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedVideo, selectedPhoto]);
 
   const handleDownload = (url: string, filename: string) => {
     const link = document.createElement('a');
@@ -297,41 +308,41 @@ export default function Media() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95"
           >
-            <div className="relative w-full max-w-4xl aspect-video bg-black rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-white/10">
-              <div className="absolute top-6 right-6 z-50 flex gap-2">
+            <div className="relative w-full max-w-4xl flex flex-col gap-4">
+              <div className="flex items-center justify-between px-2">
+                <div className="flex flex-col gap-1">
+                   <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 bg-primary rounded-xl text-[9px] font-black text-white uppercase tracking-widest shadow-glow">Exclusive Media</span>
+                   </div>
+                   <h2 className="text-white font-black text-xl drop-shadow-2xl">{selectedVideo.title}</h2>
+                </div>
                 <button 
                   onClick={() => setSelectedVideo(null)}
-                  className="w-12 h-12 bg-black/40 hover:bg-red-500 backdrop-blur-xl text-white rounded-2xl flex items-center justify-center transition-all border border-white/10 shadow-2xl"
+                  className="w-12 h-12 bg-white/10 hover:bg-red-500 text-white rounded-2xl flex items-center justify-center transition-all border border-white/10 shadow-2xl"
                 >
                   <X size={24} />
                 </button>
               </div>
 
-              {isEmbeddable(selectedVideo.url) || selectedVideo.source === 'embed' ? (
-                <iframe 
-                  src={getEmbedUrl(selectedVideo.url, selectedVideo.source) || undefined} 
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                  allowFullScreen
-                ></iframe>
-              ) : (
-                <video 
-                  src={selectedVideo.url} 
-                  className="w-full h-full" 
-                  controls 
-                  autoPlay
-                ></video>
-              )}
-              
-              <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none">
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                     <span className="px-3 py-1 bg-primary rounded-xl text-[9px] font-black text-white uppercase tracking-widest shadow-glow">Exclusive Media</span>
-                  </div>
-                  <h2 className="text-white font-black text-2xl drop-shadow-2xl">{selectedVideo.title}</h2>
-                </div>
+              <div className="relative w-full aspect-video bg-black rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-white/10">
+                {isEmbeddable(selectedVideo.url) || selectedVideo.source === 'embed' ? (
+                  <iframe 
+                    src={getEmbedUrl(selectedVideo.url, selectedVideo.source) || undefined} 
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowFullScreen
+                    loading="lazy"
+                  ></iframe>
+                ) : (
+                  <video 
+                    src={selectedVideo.url} 
+                    className="w-full h-full" 
+                    controls 
+                    autoPlay
+                  ></video>
+                )}
               </div>
             </div>
           </motion.div>

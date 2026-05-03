@@ -162,7 +162,9 @@
         "id": { "type": "string" },
         "appName": { "type": "string" },
         "appLogo": { "type": "string" },
-        "primaryColor": { "type": "string" }
+        "logoType": { "type": "string", "enum": ["image", "text"] },
+        "logoText": { "type": "string" },
+        "defaultSport": { "type": "string", "enum": ["auto", "football", "basketball"] }
       }
     },
     "FCMToken": {

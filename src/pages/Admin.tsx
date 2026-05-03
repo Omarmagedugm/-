@@ -663,10 +663,16 @@ export default function Admin() {
         
         await setDoc(doc(db, 'city_info', 'alexandria'), payload);
       } else if (activeTab === 'settings') {
-        await setDoc(doc(db, 'settings', 'global'), {
+        const payload = {
           appName: formData.appName || appSettings.appName,
-          appLogo: formData.appLogo || appSettings.appLogo
-        });
+          appLogo: formData.appLogo || appSettings.appLogo,
+          logoType: formData.logoType || appSettings.logoType || 'image',
+          logoText: formData.logoText || appSettings.logoText || '',
+          defaultSport: formData.defaultSport || appSettings.defaultSport || 'auto'
+        };
+        await setDoc(doc(db, 'settings', 'global'), payload);
+        const { setSettings } = useAppStore.getState();
+        setSettings(payload);
       } else if (activeTab === 'live') {
         await setDoc(doc(db, 'settings', 'liveStream'), {
           isActive: formData.isActive ?? liveStream.isActive,
@@ -2637,6 +2643,50 @@ export default function Admin() {
                    <span className="text-[10px] text-slate-400 font-bold">معاينة الشعار</span>
                 </div>
               </div>
+
+               <div className="pt-4 border-t border-border-light dark:border-border-dark">
+                 <h3 className="text-sm font-black mb-1">إعدادات الصفحة الرئيسية</h3>
+                 <p className="text-[10px] text-slate-500 font-bold mb-4">تحكم في القسم الافتراضي الذي يظهر للمستخدم عند فتح التطبيق</p>
+                 
+                 <div className="space-y-3">
+                   <label className="text-[10px] font-black text-slate-500 block">الرياضة الافتراضية لعرض المباريات</label>
+                   <div className="grid grid-cols-3 gap-2">
+                     <button 
+                       onClick={() => setFormData({...formData, defaultSport: 'auto'})}
+                       className={`py-3 px-2 rounded-xl border text-[10px] font-black transition-all ${
+                         (formData.defaultSport || appSettings.defaultSport || 'auto') === 'auto' 
+                           ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-[1.02]' 
+                           : 'bg-slate-50 dark:bg-surface-dark border-border-light dark:border-border-dark text-slate-500'
+                       }`}
+                     >
+                       تلقائي (حسب الأولوية)
+                     </button>
+                     <button 
+                       onClick={() => setFormData({...formData, defaultSport: 'football'})}
+                       className={`py-3 px-2 rounded-xl border text-[10px] font-black transition-all ${
+                         (formData.defaultSport || appSettings.defaultSport) === 'football' 
+                           ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-[1.02]' 
+                           : 'bg-slate-50 dark:bg-surface-dark border-border-light dark:border-border-dark text-slate-500'
+                       }`}
+                     >
+                       كرة القدم دائماً
+                     </button>
+                     <button 
+                       onClick={() => setFormData({...formData, defaultSport: 'basketball'})}
+                       className={`py-3 px-2 rounded-xl border text-[10px] font-black transition-all ${
+                         (formData.defaultSport || appSettings.defaultSport) === 'basketball' 
+                           ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-[1.02]' 
+                           : 'bg-slate-50 dark:bg-surface-dark border-border-light dark:border-border-dark text-slate-500'
+                       }`}
+                     >
+                       كرة السلة دائماً
+                     </button>
+                   </div>
+                   <p className="text-[9px] text-slate-400 font-bold italic leading-relaxed">
+                     * ملاحظة: الخيار الافتراضي هو "تلقائي" حيث يقوم النظام بإظهار مباريات كرة القدم أو السلة حسب وجود مباريات جارية أو تم تمييزها. اختيار رياضة محددة سيلغي هذا السلوك وسيظهر الرياضة المختارة دائماً عند الفتح.
+                   </p>
+                 </div>
+               </div>
               <button 
                 onClick={handleAdd} 
                 disabled={loading}

@@ -289,6 +289,7 @@ interface AppState {
     appLogo: string;
     logoType?: 'image' | 'text';
     logoText?: string;
+    defaultSport?: 'football' | 'basketball' | 'auto';
   };
   liveStream: LiveStream;
   theme: 'dark' | 'light';
@@ -332,7 +333,7 @@ interface AppState {
   setUsers: (users: UserProfile[]) => void;
   updateUser: (uid: string, item: Partial<UserProfile>) => void;
   deleteUser: (uid: string) => void;
-  setSettings: (settings: { appName: string; appLogo: string }) => void;
+  setSettings: (settings: any) => void;
   updateLiveStream: (stream: Partial<LiveStream>) => void;
   toggleTheme: () => void;
   updateProfile: (profile: Partial<UserProfile>) => void;
@@ -467,7 +468,8 @@ export const useAppStore = create<AppState>()(
         appName: 'قناة الاتحاد السكندري',
         appLogo: 'https://upload.wikimedia.org/wikipedia/ar/thumb/0/0e/Al_Ittihad_Alexandria_Club_Logo.svg/1024px-Al_Ittihad_Alexandria_Club_Logo.svg.png',
         logoType: 'image',
-        logoText: 'الاتحاد السكندري'
+        logoText: 'الاتحاد السكندري',
+        defaultSport: 'auto'
       },
       liveStream: defaultLiveStream,
       theme: 'dark',
@@ -569,7 +571,7 @@ export const useAppStore = create<AppState>()(
       deleteUser: (uid) => set((state) => ({
         users: state.users.filter(u => u.uid !== uid)
       })),
-      setSettings: (settings) => set({ appSettings: settings }),
+      setSettings: (settings) => set((state) => ({ appSettings: { ...state.appSettings, ...settings } })),
       updateLiveStream: (stream) => set((state) => ({ liveStream: { ...state.liveStream, ...stream } })),
       toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
       updateProfile: (profile) => set((state) => ({ profile: { ...state.profile, ...profile } as UserProfile })),

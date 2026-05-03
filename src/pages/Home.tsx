@@ -47,9 +47,12 @@ export default function Home() {
     homeSections,
     cityInfo,
     ads,
+    appSettings,
   } = useAppStore();
   const [tick, setTick] = useState(0);
-  const [selectedSport, setSelectedSport] = useState<"football" | "basketball" | "auto">("auto");
+  const [selectedSport, setSelectedSport] = useState<"football" | "basketball" | "auto">(
+    appSettings?.defaultSport || "auto"
+  );
   const [autoWeather, setAutoWeather] = useState<{
     temp: string;
     condition: string;
@@ -58,6 +61,12 @@ export default function Home() {
     isDay?: boolean;
   } | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (appSettings?.defaultSport) {
+      setSelectedSport(appSettings.defaultSport);
+    }
+  }, [appSettings?.defaultSport]);
 
   useEffect(() => {
     const timer = setInterval(() => setTick((t) => t + 1), 1000);

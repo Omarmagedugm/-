@@ -134,6 +134,31 @@ export default function Library() {
     }
   };
 
+  const [isBookLoading, setIsBookLoading] = useState(true);
+
+  useEffect(() => {
+    if (selectedBook || selectedMedia) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedBook, selectedMedia]);
+
+  const closeBookModal = () => {
+    // Explicitly nullify content if needed, but AnimatePresence covers unmounting
+    setSelectedBook(null);
+    setIsBookLoading(true);
+  };
+
+  useEffect(() => {
+    if (selectedBook) {
+      setIsBookLoading(true);
+    }
+  }, [selectedBook]);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-background-dark pb-32">
       {/* Header */}
@@ -433,7 +458,7 @@ export default function Library() {
                   >
                     <div className="aspect-[3/4] rounded-[32px] overflow-hidden shadow-premium group-hover:shadow-2xl transition-all relative mb-4">
                       {book.coverUrl && book.coverUrl.trim() !== '' ? (
-                        <img src={book.coverUrl || undefined} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" referrerPolicy="no-referrer" />
+                        <img src={book.coverUrl || undefined} className="w-full h-full object-cover transition-all duration-700" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-full h-full bg-slate-100 flex items-center justify-center">
                           <BookOpen size={48} className="text-slate-300" />
@@ -475,13 +500,15 @@ export default function Library() {
       <AnimatePresence>
         {selectedMedia && (
           <motion.div 
+            key="media-modal-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSelectedMedia(null)}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-sm p-4 cursor-pointer"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 cursor-pointer"
           >
             <motion.div 
+              key="media-modal-content"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -543,16 +570,18 @@ export default function Library() {
       <AnimatePresence>
         {selectedBook && (
           <motion.div 
+            key="book-modal-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 md:p-10"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-2 md:p-10"
           >
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-5xl h-full bg-white dark:bg-card-dark rounded-[40px] overflow-hidden flex flex-col shadow-2xl"
+              key="book-modal-content"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full h-full max-w-6xl bg-white dark:bg-background-dark rounded-[32px] overflow-hidden shadow-2xl flex flex-col"
             >
               <div className="p-6 border-b border-border-light dark:border-border-dark flex items-center justify-between bg-white dark:bg-surface-dark">
                 <div className="flex items-center gap-4">
@@ -569,12 +598,23 @@ export default function Library() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                   <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-background-dark rounded-xl text-xs font-black hover:bg-slate-200 transition-all">
+                   <button 
+                     onClick={() => {
+                       const link = document.createElement('a');
+                       link.href = selectedBook.pdfUrl;
+                       link.target = '_blank';
+                       link.download = `${selectedBook.title}.pdf`;
+                       document.body.appendChild(link);
+                       link.click();
+                       document.body.removeChild(link);
+                     }}
+                     className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-background-dark rounded-xl text-xs font-black hover:bg-slate-200 transition-all"
+                   >
                      <Download size={16} />
-                     تحميل PDF
+                     <span className="hidden sm:inline">تحميل PDF</span>
                    </button>
                    <button 
-                    onClick={() => setSelectedBook(null)}
+                    onClick={closeBookModal}
                     className="p-3 bg-slate-100 dark:bg-background-dark hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-500 hover:text-red-500 rounded-2xl transition-all"
                    >
                     <X size={20} />
@@ -582,18 +622,30 @@ export default function Library() {
                 </div>
               </div>
               
-              <div className="flex-1 bg-slate-900 relative">
+              <div className="flex-1 bg-slate-800 relative">
+                {isBookLoading && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800 z-10 text-center p-4">
+                    <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p className="text-white font-black text-xs animate-pulse">جاري تحميل صفحات الكتاب...</p>
+                    <p className="text-white/40 text-[10px] font-bold mt-2">قد يستغرق بعض الوقت حسب حجم الملف</p>
+                  </div>
+                )}
                 {selectedBook.pdfUrl.includes('drive.google.com') ? (
                   <iframe 
                     src={selectedBook.pdfUrl.replace('/view', '/preview') || undefined} 
                     className="w-full h-full border-none"
+                    title="book-reader"
                     allow="autoplay"
+                    onLoad={() => setIsBookLoading(false)}
+                    loading="lazy"
                   />
                 ) : (
                   <iframe 
                     src={selectedBook.pdfUrl || undefined} 
                     className="w-full h-full border-none"
                     title="book-reader"
+                    onLoad={() => setIsBookLoading(false)}
+                    loading="lazy"
                   />
                 )}
               </div>
