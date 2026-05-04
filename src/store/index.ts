@@ -314,6 +314,8 @@ interface AppState {
   cityInfo: CityInfo | null;
   currentSong: Song | null;
   isPlaying: boolean;
+  playerVolume: number;
+  stadiumOpacity: number;
   isAuthReady: boolean;
   activePlaylist: Song[];
   undoStack: { collection: string; action: 'add' | 'delete' | 'update'; data: any }[];
@@ -357,6 +359,8 @@ interface AppState {
   setCityInfo: (info: CityInfo | null) => void;
   setCurrentSong: (song: Song | null) => void;
   setIsPlaying: (playing: boolean) => void;
+  setPlayerVolume: (volume: number) => void;
+  setStadiumOpacity: (opacity: number) => void;
   setIsAuthReady: (ready: boolean) => void;
   setActivePlaylist: (songs: Song[]) => void;
   pushToUndoStack: (op: { collection: string; action: 'add' | 'delete' | 'update'; data: any }) => void;
@@ -545,6 +549,8 @@ export const useAppStore = create<AppState>()(
       cityInfo: null,
       currentSong: null,
       isPlaying: false,
+      playerVolume: 1,
+      stadiumOpacity: 0.2,
       activePlaylist: [],
       undoStack: [],
       setNews: (news) => set({ news }),
@@ -597,6 +603,8 @@ export const useAppStore = create<AppState>()(
       setCityInfo: (cityInfo) => set({ cityInfo }),
       setCurrentSong: (currentSong) => set({ currentSong }),
       setIsPlaying: (isPlaying) => set({ isPlaying }),
+      setPlayerVolume: (playerVolume) => set({ playerVolume }),
+      setStadiumOpacity: (stadiumOpacity) => set({ stadiumOpacity }),
       setIsAuthReady: (isAuthReady) => set({ isAuthReady }),
       setActivePlaylist: (activePlaylist) => set({ activePlaylist }),
       pushToUndoStack: (op) => set((state) => ({ 

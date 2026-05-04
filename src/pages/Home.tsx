@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAppStore } from "../store";
-import { auth } from "../lib/firebase";
+import { auth, db } from "../lib/firebase";
+import toast from "react-hot-toast";
 import { formatDistanceToNow, format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { motion, AnimatePresence } from "motion/react";
@@ -34,6 +35,8 @@ import {
   Dribbble,
   Plus,
   Minus,
+  Play,
+  CheckCircle2,
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import AdvertiseWidget from "../components/AdvertiseWidget";
@@ -53,8 +56,14 @@ export default function Home() {
     ads,
     appSettings,
     newsTags,
+    stadiumOpacity,
+    setStadiumOpacity,
   } = useAppStore();
   const [tick, setTick] = useState(0);
+  const [clarityOpen, setClarityOpen] = useState(false);
+  const isOmar = auth.currentUser?.email === "omarmagedugm@ittihad.club";
+  const isDev = auth.currentUser?.email === "copyrightofficialco@gmail.com";
+  const isAdmin = profile?.role === "admin" || isOmar || isDev;
   const [selectedSport, setSelectedSport] = useState<"football" | "basketball" | "auto">(
     appSettings?.defaultSport || "auto"
   );
@@ -176,6 +185,67 @@ export default function Home() {
     }
   };
 
+  const handleStatusUpdate = async (matchId: string, newStatus: 'live' | 'finished' | 'upcoming', toggleTimer?: boolean) => {
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return;
+
+    try {
+      const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+      const updates: any = {
+        status: newStatus,
+        updatedAt: serverTimestamp()
+      };
+
+      if (toggleTimer !== undefined) {
+        updates.isTimerRunning = !match.isTimerRunning;
+        if (updates.isTimerRunning) {
+          updates.timerStartTime = new Date().toISOString();
+        } else {
+          // Store current minute as base before stopping
+          const now = new Date();
+          const start = match.timerStartTime ? new Date(match.timerStartTime) : now;
+          const diffMinutes = Math.floor((now.getTime() - start.getTime()) / 60000);
+          updates.timerBaseMinute = (match.timerBaseMinute || 0) + diffMinutes;
+        }
+      } else if (newStatus === 'live' && match.status !== 'live') {
+        updates.isTimerRunning = true;
+        updates.timerStartTime = new Date().toISOString();
+        updates.timerBaseMinute = 0;
+      } else if (newStatus === 'finished') {
+        updates.isTimerRunning = false;
+      }
+
+      await updateDoc(doc(db, 'matches', matchId), updates);
+      toast.success(toggleTimer ? (updates.isTimerRunning ? 'تم استئناف الوقت' : 'تم إيقاف الوقت مؤقتاً') : 'تم تحديث حالة المباراة');
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('فشل تحديث الحالة');
+    }
+  };
+
+  // Auto-start timer logic: if an upcoming match's time has passed, and we are admin, we can auto-start or prompt.
+  // The user asked for "start automatically".
+  useEffect(() => {
+    if (!isAdmin) return;
+    
+    const checkUpcoming = () => {
+      const now = new Date();
+      matches.forEach(m => {
+        if (m.status === 'upcoming' && m.date) {
+          const matchDate = new Date(m.date);
+          if (now >= matchDate) {
+            // Auto-trigger live status
+            handleStatusUpdate(m.id, 'live');
+          }
+        }
+      });
+    };
+
+    const interval = setInterval(checkUpcoming, 30000); // Check every 30s
+    checkUpcoming(); // Initial check
+    return () => clearInterval(interval);
+  }, [matches, isAdmin]);
+
   const recentNews = news.slice(0, 5);
   const recentMedia = media.slice(0, 5);
 
@@ -222,11 +292,6 @@ export default function Home() {
                 (!m.sport && currentSport === "football")),
           )
           .slice(0, 3);
-
-  // High-level admin check
-  const isOmar = auth.currentUser?.email === "omarmagedugm@ittihad.club";
-  const isDev = auth.currentUser?.email === "copyrightofficialco@gmail.com";
-  const isAdmin = profile.role === "admin" || isOmar || isDev;
 
   let timeLeft = { d: 0, h: 0, m: 0, s: 0 };
   let isUpcoming = false;
@@ -317,10 +382,52 @@ export default function Home() {
                 <div className="absolute inset-0 z-0 rounded-[inherit] overflow-hidden">
                    <img 
                       src={heroMatch?.stadiumImage || (effectiveSport === "basketball" ? "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=2000" : "https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=2000")} 
-                      className="w-full h-full object-cover opacity-20 filter saturate-50 blur-[2px] rounded-[inherit]" 
+                      className="w-full h-full object-cover filter saturate-50 rounded-[inherit] transition-all duration-500" 
+                      style={{ 
+                        opacity: stadiumOpacity,
+                        filter: `saturate(0.5) blur(${stadiumOpacity > 0.5 ? '0px' : '2px'})`
+                      }}
                       alt="stadium"
                    />
                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent rounded-[inherit]"></div>
+                </div>
+
+                {/* Clarity Control Toggle (Admin or Guest) */}
+                <div className="absolute top-4 left-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="relative">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setClarityOpen(!clarityOpen); }}
+                      className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/20 text-white transition-all"
+                      title="وضوح الخلفية"
+                    >
+                      <Settings size={16} />
+                    </button>
+                    
+                    <AnimatePresence>
+                      {clarityOpen && (
+                        <motion.div 
+                          initial={{ opacity: 0, scale: 0.9, x: -10 }}
+                          animate={{ opacity: 1, scale: 1, x: 0 }}
+                          exit={{ opacity: 0, scale: 0.9, x: -10 }}
+                          className="absolute top-0 left-10 ml-2 bg-slate-900/80 backdrop-blur-xl border border-white/10 p-3 rounded-2xl shadow-xl w-40 flex flex-col gap-2"
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="text-[10px] font-bold text-white/60 uppercase">وضوح الخلفية</span>
+                            <span className="text-[10px] font-mono text-primary">{Math.round(stadiumOpacity * 100)}%</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="0.05" 
+                            max="0.8" 
+                            step="0.05"
+                            value={stadiumOpacity}
+                            onChange={(e) => setStadiumOpacity(parseFloat(e.target.value))}
+                            className="accent-primary h-1 rounded-full cursor-pointer bg-white/20"
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
 
                 <div
@@ -463,6 +570,16 @@ export default function Home() {
                                 "غير محدد"
                               )}
                             </div>
+                            
+                            {isAdmin && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleStatusUpdate(heroMatch.id, 'live'); }}
+                                className="mt-3 flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl text-[10px] font-black transition-all shadow-lg ring-4 ring-green-500/20"
+                              >
+                                <Play size={12} fill="currentColor" />
+                                بـــدء الآن
+                              </button>
+                            )}
                           </div>
                         ) : (
                           <div
@@ -528,9 +645,37 @@ export default function Home() {
                               </div>
                               بث مباشر
                             </div>
-                            <div className="px-3 py-1 bg-white/10 rounded-full text-[9px] sm:text-[11px] font-black text-white backdrop-blur-md border border-white/10">
+                            <div className="px-3 py-1 bg-white/10 rounded-full text-[9px] sm:text-[11px] font-black text-white backdrop-blur-md border border-white/10 flex items-center gap-1">
+                              {heroMatch.isTimerRunning ? (
+                                <motion.span 
+                                  animate={{ opacity: [1, 0.5, 1] }} 
+                                  transition={{ repeat: Infinity, duration: 1 }}
+                                  className="w-1.5 h-1.5 rounded-full bg-green-400"
+                                />
+                              ) : (
+                                <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+                              )}
                               {calculateCurrentMinute(heroMatch)}'
                             </div>
+                            
+                            {isAdmin && (
+                              <div className="flex items-center gap-2 mt-2">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleStatusUpdate(heroMatch.id, 'live', true); }}
+                                  className="flex items-center gap-2 px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-[9px] font-bold border border-white/10 transition-all"
+                                >
+                                  {heroMatch.isTimerRunning ? <Minus size={10} /> : <Play size={10} fill="currentColor" />}
+                                  {heroMatch.isTimerRunning ? 'إيقاف مؤقت' : 'استئناف'}
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleStatusUpdate(heroMatch.id, 'finished'); }}
+                                  className="flex items-center gap-2 px-3 py-1 bg-slate-800/80 hover:bg-slate-900 text-white rounded-lg text-[9px] font-bold border border-white/10 transition-all"
+                                >
+                                  <CheckCircle2 size={10} />
+                                  إنهاء
+                                </button>
+                              </div>
+                            )}
                           </>
                         ) : heroMatch.status === "finished" ? (
                           <div className="flex items-center gap-2 rounded-full bg-black/30 backdrop-blur-md px-3 sm:px-4 py-1 sm:py-1.5 text-[9px] sm:text-[11px] font-black text-white ring-1 ring-white/10 uppercase tracking-tighter text-center">

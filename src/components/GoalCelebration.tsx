@@ -1,17 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy } from 'lucide-react';
+import { Trophy, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface GoalCelebrationProps {
   show: boolean;
   onComplete: () => void;
   teamName: string;
+  match?: {
+    homeTeam: string;
+    awayTeam: string;
+    homeScore: string;
+    awayScore: string;
+    homeLogo?: string;
+    awayLogo?: string;
+  };
 }
 
-export default function GoalCelebration({ show, onComplete, teamName }: GoalCelebrationProps) {
+export default function GoalCelebration({ show, onComplete, teamName, match }: GoalCelebrationProps) {
+  const [isVisible, setIsVisible] = useState(false);
+
   useEffect(() => {
     if (show) {
+      setIsVisible(true);
       // Trigger confetti
       const duration = 5 * 1000;
       const animationEnd = Date.now() + duration;
@@ -54,14 +65,22 @@ export default function GoalCelebration({ show, onComplete, teamName }: GoalCele
 
   return (
     <AnimatePresence>
-      {show && (
+      {show && isVisible && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none"
+          className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-auto"
         >
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          
+          <button 
+            onClick={() => { setIsVisible(false); onComplete(); }}
+            className="absolute top-8 right-8 z-50 p-3 bg-white/20 hover:bg-white/40 backdrop-blur-xl rounded-full text-white border border-white/20 transition-all pointer-events-auto"
+            title="إغلاق الاحتفال"
+          >
+            <X size={24} />
+          </button>
           
           <motion.div
             initial={{ scale: 0.5, y: 100, opacity: 0 }}
@@ -70,6 +89,36 @@ export default function GoalCelebration({ show, onComplete, teamName }: GoalCele
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
             className="relative flex flex-col items-center"
           >
+            {/* Flare Background Image */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 0.6, scale: 1 }}
+              transition={{ delay: 0.5, duration: 1 }}
+              className="absolute -top-32 -left-32 w-64 h-64 rounded-full overflow-hidden blur-[2px] opacity-60 z-[-1] pointer-events-none hidden sm:block shadow-[0_0_50px_rgba(239,68,68,0.5)]"
+            >
+              <img 
+                src="https://images.unsplash.com/photo-1516733725897-1aa73b87c8e8?q=80&w=600" 
+                className="w-full h-full object-cover saturate-150 rotate-[-15deg]" 
+                alt="flare"
+                referrerPolicy="no-referrer"
+              />
+            </motion.div>
+
+            {/* Second Flare/Fan Image */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 0.6, scale: 1 }}
+              transition={{ delay: 0.7, duration: 1 }}
+              className="absolute -top-32 -right-32 w-64 h-64 rounded-full overflow-hidden blur-[1px] opacity-60 z-[-1] pointer-events-none hidden sm:block shadow-[0_0_50px_rgba(239,68,68,0.4)]"
+            >
+              <img 
+                src="https://images.unsplash.com/photo-1521412644187-c49fa0b3334d?q=80&w=600" 
+                className="w-full h-full object-cover saturate-150 rotate-[15deg]" 
+                alt="fan flare"
+                referrerPolicy="no-referrer"
+              />
+            </motion.div>
+
             <motion.div
               animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
               transition={{ repeat: Infinity, duration: 2 }}
@@ -89,7 +138,30 @@ export default function GoalCelebration({ show, onComplete, teamName }: GoalCele
               <h2 className="text-3xl font-black text-white mt-4 uppercase drop-shadow-lg">
                 سيد البلد سجل!
               </h2>
-              <p className="text-white/80 font-bold text-xl mt-2">{teamName}</p>
+              
+              {match && (
+                <div className="flex items-center justify-center gap-4 sm:gap-6 mt-6 bg-black/60 backdrop-blur-xl px-5 py-3 rounded-2xl border border-white/20 shadow-2xl w-fit mx-auto">
+                  <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                    <img src={match.homeLogo} className="w-10 h-10 object-contain drop-shadow-md" alt="" />
+                    <span className="text-white/60 text-[9px] font-bold truncate max-w-[60px]">{match.homeTeam}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 px-2">
+                    <span className="text-4xl font-black text-white tabular-nums drop-shadow-lg">
+                      {match.homeScore}
+                    </span>
+                    <span className="text-2xl font-black text-white/40">:</span>
+                    <span className="text-4xl font-black text-white tabular-nums drop-shadow-lg">
+                      {match.awayScore}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                    <img src={match.awayLogo} className="w-10 h-10 object-contain drop-shadow-md" alt="" />
+                    <span className="text-white/60 text-[9px] font-bold truncate max-w-[60px]">{match.awayTeam}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
 

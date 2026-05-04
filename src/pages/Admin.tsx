@@ -3331,9 +3331,9 @@ export default function Admin() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-card-dark w-full max-w-md rounded-2xl p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-card-dark w-full max-w-md rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar no-pull">
+            <div className="flex items-center justify-between mb-6 sticky top-0 bg-white dark:bg-card-dark z-20 py-2 -mt-2">
               <h3 className="text-lg font-bold">
                 {isEditing ? 'تعديل' : 'إضافة'} {
                   activeTab === 'news' ? 'خبر' : 
@@ -3360,16 +3360,17 @@ export default function Admin() {
                     استرجاع
                   </button>
                 )}
-                <button 
-                  onClick={() => {
-                    setShowModal(false);
-                    setIsEditing(false);
-                    setEditingId(null);
-                  }} 
-                  className="p-1 text-slate-400 hover:text-slate-900 transition-colors"
-                >
-                  <X size={20} />
-                </button>
+                  <button 
+                    onClick={() => {
+                      setShowModal(false);
+                      setIsEditing(false);
+                      setEditingId(null);
+                    }} 
+                    className="p-2 bg-slate-100 dark:bg-surface-dark text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all border border-border-light dark:border-border-dark"
+                    title="إغلاق"
+                  >
+                    <X size={24} />
+                  </button>
               </div>
             </div>
 
