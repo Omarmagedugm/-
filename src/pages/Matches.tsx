@@ -400,6 +400,9 @@ export default function Matches() {
                           {match.status === 'live' && (
                             <span className="text-[12px] font-digital font-black text-red-500 mt-2 tracking-widest">{calculateCurrentTimeFormat(match)}</span>
                           )}
+                          {match.status === 'finished' && (
+                            <span className="text-[9px] font-black text-slate-500 mt-2 bg-slate-100 dark:bg-surface-dark px-2 rounded border border-slate-200 dark:border-border-dark py-1">المباراة انتهت</span>
+                          )}
                         </div>
 
                         <div className="flex flex-col items-center gap-2 sm:gap-3 w-20 sm:w-32 group/team">

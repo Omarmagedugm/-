@@ -45,7 +45,8 @@ export default function NewsDetail() {
   return (
     <div className="relative flex-1 flex flex-col bg-background-light dark:bg-background-dark min-h-screen pb-32 overflow-x-hidden">
       {/* Floating Header */}
-      <header style={{ paddingTop: 'calc(env(safe-area-inset-top) + 16px)' }} className="sticky top-0 z-50 flex items-center justify-between px-4 pb-4 backdrop-blur-xl bg-background-light/80 dark:bg-background-dark/80 border-b border-border-light/40 dark:border-border-dark/40 shadow-sm">
+      <div style={{ height: 'calc(env(safe-area-inset-top) + 68px)' }} className="w-full"></div>
+      <header style={{ paddingTop: 'calc(env(safe-area-inset-top) + 16px)' }} className="fixed top-0 inset-x-0 w-full max-w-md mx-auto z-50 flex items-center justify-between px-4 pb-4 backdrop-blur-xl bg-background-light/80 dark:bg-background-dark/80 border-b border-border-light/40 dark:border-border-dark/40 shadow-sm">
         <Link to="/news" className="p-2.5 rounded-full bg-slate-100 dark:bg-surface-dark text-slate-800 dark:text-white shadow-sm pressable border border-border-light dark:border-border-dark">
           <ArrowRight size={22} />
         </Link>

@@ -478,7 +478,7 @@ export default function Home() {
                                 className={`flex items-center justify-center gap-2 sm:gap-4 tracking-widest tabular-nums ${String(heroMatch.homeScore).length > 2 || String(heroMatch.awayScore).length > 2 ? "text-4xl sm:text-7xl" : "text-5xl sm:text-8xl"}`}
                               >
                                 <div className="flex flex-col items-center gap-1">
-                                  {isAdmin && (
+                                  {isAdmin && heroMatch.status === 'live' && (
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -490,7 +490,7 @@ export default function Home() {
                                     </button>
                                   )}
                                   <span>{heroMatch.homeScore}</span>
-                                  {isAdmin && (
+                                  {isAdmin && heroMatch.status === 'live' && (
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -516,7 +516,7 @@ export default function Home() {
                                   :
                                 </span>
                                 <div className="flex flex-col items-center gap-1">
-                                  {isAdmin && (
+                                  {isAdmin && heroMatch.status === 'live' && (
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -528,7 +528,7 @@ export default function Home() {
                                     </button>
                                   )}
                                   <span>{heroMatch.awayScore}</span>
-                                  {isAdmin && (
+                                  {isAdmin && heroMatch.status === 'live' && (
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -547,6 +547,13 @@ export default function Home() {
                               </div>
                             )}
                             
+                            {heroMatch.status === "finished" && (
+                              <div className="flex flex-col items-center gap-2 mt-4">
+                                <div className="px-5 py-1.5 bg-black/40 border border-white/20 rounded-xl text-white font-black text-xs sm:text-sm text-center tracking-widest shadow-inner">
+                                  المباراة انتهت
+                                </div>
+                              </div>
+                            )}
                             {heroMatch.status === "live" && (
                               <div className="flex flex-col items-center gap-2 mt-4">
                                 <div className="px-5 py-1.5 bg-black/40 border border-white/20 rounded-xl text-white font-digital font-black text-[18px] tabular-nums text-center tracking-widest shadow-inner">

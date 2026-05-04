@@ -109,7 +109,9 @@ export default function TopHeader() {
 
   return (
     <>
-      <header id="global-header" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }} className="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 pb-3 shadow-sm">
+      {/* Added a spacer to prevent content from going under the fixed header */}
+      <div style={{ height: 'calc(env(safe-area-inset-top) + 68px)' }} className="w-full"></div>
+      <header id="global-header" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }} className="fixed top-0 inset-x-0 w-full max-w-md mx-auto z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 pb-3 shadow-sm">
         <div className="flex items-center justify-between max-w-md mx-auto">
           {isHome ? (
             <motion.button 

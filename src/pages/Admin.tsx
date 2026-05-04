@@ -1042,7 +1042,7 @@ export default function Admin() {
         } else {
           await addDoc(collection(db, 'books'), cleanPayload(payload));
         }
-      } else if (activeTab === 'layout' && formData.isCustomPage) {
+      } else if (activeTab === 'layout' && formData.__isCustomPage) {
         const payload = {
           title: formData.title || 'صفحة جديدة',
           slug: formData.slug || formData.title.toLowerCase().replace(/\s+/g, '-'),
