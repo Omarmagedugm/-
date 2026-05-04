@@ -105,39 +105,41 @@ export default function WinCelebration({ show, onComplete, match }: WinCelebrati
                 <PartyPopper size={20} />
               </div>
               
-              <div className="bg-black/60 backdrop-blur-xl px-10 py-6 rounded-[40px] border border-white/20 shadow-2xl relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-50" />
-                
-                <div className="relative flex items-center justify-center gap-8">
-                  <div className="flex flex-col items-center gap-2 min-w-[80px]">
-                    <div className="w-16 h-16 bg-white/5 rounded-2xl p-2 border border-white/10 shadow-inner">
-                      <img src={match.homeLogo} className="w-full h-full object-contain drop-shadow-md" alt="" />
-                    </div>
-                    <span className="text-white font-bold text-xs truncate max-w-[80px]">{match.homeTeam}</span>
-                  </div>
+              <div className="mt-8 flex justify-center">
+                <div className="inline-flex flex-col items-center bg-black/80 backdrop-blur-3xl px-8 py-6 rounded-[40px] border border-white/30 shadow-[0_30px_60px_rgba(0,0,0,0.6)] ring-1 ring-white/10 group relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-50" />
                   
-                  <div className="flex items-center gap-4">
-                    <span className="text-5xl font-black text-white tabular-nums drop-shadow-glow">
-                      {match.homeScore}
-                    </span>
-                    <span className="text-3xl font-black text-white/30">:</span>
-                    <span className="text-5xl font-black text-white tabular-nums drop-shadow-glow">
-                      {match.awayScore}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col items-center gap-2 min-w-[80px]">
-                    <div className="w-16 h-16 bg-white/5 rounded-2xl p-2 border border-white/10 shadow-inner">
-                      <img src={match.awayLogo} className="w-full h-full object-contain drop-shadow-md" alt="" />
+                  <div className="relative flex items-center justify-center gap-8">
+                    <div className="flex flex-col items-center gap-2 min-w-[80px]">
+                      <div className="w-16 h-16 bg-white/5 rounded-2xl p-2 border border-white/10 shadow-inner">
+                        <img src={match.homeLogo} className="w-full h-full object-contain drop-shadow-md" alt="" />
+                      </div>
+                      <span className="text-white font-bold text-[10px] truncate max-w-[80px]">{match.homeTeam}</span>
                     </div>
-                    <span className="text-white font-bold text-xs truncate max-w-[80px]">{match.awayTeam}</span>
-                  </div>
-                </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <span className="text-6xl font-black text-white tabular-nums drop-shadow-glow">
+                        {match.homeScore}
+                      </span>
+                      <span className="text-3xl font-black text-white/30">:</span>
+                      <span className="text-6xl font-black text-white tabular-nums drop-shadow-glow">
+                        {match.awayScore}
+                      </span>
+                    </div>
 
-                <div className="mt-6 pt-4 border-t border-white/10">
-                  <span className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">
-                    {match.sport === 'basketball' ? 'كرة السلة' : 'كرة القـدم'}
-                  </span>
+                    <div className="flex flex-col items-center gap-2 min-w-[80px]">
+                      <div className="w-16 h-16 bg-white/5 rounded-2xl p-2 border border-white/10 shadow-inner">
+                        <img src={match.awayLogo} className="w-full h-full object-contain drop-shadow-md" alt="" />
+                      </div>
+                      <span className="text-white font-bold text-[10px] truncate max-w-[80px]">{match.awayTeam}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-white/10 w-full text-center">
+                    <span className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">
+                      {match.sport === 'basketball' ? 'كرة السلة' : 'كرة القـدم'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

@@ -782,6 +782,7 @@ export default function Admin() {
           status: formData.status || 'upcoming',
           stadium: formData.stadium || '',
           stadiumImage: formData.stadiumImage || '',
+          stadiumOpacity: formData.stadiumOpacity ?? 0.2,
           // If we are editing a live match, we refresh the timerStartTime to "now" 
           // and use the provided base minute as the new starting point to ensure continuity
           timerStartTime: (formData.status === 'live' && formData.isTimerRunning) ? new Date().toISOString() : (formData.timerStartTime || null),
@@ -4012,6 +4013,21 @@ export default function Admin() {
                    </div>
                    <div className="mt-4 mb-4">
                      <UploadOrUrlField label="صورة الملعب" fieldName="stadiumImage" currentUrl={formData.stadiumImage} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                    <div className="mt-2 text-right">
+                       <label className="text-[10px] font-black text-slate-500 mb-1 block">شفافية خلفية الملعب (0.0 - 1.0)</label>
+                       <div className="flex items-center gap-3">
+                         <input 
+                           type="range" 
+                           min="0" 
+                           max="1" 
+                           step="0.05"
+                           className="flex-1 accent-primary"
+                           value={formData.stadiumOpacity ?? 0.2}
+                           onChange={(e) => setFormData({...formData, stadiumOpacity: parseFloat(e.target.value)})}
+                         />
+                         <span className="text-xs font-black tabular-nums w-8">{(formData.stadiumOpacity ?? 0.2).toFixed(2)}</span>
+                       </div>
+                    </div>
                    </div>
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">تاريخ ووقت المباراة (بتوقيت مصر)</label>

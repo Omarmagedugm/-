@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { formatDistanceToNow, format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { motion, AnimatePresence } from "motion/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Menu,
   LayoutDashboard,
@@ -64,9 +64,10 @@ export default function Home() {
   const isOmar = auth.currentUser?.email === "omarmagedugm@ittihad.club";
   const isDev = auth.currentUser?.email === "copyrightofficialco@gmail.com";
   const isAdmin = profile?.role === "admin" || isOmar || isDev;
-  const [selectedSport, setSelectedSport] = useState<"football" | "basketball" | "auto">(
-    appSettings?.defaultSport || "auto"
-  );
+  const [selectedSport, setSelectedSport] = useState<"football" | "basketball" | "auto">(() => {
+    const saved = localStorage.getItem("selected_sport");
+    return (saved as "football" | "basketball" | "auto") || "auto";
+  });
   const [autoWeather, setAutoWeather] = useState<{
     temp: string;
     condition: string;
@@ -77,10 +78,14 @@ export default function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (appSettings?.defaultSport) {
+    if (appSettings?.defaultSport && selectedSport === "auto") {
       setSelectedSport(appSettings.defaultSport);
     }
-  }, [appSettings?.defaultSport]);
+  }, [appSettings?.defaultSport, selectedSport]);
+
+  useEffect(() => {
+    localStorage.setItem("selected_sport", selectedSport);
+  }, [selectedSport]);
 
   useEffect(() => {
     const timer = setInterval(() => setTick((t) => t + 1), 1000);
@@ -249,49 +254,39 @@ export default function Home() {
   const recentNews = news.slice(0, 5);
   const recentMedia = media.slice(0, 5);
 
-  const allFeatured = matches
+  const allFeatured = useMemo(() => matches
     .filter((m) => m.featured === true)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  const allLive = matches.filter((m) => m.status === "live");
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [matches]);
 
-  const defaultSport = allFeatured[0]?.sport || allLive[0]?.sport || 'football';
-  const effectiveSport = selectedSport === "auto" ? defaultSport : selectedSport;
+  const allLive = useMemo(() => matches.filter((m) => m.status === "live"), [matches]);
 
-  const sportMatches = matches.filter(
+  const defaultSport = useMemo(() => allFeatured[0]?.sport || allLive[0]?.sport || 'football', [allFeatured, allLive]);
+  
+  const effectiveSport = useMemo(() => selectedSport === "auto" ? defaultSport : selectedSport, [selectedSport, defaultSport]);
+
+  const sportMatches = useMemo(() => matches.filter(
     (m) =>
       m.sport === effectiveSport || (!m.sport && effectiveSport === "football"),
-  );
+  ), [matches, effectiveSport]);
 
   // Strict hero selection that respects active filter without cross-sport fallbacks
-  const heroMatch =
+  const heroMatch = useMemo(() => 
     sportMatches.find((m) => m.status === "live") ||
     sportMatches.find((m) => m.featured === true) ||
     sportMatches.find((m) => m.status === "upcoming") ||
-    sportMatches[0]; // If there are no matches, this is undefined. We do NOT fallback to another sport here to avoid bugs.
+    sportMatches[0], [sportMatches]); // If there are no matches, this is undefined. We do NOT fallback to another sport here to avoid bugs.
 
-  // Logic for upcoming matches: prioritize the 'other' sport if available
-  const currentSport = heroMatch?.sport || effectiveSport || "football";
-  const otherSport = currentSport === "basketball" ? "football" : "basketball";
-
-  const matchesFromOtherSport = matches.filter(
-    (m) =>
-      m.status === "upcoming" &&
-      m.id !== heroMatch?.id &&
-      (m.sport === otherSport || (!m.sport && otherSport === "football")),
-  );
-
-  const upcomingMatches =
-    matchesFromOtherSport.length > 0
-      ? matchesFromOtherSport.slice(0, 3)
-      : matches
-          .filter(
-            (m) =>
-              m.status === "upcoming" &&
-              m.id !== heroMatch?.id &&
-              (m.sport === currentSport ||
-                (!m.sport && currentSport === "football")),
-          )
-          .slice(0, 3);
+  // Logic for upcoming matches: prioritize the 'current' sport selected by user
+  const currentSport = effectiveSport || "football";
+  
+  const upcomingMatches = matches
+    .filter(
+      (m) =>
+        m.status === "upcoming" &&
+        m.id !== heroMatch?.id &&
+        (m.sport === currentSport || (!m.sport && currentSport === "football")),
+    )
+    .slice(0, 3);
 
   let timeLeft = { d: 0, h: 0, m: 0, s: 0 };
   let isUpcoming = false;
@@ -323,19 +318,29 @@ export default function Home() {
               className="space-y-4"
             >
               <div className="relative bg-slate-50 dark:bg-surface-dark p-12 rounded-[40px] flex flex-col items-center justify-center text-center gap-3 border border-dashed border-slate-300 dark:border-border-dark shadow-sm">
-                <div className="absolute top-4 right-4 z-50 flex gap-1 bg-white dark:bg-card-dark p-1 rounded-2xl shadow-sm border border-border-light dark:border-border-dark">
-                  <button
-                    onClick={() => setSelectedSport("football")}
-                    className={`p-1.5 rounded-xl transition-all ${effectiveSport === "football" ? "bg-primary text-white shadow-md" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-dark"}`}
+                <div className="absolute top-4 right-4 z-[310] flex gap-2 bg-white/95 dark:bg-card-dark/95 backdrop-blur-3xl p-1.5 rounded-2xl shadow-xl border border-border-light dark:border-border-dark ring-2 ring-black/5">
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedSport("football");
+                    }}
+                    className={`flex items-center justify-center p-2 rounded-xl transition-all duration-200 pointer-events-auto ${effectiveSport === "football" ? "bg-primary text-white shadow-glow" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-dark"}`}
+                    aria-label="كرة قدم"
                   >
-                    <Trophy size={12} />
-                  </button>
-                  <button
-                    onClick={() => setSelectedSport("basketball")}
-                    className={`p-1.5 rounded-xl transition-all ${effectiveSport === "basketball" ? "bg-[#ea580c] text-white shadow-md" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-dark"}`}
+                    <Trophy size={14} />
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedSport("basketball");
+                    }}
+                    className={`flex items-center justify-center p-2 rounded-xl transition-all duration-200 pointer-events-auto ${effectiveSport === "basketball" ? "bg-[#ea580c] text-white shadow-glow" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-dark"}`}
+                    aria-label="كرة سلة"
                   >
-                    <Dribbble size={12} />
-                  </button>
+                    <Dribbble size={14} />
+                  </motion.button>
                 </div>
                 {effectiveSport === "football" ? (
                   <Trophy
@@ -384,8 +389,8 @@ export default function Home() {
                       src={heroMatch?.stadiumImage || (effectiveSport === "basketball" ? "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=2000" : "https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=2000")} 
                       className="w-full h-full object-cover filter saturate-50 rounded-[inherit] transition-all duration-500" 
                       style={{ 
-                        opacity: stadiumOpacity,
-                        filter: `saturate(0.5) blur(${stadiumOpacity > 0.5 ? '0px' : '2px'})`
+                        opacity: heroMatch?.stadiumOpacity ?? stadiumOpacity,
+                        filter: `saturate(0.5) blur(${(heroMatch?.stadiumOpacity ?? stadiumOpacity) > 0.5 ? '0px' : '2px'})`
                       }}
                       alt="stadium"
                    />
@@ -496,19 +501,29 @@ export default function Home() {
                       </div>
                     )}
 
-                    <div className="flex gap-1 bg-black/20 backdrop-blur-md p-1 rounded-xl shadow-sm border border-white/10">
-                      <button
-                        onClick={() => setSelectedSport("football")}
-                        className={`p-1.5 rounded-lg transition-all ${effectiveSport === "football" ? "bg-primary text-white shadow-md" : "text-white/50 hover:bg-white/10 hover:text-white"}`}
+                    <div className="flex gap-2 bg-black/70 backdrop-blur-3xl p-1.5 rounded-2xl shadow-2xl border border-white/20 z-[310] relative ring-2 ring-white/5">
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSport("football");
+                        }}
+                        className={`flex items-center justify-center p-2.5 rounded-xl transition-all duration-200 pointer-events-auto ${effectiveSport === "football" ? "bg-primary text-white shadow-glow" : "text-white/40 hover:bg-white/10 hover:text-white"}`}
+                        aria-label="كرة قدم"
                       >
-                        <Trophy size={14} className="sm:w-4 sm:h-4" />
-                      </button>
-                      <button
-                        onClick={() => setSelectedSport("basketball")}
-                        className={`p-1.5 rounded-lg transition-all ${effectiveSport === "basketball" ? "bg-[#ea580c] text-white shadow-md" : "text-white/50 hover:bg-white/10 hover:text-white"}`}
+                        <Trophy size={16} />
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSport("basketball");
+                        }}
+                        className={`flex items-center justify-center p-2.5 rounded-xl transition-all duration-200 pointer-events-auto ${effectiveSport === "basketball" ? "bg-[#ea580c] text-white shadow-glow" : "text-white/40 hover:bg-white/10 hover:text-white"}`}
+                        aria-label="كرة سلة"
                       >
-                        <Dribbble size={14} className="sm:w-4 sm:h-4" />
-                      </button>
+                        <Dribbble size={16} />
+                      </motion.button>
                     </div>
                   </div>
                   <div className="flex justify-between sm:justify-center items-center gap-1 sm:gap-6 py-4 sm:py-6 px-1 sm:px-4">
@@ -532,14 +547,6 @@ export default function Home() {
                       <div
                         className={`font-black text-white filter flex flex-col items-center w-full ${effectiveSport === "basketball" ? "drop-shadow-[0_5px_15px_rgba(234,88,12,0.3)]" : "drop-shadow-[0_5px_15px_rgba(46,204,113,0.3)]"}`}
                       >
-                        {effectiveSport === "basketball" && (
-                          <div className="mb-2 animate-bounce">
-                            <Dribbble
-                              size={24}
-                              className="text-orange-400 opacity-80"
-                            />
-                          </div>
-                        )}
                         {heroMatch.status === "upcoming" ? (
                           <div className="flex flex-col items-center w-full justify-center gap-1 sm:gap-2">
                             <div className="text-xl sm:text-3xl opacity-60">
@@ -1827,7 +1834,9 @@ export default function Home() {
         animate="visible"
         className="flex-1 overflow-x-hidden px-4 flex flex-col gap-0 py-6"
       >
-        {sortedSections.map((section) => {
+        {/* Goal Celebration Trigger is in App.tsx */}
+      
+      {sortedSections.map((section) => {
           const content = renderSection(section);
           if (!content) return null;
           return (

@@ -69,6 +69,7 @@ export interface MatchItem {
   timerBaseMinute?: number;
   sport: 'football' | 'basketball';
   featured?: boolean;
+  stadiumOpacity?: number;
 }
 
 export interface CityInfo {
