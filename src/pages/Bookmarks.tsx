@@ -46,7 +46,7 @@ export default function Bookmarks() {
 
   return (
     <div className="flex-1 w-full max-w-md mx-auto bg-background-light dark:bg-background-dark min-h-screen pb-32 text-right">
-      <header className="sticky top-0 z-40 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 py-4">
+      <header style={{ paddingTop: 'calc(env(safe-area-inset-top) + 16px)' }} className="sticky top-0 z-40 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button onClick={() => navigate(-1)} className="h-10 w-10 flex items-center justify-center rounded-2xl glass-card text-slate-600 dark:text-slate-300">

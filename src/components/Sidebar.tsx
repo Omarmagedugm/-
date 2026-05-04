@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
+import { doc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
-import { X, LayoutDashboard, Flag, MessageSquare, Info, Mail, Home, LogOut, ShieldCheck } from 'lucide-react';
+import { X, LayoutDashboard, Flag, MessageSquare, Info, Mail, Home, LogOut, ShieldCheck, FileText } from 'lucide-react';
 import { useAppStore, UserProfile } from '../store';
 import { getOptimizedImage } from '../lib/cloudinary';
 
@@ -15,6 +17,22 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
   const { appSettings } = useAppStore();
   const navigate = useNavigate();
+  const [customPages, setCustomPages] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const fetchPages = async () => {
+      try {
+        const q = query(collection(db, 'custom_pages'), where('active', '==', true), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        setCustomPages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (err) {
+        console.error('Error fetching custom pages:', err);
+      }
+    };
+    if (isOpen) {
+      fetchPages();
+    }
+  }, [isOpen]);
   
   // High-level admin check
   const isOmar = auth.currentUser?.email === 'omarmagedugm@ittihad.club';
@@ -129,13 +147,25 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                 <span className="text-sm font-bold">تاريخ النادي</span>
               </Link>
 
-              <Link to="/store" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable uppercase border-b border-slate-100 dark:border-border-dark pb-6 mb-4">
+              <Link to="/store" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable uppercase">
                 <span className="material-symbols-outlined !text-[20px]">shopping_bag</span>
                 <span className="text-sm font-bold">متجر الجماهير</span>
               </Link>
 
-              <div className="pt-2 pb-1 px-4">
-                 <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest">استكشف المزيد</p>
+              {customPages.length > 0 && (
+                <div className="pt-2 pb-1 px-4 mt-2 border-t border-slate-100 dark:border-border-dark">
+                  <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest mt-2">صفحات إضافية</p>
+                </div>
+              )}
+              {customPages.map(page => (
+                <Link key={page.id} to={`/page/${page.slug}`} onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
+                  <FileText size={20} className="text-slate-400" />
+                  <span className="text-sm font-bold">{page.title}</span>
+                </Link>
+              ))}
+
+              <div className="pt-2 pb-1 px-4 border-t border-slate-100 dark:border-border-dark mt-2">
+                 <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest mt-2">استكشف المزيد</p>
               </div>
 
               <Link to="/profile" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
