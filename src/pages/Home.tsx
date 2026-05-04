@@ -439,11 +439,11 @@ export default function Home() {
                       </div>
 
                       <div className="flex justify-center items-center gap-2 sm:gap-6 py-4 sm:py-6 px-1 sm:px-4">
-                        <div className="flex flex-col items-center gap-2 sm:gap-5 w-[80px] sm:w-44 group/team shrink-0 z-10">
-                          <div className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium ${heroMatch.status === "upcoming" ? "h-20 w-20 sm:h-40 sm:w-40" : "h-16 w-16 sm:h-32 sm:w-32"}`}>
+                        <div className="flex flex-col items-center gap-2 sm:gap-5 w-[90px] sm:w-44 group/team shrink-0 z-10">
+                          <div className={`relative flex items-center justify-center rounded-[28px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium h-24 w-24 sm:h-44 sm:w-44`}>
                             <SafeImage alt={heroMatch.homeTeam} className="w-full h-full object-contain filter drop-shadow-2xl" src={heroMatch.homeLogo || undefined} width={200} />
                           </div>
-                          <span className="text-center text-[10px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">{heroMatch.homeTeam}</span>
+                          <span className="text-center text-[11px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">{heroMatch.homeTeam}</span>
                         </div>
 
                         <div className="flex flex-col items-center flex-1 px-1 sm:px-4 z-10 min-w-0">
@@ -460,22 +460,11 @@ export default function Home() {
                                     </div>
                                   ) : "غير محدد"}
                                 </div>
-                                {isAdmin && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleStatusUpdate(heroMatch.id, "live");
-                                    }}
-                                    className="mt-3 flex items-center gap-2 px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl text-[11px] font-black transition-all shadow-lg ring-4 ring-green-500/20 active:scale-95"
-                                  >
-                                    <Play size={14} fill="currentColor" />
-                                    بـــدء الآن
-                                  </button>
-                                )}
+
                               </div>
                             ) : (
                               <div
-                                className={`flex items-center justify-center gap-2 sm:gap-4 tracking-widest tabular-nums ${String(heroMatch.homeScore).length > 2 || String(heroMatch.awayScore).length > 2 ? "text-4xl sm:text-7xl" : "text-5xl sm:text-8xl"}`}
+                                className={`flex items-center justify-center gap-1 sm:gap-4 tracking-tighter sm:tracking-widest tabular-nums ${String(heroMatch.homeScore).length > 2 || String(heroMatch.awayScore).length > 2 ? "text-2xl sm:text-4xl" : "text-3xl sm:text-5xl"}`}
                               >
                                 <div className="flex flex-col items-center gap-1">
                                   {isAdmin && heroMatch.status === 'live' && (
@@ -548,8 +537,8 @@ export default function Home() {
                             )}
                             
                             {heroMatch.status === "finished" && (
-                              <div className="flex flex-col items-center gap-2 mt-4">
-                                <div className="px-5 py-1.5 bg-black/40 border border-white/20 rounded-xl text-white font-black text-xs sm:text-sm text-center tracking-widest shadow-inner">
+                              <div className="flex flex-col items-center gap-1 mt-2">
+                                <div className="px-2 sm:px-3 py-1 bg-black/40 border border-white/20 rounded-xl text-white font-black text-[8px] sm:text-[10px] whitespace-nowrap text-center shadow-inner">
                                   المباراة انتهت
                                 </div>
                               </div>
@@ -590,9 +579,9 @@ export default function Home() {
                           </div>
                         </div>
 
-                        <div className="flex flex-col items-center gap-2 sm:gap-5 w-[80px] sm:w-44 group/team shrink-0 z-10">
+                        <div className="flex flex-col items-center gap-2 sm:gap-5 w-[90px] sm:w-44 group/team shrink-0 z-10">
                           <div
-                            className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium ${heroMatch.status === "upcoming" ? "h-20 w-20 sm:h-40 sm:w-40" : "h-16 w-16 sm:h-32 sm:w-32"}`}
+                            className={`relative flex items-center justify-center rounded-[28px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium h-24 w-24 sm:h-44 sm:w-44`}
                           >
                             <SafeImage
                               alt={heroMatch.awayTeam}
@@ -601,7 +590,7 @@ export default function Home() {
                               width={200}
                             />
                           </div>
-                          <span className="text-center text-[10px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">
+                          <span className="text-center text-[11px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">
                             {heroMatch.awayTeam}
                           </span>
                         </div>

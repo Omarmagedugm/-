@@ -31,15 +31,18 @@ export function handleFirestoreError(error: any, operationType: OperationType, p
   const errCode = error?.code || '';
   const isRead = operationType === OperationType.LIST || operationType === OperationType.GET;
   const isUnavailable = errCode === 'unavailable' || errCode === 'deadline-exceeded';
+  
+  const errStr = error?.message || errCode || String(error);
+  const isQuotaExceeded = errCode === 'resource-exhausted' || errStr.includes('Quota') || errStr.includes('quota');
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('firestore-error', { 
-      detail: { code: errCode, message: error?.message, path, operationType } 
+      detail: { code: errCode, message: errStr, path, operationType } 
     }));
   }
 
   const errInfo: FirestoreErrorInfo = {
-    error: error?.message || errCode || String(error),
+    error: errStr,
     authInfo: {
       userId: getAuth().currentUser?.uid,
       email: getAuth().currentUser?.email,
@@ -50,12 +53,16 @@ export function handleFirestoreError(error: any, operationType: OperationType, p
     path
   };
 
-  if (isRead && isUnavailable) {
-    console.warn(`Firestore [${path}] temporarily unavailable. Operating in offline mode.`, errInfo);
+  if (isRead && (isUnavailable || isQuotaExceeded)) {
+    console.warn(`Firestore [${path}] temporarily unavailable. Operating in offline/quota-exceeded mode.`, errInfo);
     return;
   }
 
   console.error(`Firestore Error [${path}]: `, JSON.stringify(errInfo));
+  if (isQuotaExceeded) {
+     console.warn("Quota Exceeded. Application degraded.");
+     return;
+  }
   throw new Error(JSON.stringify(errInfo));
 }
 

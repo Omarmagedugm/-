@@ -15,11 +15,13 @@ export default function CustomPage() {
     const fetchPage = async () => {
       if (!slug) return;
       try {
-        const q = query(collection(db, 'custom_pages'), where('slug', '==', slug), where('active', '==', true));
+        const q = collection(db, 'custom_pages');
         const querySnapshot = await getDocs(q);
+        const docs = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
+        const matchedPage = docs.find(p => p.slug === slug && p.active !== false);
         
-        if (!querySnapshot.empty) {
-          setPageData({ id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() });
+        if (matchedPage) {
+          setPageData(matchedPage);
         } else {
           // If no active page found with that slug, head home
           navigate('/');
@@ -34,6 +36,40 @@ export default function CustomPage() {
     
     fetchPage();
   }, [slug, navigate]);
+
+  useEffect(() => {
+    if (pageData && !loading) {
+      const container = document.getElementById('custom-page-content');
+      if (container) {
+        const scripts = container.getElementsByTagName('script');
+        Array.from(scripts).forEach(oldScript => {
+          const newScript = document.createElement('script');
+          Array.from(oldScript.attributes).forEach(attr => {
+            newScript.setAttribute(attr.name, attr.value);
+          });
+          newScript.text = oldScript.innerHTML;
+          // If it's a src script (like elfsight), appending it to document.head often works better
+          if (newScript.src) {
+             // Avoid adding duplicates if possible, or force reload/re-exec
+             const existing = document.querySelector(`script[src="${newScript.src}"]`);
+             if (existing) {
+               // Already exists, try to manually init if it's Elfsight
+               if (newScript.src.includes('elfsight')) {
+                 if (typeof window !== 'undefined' && 'eapps' in window) {
+                   (window as any).eapps.init();
+                 }
+               }
+             } else {
+               document.head.appendChild(newScript);
+             }
+             oldScript.remove(); // Remove the original lifeless script
+          } else {
+             oldScript.parentNode?.replaceChild(newScript, oldScript);
+          }
+        });
+      }
+    }
+  }, [pageData, loading]);
 
   if (loading) {
     return (
@@ -52,7 +88,7 @@ export default function CustomPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-900 dark:text-white pb-[80px]">
       <TopHeader />
-      <div className="px-4 py-6">
+      <div className="px-4 py-6" id="custom-page-content">
         <h1 className="text-2xl font-black mb-6 border-b-2 border-primary inline-block pb-1">{pageData.title}</h1>
         {/* Render HTML content safely or iframe based on content */}
         {pageData.content.includes('<iframe') ? (

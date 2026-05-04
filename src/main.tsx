@@ -21,16 +21,18 @@ const updateSW = registerSW({
 
 // CRITICAL: Handle chunk loading errors which cause white screens
 // This happens when the browser tries to load a JS chunk that was deleted/replaced on the server
-const handleChunkError = (error: any) => {
-  const message = error?.message || error?.reason?.message || '';
+const handleChunkError = (event: any) => {
+  const error = event?.error || event?.reason || event;
+  const message = String(error?.message || error || '').toLowerCase();
+  
+  // Stricter check for chunk mapping errors from Vite/Rollup
   const isChunkError = 
-    message.toLowerCase().includes('loading chunk') || 
-    message.toLowerCase().includes('supported type') ||
-    (error?.filename && error.filename.includes('assets/'));
+    message.includes('dynamically imported module') ||
+    (message.includes('failed to fetch') && message.includes('module')) ||
+    (message.includes('loading chunk') && message.includes('failed'));
 
   if (isChunkError) {
-    console.warn('Detected chunk loading error, forcing reload to get latest version...');
-    // Add a small delay to avoid infinite reload loops if the server is actually down
+    console.warn('Detected chunk loading error, forcing reload to get latest version...', message);
     setTimeout(() => {
       window.location.reload();
     }, 1000);

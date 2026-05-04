@@ -150,14 +150,10 @@ export function useFirestoreSync() {
           ? query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
           : query(collection(db, 'orders'), where('userId', '==', auth.currentUser.uid), orderBy('createdAt', 'desc'));
           
-        unsubOrders = onSnapshot(ordersQuery, (snapshot) => {
-          const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
-          useAppStore.getState().setOrders(items);
-        }, (error) => {
-          if (error.code !== 'permission-denied') {
-            console.error('Orders Sync Error:', error);
-          }
-        });
+      unsubOrders = onSnapshot(ordersQuery, (snapshot) => {
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+        useAppStore.getState().setOrders(items);
+      }, (error) => handleFirestoreError(error, OperationType.LIST, 'orders'));
       } catch (e) {
         console.error('Orders Query Setup Error:', e);
       }

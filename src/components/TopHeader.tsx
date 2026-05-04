@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import Sidebar from './Sidebar';
 import { db, auth } from '../lib/firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, orderBy } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../lib/firebase';
 import toast from 'react-hot-toast';
 
 export default function TopHeader() {
@@ -56,11 +57,7 @@ export default function TopHeader() {
         });
       }
       initialLoadRef.current = false;
-    }, (error) => {
-      if (error.code !== 'permission-denied') {
-         console.error('Notification sync error:', error);
-      }
-    });
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'push_notifications'));
     
     return () => unsubscribe();
   }, [profile?.uid]);

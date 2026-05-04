@@ -22,9 +22,11 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
   useEffect(() => {
     const fetchPages = async () => {
       try {
-        const q = query(collection(db, 'custom_pages'), where('active', '==', true), orderBy('createdAt', 'desc'));
+        const q = collection(db, 'custom_pages');
         const snapshot = await getDocs(q);
-        setCustomPages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const pages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+        const activePages = pages.filter(p => p.active !== false).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setCustomPages(activePages);
       } catch (err) {
         console.error('Error fetching custom pages:', err);
       }
