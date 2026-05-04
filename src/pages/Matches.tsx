@@ -103,12 +103,20 @@ export default function Matches() {
     }
   };
 
-  const calculateCurrentMinute = (match: any) => {
-    if (!match.isTimerRunning || !match.timerStartTime) return Number(match.timerBaseMinute || 0);
+  const calculateCurrentTimeFormat = (match: any) => {
+    if (!match.isTimerRunning || !match.timerStartTime) {
+      return `${String(match.timerBaseMinute || 0).padStart(2, '0')}:00'`;
+    }
     const start = new Date(match.timerStartTime).getTime();
-    if (isNaN(start)) return Number(match.timerBaseMinute || 0);
-    const elapsed = Math.max(0, Math.floor((new Date().getTime() - start) / 60000));
-    return Number(match.timerBaseMinute || 0) + elapsed;
+    if (isNaN(start)) {
+      return `${String(match.timerBaseMinute || 0).padStart(2, '0')}:00'`;
+    }
+    const totalSeconds = Math.max(0, Math.floor((new Date().getTime() - start) / 1000));
+    const baseSeconds = Number(match.timerBaseMinute || 0) * 60;
+    const currentSeconds = baseSeconds + totalSeconds;
+    const mm = Math.floor(currentSeconds / 60);
+    const ss = currentSeconds % 60;
+    return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}'`;
   };
 
   const sortedMatches = [...matches].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -268,8 +276,12 @@ export default function Matches() {
                                     <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
                                     <span className="text-white text-[9px] font-black tracking-widest">بث مباشر</span>
                                  </div>
-                                 <span className="text-white text-[10px] font-black tracking-widest mt-1">د {calculateCurrentMinute(section.newestMatch)}</span>
                                </div>
+                            )}
+                            {section.newestMatch.status === 'live' && (
+                              <div className="mt-2 text-white font-digital font-black text-[12px] tabular-nums text-center tracking-widest">
+                                {calculateCurrentTimeFormat(section.newestMatch)}
+                              </div>
                             )}
                           </div>
 
@@ -386,7 +398,7 @@ export default function Matches() {
                             )}
                           </div>
                           {match.status === 'live' && (
-                            <span className="text-[9px] sm:text-[10px] font-black text-red-500 mt-2">د {calculateCurrentMinute(match)}</span>
+                            <span className="text-[12px] font-digital font-black text-red-500 mt-2 tracking-widest">{calculateCurrentTimeFormat(match)}</span>
                           )}
                         </div>
 

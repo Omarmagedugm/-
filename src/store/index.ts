@@ -294,8 +294,6 @@ interface AppState {
     logoType?: 'image' | 'text';
     logoText?: string;
     defaultSport?: 'football' | 'basketball' | 'auto';
-    headerColorLight?: string;
-    headerColorDark?: string;
   };
   liveStream: LiveStream;
   theme: 'dark' | 'light';
@@ -481,9 +479,7 @@ export const useAppStore = create<AppState>()(
         headerLogoDark: '',
         logoType: 'image',
         logoText: 'الاتحاد السكندري',
-        defaultSport: 'auto',
-        headerColorLight: '#ffffff',
-        headerColorDark: '#0f172a'
+        defaultSport: 'auto'
       },
       liveStream: defaultLiveStream,
       theme: 'dark',

@@ -834,9 +834,7 @@ export default function Admin() {
           headerLogoDark: formData.headerLogoDark !== undefined ? formData.headerLogoDark : (appSettings.headerLogoDark || ''),
           logoType: formData.logoType || appSettings.logoType || 'image',
           logoText: formData.logoText || appSettings.logoText || '',
-          defaultSport: formData.defaultSport || appSettings.defaultSport || 'auto',
-          headerColorLight: formData.headerColorLight !== undefined ? formData.headerColorLight : (appSettings.headerColorLight || '#ffffff'),
-          headerColorDark: formData.headerColorDark !== undefined ? formData.headerColorDark : (appSettings.headerColorDark || '#0f172a')
+          defaultSport: formData.defaultSport || appSettings.defaultSport || 'auto'
         };
         await setDoc(doc(db, 'settings', 'global'), payload);
         const { setSettings } = useAppStore.getState();
@@ -2873,57 +2871,6 @@ export default function Admin() {
               </div>
 
                 <div className="pt-4 border-t border-border-light dark:border-border-dark">
-                  <h3 className="text-sm font-black mb-1">ألوان الهيدر</h3>
-                  <p className="text-[10px] text-slate-500 font-bold mb-4">اختر لون خلفية الهيدر لكل وضع (فاتح / مظلم)</p>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-500 mb-1 block uppercase tracking-wider text-center">الوضع الفاتح</label>
-                       <div className="flex flex-col items-center gap-2">
-                         <div 
-                           className="w-full h-12 rounded-xl border border-border-light shadow-sm" 
-                           style={{ backgroundColor: formData.headerColorLight ?? appSettings.headerColorLight ?? '#ffffff' }}
-                         />
-                         <input 
-                           type="color" 
-                           value={formData.headerColorLight ?? appSettings.headerColorLight ?? '#ffffff'} 
-                           onChange={(e) => setFormData({...formData, headerColorLight: e.target.value})}
-                           className="w-full h-8 cursor-pointer rounded-lg bg-transparent border-none"
-                         />
-                         <input 
-                           type="text" 
-                           value={formData.headerColorLight ?? appSettings.headerColorLight ?? '#ffffff'} 
-                           onChange={(e) => setFormData({...formData, headerColorLight: e.target.value})}
-                           className="w-full p-2 rounded-lg border border-border-light bg-white text-[10px] font-mono text-center focus:border-primary outline-none"
-                         />
-                       </div>
-                    </div>
-
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-500 mb-1 block uppercase tracking-wider text-center">الوضع المظلم</label>
-                       <div className="flex flex-col items-center gap-2">
-                         <div 
-                           className="w-full h-12 rounded-xl border border-slate-800 shadow-sm" 
-                           style={{ backgroundColor: formData.headerColorDark ?? appSettings.headerColorDark ?? '#0f172a' }}
-                         />
-                         <input 
-                           type="color" 
-                           value={formData.headerColorDark ?? appSettings.headerColorDark ?? '#0f172a'} 
-                           onChange={(e) => setFormData({...formData, headerColorDark: e.target.value})}
-                           className="w-full h-8 cursor-pointer rounded-lg bg-transparent border-none"
-                         />
-                         <input 
-                           type="text" 
-                           value={formData.headerColorDark ?? appSettings.headerColorDark ?? '#0f172a'} 
-                           onChange={(e) => setFormData({...formData, headerColorDark: e.target.value})}
-                           className="w-full p-2 rounded-lg border border-slate-800 bg-slate-900 text-white text-[10px] font-mono text-center focus:border-primary outline-none"
-                         />
-                       </div>
-                    </div>
-                  </div>
-                </div>
-
-               <div className="pt-4 border-t border-border-light dark:border-border-dark">
                  <h3 className="text-sm font-black mb-1">إعدادات الصفحة الرئيسية</h3>
                  <p className="text-[10px] text-slate-500 font-bold mb-4">تحكم في القسم الافتراضي الذي يظهر للمستخدم عند فتح التطبيق</p>
                  

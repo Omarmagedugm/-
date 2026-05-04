@@ -160,16 +160,20 @@ export default function Home() {
     }
   }, [homeSections, cityInfo?.active]);
 
-  const calculateCurrentMinute = (match: any) => {
-    if (!match.isTimerRunning || !match.timerStartTime)
-      return Number(match.timerBaseMinute || 0);
+  const calculateCurrentTimeFormat = (match: any) => {
+    if (!match.isTimerRunning || !match.timerStartTime) {
+      return `${String(match.timerBaseMinute || 0).padStart(2, '0')}:00'`;
+    }
     const start = new Date(match.timerStartTime).getTime();
-    if (isNaN(start)) return Number(match.timerBaseMinute || 0);
-    const elapsed = Math.max(
-      0,
-      Math.floor((new Date().getTime() - start) / 60000),
-    );
-    return Number(match.timerBaseMinute || 0) + elapsed;
+    if (isNaN(start)) {
+      return `${String(match.timerBaseMinute || 0).padStart(2, '0')}:00'`;
+    }
+    const totalSeconds = Math.max(0, Math.floor((new Date().getTime() - start) / 1000));
+    const baseSeconds = Number(match.timerBaseMinute || 0) * 60;
+    const currentSeconds = baseSeconds + totalSeconds;
+    const mm = Math.floor(currentSeconds / 60);
+    const ss = currentSeconds % 60;
+    return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}'`;
   };
 
   const handleScoreUpdate = async (matchId: string, team: 'home' | 'away', change: number) => {
@@ -310,10 +314,10 @@ export default function Home() {
     const timePhase = hour >= 6 && hour < 18 ? "day" : "night";
 
     const cardBg = effectiveSport === "basketball" 
-      ? "bg-gradient-to-br from-orange-600 via-orange-900 to-slate-900" 
+      ? "bg-gradient-to-br from-orange-600 via-orange-900 to-slate-900 border-orange-500/20" 
       : timePhase === "day" 
-        ? "bg-gradient-to-br from-primary-dark via-primary to-primary-light" 
-        : "bg-gradient-to-br from-slate-900 via-slate-800 to-primary-dark";
+        ? "bg-gradient-to-br from-[#064e3b] via-[#065f46] to-[#047857] border-[#065f46]/30" 
+        : "bg-gradient-to-br from-[#022c1b] via-[#044a2b] to-[#01140c] border-[#045532]/40";
 
     switch (
       section.type === "custom" && section.id === "city" ? "city" : section.type
@@ -325,32 +329,6 @@ export default function Home() {
             variants={itemVariants}
             className="relative space-y-4"
           >
-            {/* Stable Sport Switcher - Fixed Position & High Z-Index */}
-            <div className={`absolute top-4 left-4 z-40 flex gap-2 backdrop-blur-3xl p-1.5 rounded-2xl shadow-xl border ring-2 ring-black/5 ${!heroMatch ? 'bg-white/95 dark:bg-card-dark/95 border-border-light dark:border-border-dark' : 'bg-black/70 border-white/20 ring-white/5'}`}>
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedSport("football");
-                }}
-                className={`flex items-center justify-center p-2 rounded-xl transition-all duration-200 pointer-events-auto ${effectiveSport === "football" ? "bg-primary text-white shadow-glow" : !heroMatch ? "text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-dark" : "text-white/40 hover:bg-white/10 hover:text-white"}`}
-                aria-label="كرة قدم"
-              >
-                <Trophy size={14} />
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedSport("basketball");
-                }}
-                className={`flex items-center justify-center p-2 rounded-xl transition-all duration-200 pointer-events-auto ${effectiveSport === "basketball" ? "bg-[#ea580c] text-white shadow-glow" : !heroMatch ? "text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-dark" : "text-white/40 hover:bg-white/10 hover:text-white"}`}
-                aria-label="كرة سلة"
-              >
-                <Dribbble size={14} />
-              </motion.button>
-            </div>
-
             {!heroMatch ? (
               <div className="relative bg-slate-50 dark:bg-surface-dark p-12 rounded-[40px] flex flex-col items-center justify-center text-center gap-3 border border-dashed border-slate-300 dark:border-border-dark shadow-sm">
                 {effectiveSport === "football" ? (
@@ -378,7 +356,7 @@ export default function Home() {
                 )}
 
                 <div className="relative rounded-[40px] shadow-2xl overflow-hidden">
-                  <div className={`relative w-full h-full cinematic-glow ${cardBg} border border-white/10 p-5 sm:p-6 rounded-[40px]`}>
+                  <div className={`relative w-full h-full cinematic-glow ${cardBg} border p-5 sm:p-6 rounded-[40px]`}>
                     {/* Background Effects Container */}
                     <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none rounded-[40px]">
                       {/* Stadium Image Background */}
@@ -397,33 +375,67 @@ export default function Home() {
                     </div>
 
                     <div className="relative z-10">
-                      <div className="mb-4 flex items-center justify-between relative">
-                        <div className={`text-[10px] font-black text-white px-2.5 py-1.5 rounded-lg backdrop-blur-md border border-white/10 tracking-tighter flex items-center gap-1.5 ${effectiveSport === "basketball" ? "bg-orange-500/20" : "bg-accent/20"}`}>
-                          {effectiveSport === "basketball" ? <Dribbble size={10} className="text-orange-400" /> : <Trophy size={10} className="text-accent" />}
-                          {heroMatch.competition}
+                      <div className="mb-6 flex items-center justify-center w-full relative h-8">
+                        {/* Right: Competition */}
+                        <div className={`absolute right-0 top-0 text-[10px] sm:text-[11px] shrink-0 font-black text-white px-2 sm:px-3 py-1.5 h-8 rounded-lg backdrop-blur-md border border-white/10 tracking-tighter flex items-center justify-center gap-1.5 z-20 ${effectiveSport === "basketball" ? "bg-orange-500/30" : "bg-white/10"}`}>
+                          {effectiveSport === "basketball" ? <Dribbble size={12} className="text-orange-400 shrink-0" /> : <Trophy size={12} className="text-white shrink-0" />}
+                          <span className="truncate max-w-[70px] sm:max-w-none">{heroMatch.competition}</span>
+                        </div>
+                        
+                        {/* Center: Live / Timer */}
+                        <div className="flex items-center justify-center z-20">
+                          {heroMatch.status === "live" ? (
+                            <div className="flex shrink-0 items-center justify-center gap-1.5 px-3 py-1.5 h-8 bg-red-600/90 rounded-lg animate-pulse shadow-glow border border-red-500/50">
+                              <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                              <span className="text-white text-[9px] sm:text-[10px] font-black tracking-widest leading-none">مباشر</span>
+                            </div>
+                          ) : isUpcoming ? (
+                            <div className="flex shrink-0 items-center gap-0.5 sm:gap-1.5 text-white dir-ltr scale-[0.80] sm:scale-100" dir="ltr" style={{ transformOrigin: "center" }}>
+                              {[
+                                { val: timeLeft.d, label: "يوم" },
+                                { val: timeLeft.h, label: "ساعة" },
+                                { val: timeLeft.m, label: "دقيقة" },
+                                { val: timeLeft.s, label: "ثانية", accent: true }
+                              ].map((unit, idx, arr) => (
+                                <div key={unit.label} className="flex items-center gap-0.5 sm:gap-1">
+                                  <div className="flex flex-col items-center gap-0.5">
+                                    <div className={`w-5 h-5 sm:w-6 sm:h-6 bg-black/30 rounded flex items-center justify-center border border-white/10 text-[10px] sm:text-xs font-mono font-black tabular-nums backdrop-blur-md ${unit.accent ? 'text-accent' : ''}`}>
+                                      {unit.val.toString().padStart(2, "0")}
+                                    </div>
+                                    <span className="text-[7px] sm:text-[8px] opacity-70 leading-none tracking-widest font-bold">{unit.label}</span>
+                                  </div>
+                                  {idx < arr.length - 1 && <span className="text-white/30 text-[10px] mb-3 font-bold">:</span>}
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
 
-                        {isUpcoming && (
-                          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 sm:gap-1.5 text-white dir-ltr" dir="ltr">
-                            {[
-                              { val: timeLeft.d, label: "يوم" },
-                              { val: timeLeft.h, label: "ساعة" },
-                              { val: timeLeft.m, label: "دقيقة" },
-                              { val: timeLeft.s, label: "ثانية", accent: true }
-                            ].map((unit, idx, arr) => (
-                              <div key={unit.label} className="flex items-center gap-1">
-                                <div className="flex flex-col items-center gap-0.5">
-                                  <div className={`w-5 h-5 sm:w-6 sm:h-6 bg-black/30 rounded flex items-center justify-center border border-white/10 text-[10px] sm:text-xs font-mono font-black tabular-nums backdrop-blur-md ${unit.accent ? 'text-accent' : ''}`}>
-                                    {unit.val.toString().padStart(2, "0")}
-                                  </div>
-                                  <span className="text-[7px] sm:text-[8px] opacity-70 leading-none tracking-widest font-bold">{unit.label}</span>
-                                </div>
-                                {idx < arr.length - 1 && <span className="text-white/30 text-[10px] mb-3 font-bold">:</span>}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <div className="w-10 invisible" />
+                        {/* Left: Sport Switcher */}
+                        <div className="absolute left-0 top-0 flex shrink-0 bg-white/10 backdrop-blur-md border border-white/10 p-0.5 rounded-lg h-8 z-20">
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedSport("football");
+                            }}
+                            className={`flex items-center justify-center px-1.5 sm:px-2 h-full rounded-md transition-all duration-200 pointer-events-auto ${effectiveSport === "football" ? "bg-white text-slate-900 shadow-sm" : "text-white/60 hover:bg-white/10 hover:text-white"}`}
+                            aria-label="كرة قدم"
+                          >
+                            <Trophy size={12} />
+                          </motion.button>
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedSport("basketball");
+                            }}
+                            className={`flex items-center justify-center px-1.5 sm:px-2 h-full rounded-md transition-all duration-200 pointer-events-auto ${effectiveSport === "basketball" ? "bg-[#ea580c] text-white shadow-glow" : "text-white/60 hover:bg-white/10 hover:text-white"}`}
+                            aria-label="كرة سلة"
+                          >
+                            <Dribbble size={12} />
+                          </motion.button>
+                        </div>
                       </div>
 
                       <div className="flex justify-center items-center gap-2 sm:gap-6 py-4 sm:py-6 px-1 sm:px-4">
@@ -532,6 +544,40 @@ export default function Home() {
                                     </button>
                                   )}
                                 </div>
+                              </div>
+                            )}
+                            
+                            {heroMatch.status === "live" && (
+                              <div className="flex flex-col items-center gap-2 mt-4">
+                                <div className="px-5 py-1.5 bg-black/40 border border-white/20 rounded-xl text-white font-digital font-black text-[18px] tabular-nums text-center tracking-widest shadow-inner">
+                                  {calculateCurrentTimeFormat(heroMatch)}
+                                </div>
+                                {isAdmin && (
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleStatusUpdate(heroMatch.id, 'live', true);
+                                      }}
+                                      className={`px-3 py-1.5 rounded-lg border text-[10px] font-black flex items-center gap-1 transition-colors ${heroMatch.isTimerRunning ? 'bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30'}`}
+                                    >
+                                      {heroMatch.isTimerRunning ? <span className="material-symbols-outlined !text-[12px]">pause</span> : <Play size={10} fill="currentColor" />}
+                                      {heroMatch.isTimerRunning ? 'إيقاف مؤقت' : 'تشغيل الوقت'}
+                                    </button>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if(window.confirm('هل أنت متأكد من إنهاء المباراة؟')) {
+                                          handleStatusUpdate(heroMatch.id, 'finished');
+                                        }
+                                      }}
+                                      className="px-3 py-1.5 rounded-lg border bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30 text-[10px] font-black flex items-center gap-1 transition-colors"
+                                    >
+                                      <span className="material-symbols-outlined !text-[12px]">stop</span>
+                                      إنهاء المباراة
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -1315,33 +1361,6 @@ export default function Home() {
                     }}
                     className="absolute inset-0 bg-white z-[20] pointer-events-none"
                   />
-                )}
-
-                {/* Night Stars Effect */}
-                {(timePhase === "night" || effectType === "stars") && (
-                  <div className="absolute inset-0 rounded-[40px] overflow-hidden z-[6]">
-                    {[...Array(60)].map((_, i) => (
-                      <motion.div
-                        key={i}
-                        className="absolute bg-white rounded-full"
-                        style={{
-                          top: `${Math.random() * 100}%`,
-                          left: `${Math.random() * 100}%`,
-                          width: `${1 + Math.random() * 1.5}px`,
-                          height: `${1 + Math.random() * 1.5}px`,
-                        }}
-                        animate={{
-                          opacity: [0.3, 1, 0.3],
-                          scale: [0.8, 1.2, 0.8],
-                        }}
-                        transition={{
-                          duration: 2 + Math.random() * 3,
-                          repeat: Infinity,
-                          delay: Math.random() * 5,
-                        }}
-                      />
-                    ))}
-                  </div>
                 )}
 
                 {/* Sun Glow Effect */}
