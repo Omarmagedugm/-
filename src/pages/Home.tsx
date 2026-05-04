@@ -61,9 +61,9 @@ export default function Home() {
   } = useAppStore();
   const [tick, setTick] = useState(0);
   const [clarityOpen, setClarityOpen] = useState(false);
-  const isOmar = auth.currentUser?.email === "omarmagedugm@ittihad.club";
-  const isDev = auth.currentUser?.email === "copyrightofficialco@gmail.com";
-  const isAdmin = profile?.role === "admin" || isOmar || isDev;
+  const isOmar = auth.currentUser?.email?.toLowerCase() === "omarmagedugm@ittihad.club";
+  const isDev = auth.currentUser?.email?.toLowerCase() === "copyrightofficialco@gmail.com";
+  const isAdmin = (auth.currentUser && profile?.role === "admin") || isOmar || isDev;
   const [selectedSport, setSelectedSport] = useState<"football" | "basketball" | "auto">(() => {
     const saved = localStorage.getItem("selected_sport");
     return (saved as "football" | "basketball" | "auto") || "auto";
@@ -306,454 +306,302 @@ export default function Home() {
   const renderSection = (section: any) => {
     if (!section.active) return null;
 
+    const hour = new Date().getHours();
+    const timePhase = hour >= 6 && hour < 18 ? "day" : "night";
+
+    const cardBg = effectiveSport === "basketball" 
+      ? "bg-gradient-to-br from-orange-600 via-orange-900 to-slate-900" 
+      : timePhase === "day" 
+        ? "bg-gradient-to-br from-primary-dark via-primary to-primary-light" 
+        : "bg-gradient-to-br from-slate-900 via-slate-800 to-primary-dark";
+
     switch (
       section.type === "custom" && section.id === "city" ? "city" : section.type
     ) {
       case "hero":
-        if (!heroMatch)
-          return (
-            <motion.section
-              key={section.id}
-              variants={itemVariants}
-              className="space-y-4"
-            >
-              <div className="relative bg-slate-50 dark:bg-surface-dark p-12 rounded-[40px] flex flex-col items-center justify-center text-center gap-3 border border-dashed border-slate-300 dark:border-border-dark shadow-sm">
-                <div className="absolute top-4 right-4 z-[310] flex gap-2 bg-white/95 dark:bg-card-dark/95 backdrop-blur-3xl p-1.5 rounded-2xl shadow-xl border border-border-light dark:border-border-dark ring-2 ring-black/5">
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedSport("football");
-                    }}
-                    className={`flex items-center justify-center p-2 rounded-xl transition-all duration-200 pointer-events-auto ${effectiveSport === "football" ? "bg-primary text-white shadow-glow" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-dark"}`}
-                    aria-label="كرة قدم"
-                  >
-                    <Trophy size={14} />
-                  </motion.button>
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedSport("basketball");
-                    }}
-                    className={`flex items-center justify-center p-2 rounded-xl transition-all duration-200 pointer-events-auto ${effectiveSport === "basketball" ? "bg-[#ea580c] text-white shadow-glow" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-dark"}`}
-                    aria-label="كرة سلة"
-                  >
-                    <Dribbble size={14} />
-                  </motion.button>
-                </div>
-                {effectiveSport === "football" ? (
-                  <Trophy
-                    size={48}
-                    className="text-slate-300 dark:text-slate-600"
-                  />
-                ) : (
-                  <Dribbble
-                    size={48}
-                    className="text-slate-300 dark:text-slate-600"
-                  />
-                )}
-                <p className="text-[11px] font-black text-slate-500">
-                  لا توجد مباريات{" "}
-                  {effectiveSport === "football" ? "كرة قدم" : "كرة سلة"} حالياً
-                </p>
-              </div>
-            </motion.section>
-          );
         return (
           <motion.section
             key={section.id}
             variants={itemVariants}
-            className="relative group space-y-4"
+            className="relative space-y-4"
           >
-            <div className="relative">
-              {isAdmin && (
-                <button
-                  onClick={() =>
-                    navigate("/admin", {
-                      state: { editCategory: "matches", editId: heroMatch.id },
-                    })
-                  }
-                  className="absolute -top-2 -right-2 z-50 p-2.5 bg-accent text-white rounded-2xl shadow-premium shadow-accent/20 pressable"
-                >
-                  <Edit2 size={16} />
-                </button>
-              )}
-
-              <div
-                className={`relative overflow-hidden rounded-[40px] shadow-2xl cinematic-glow ${effectiveSport === "basketball" ? "bg-gradient-to-br from-orange-600 via-orange-900 to-slate-900 border border-orange-500/30" : "stadium-gradient"}`}
+            {/* Stable Sport Switcher - Fixed Position & High Z-Index */}
+            <div className={`absolute top-4 left-4 z-40 flex gap-2 backdrop-blur-3xl p-1.5 rounded-2xl shadow-xl border ring-2 ring-black/5 ${!heroMatch ? 'bg-white/95 dark:bg-card-dark/95 border-border-light dark:border-border-dark' : 'bg-black/70 border-white/20 ring-white/5'}`}>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedSport("football");
+                }}
+                className={`flex items-center justify-center p-2 rounded-xl transition-all duration-200 pointer-events-auto ${effectiveSport === "football" ? "bg-primary text-white shadow-glow" : !heroMatch ? "text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-dark" : "text-white/40 hover:bg-white/10 hover:text-white"}`}
+                aria-label="كرة قدم"
               >
-                {/* Stadium Background */}
-                <div className="absolute inset-0 z-0 rounded-[inherit] overflow-hidden">
-                   <img 
-                      src={heroMatch?.stadiumImage || (effectiveSport === "basketball" ? "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=2000" : "https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=2000")} 
-                      className="w-full h-full object-cover filter saturate-50 rounded-[inherit] transition-all duration-500" 
-                      style={{ 
-                        opacity: heroMatch?.stadiumOpacity ?? stadiumOpacity,
-                        filter: `saturate(0.5) blur(${(heroMatch?.stadiumOpacity ?? stadiumOpacity) > 0.5 ? '0px' : '2px'})`
-                      }}
-                      alt="stadium"
-                   />
-                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent rounded-[inherit]"></div>
-                </div>
+                <Trophy size={14} />
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedSport("basketball");
+                }}
+                className={`flex items-center justify-center p-2 rounded-xl transition-all duration-200 pointer-events-auto ${effectiveSport === "basketball" ? "bg-[#ea580c] text-white shadow-glow" : !heroMatch ? "text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-dark" : "text-white/40 hover:bg-white/10 hover:text-white"}`}
+                aria-label="كرة سلة"
+              >
+                <Dribbble size={14} />
+              </motion.button>
+            </div>
 
-                {/* Clarity Control Toggle (Admin or Guest) */}
-                <div className="absolute top-4 left-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="relative">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setClarityOpen(!clarityOpen); }}
-                      className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/20 text-white transition-all"
-                      title="وضوح الخلفية"
-                    >
-                      <Settings size={16} />
-                    </button>
-                    
-                    <AnimatePresence>
-                      {clarityOpen && (
-                        <motion.div 
-                          initial={{ opacity: 0, scale: 0.9, x: -10 }}
-                          animate={{ opacity: 1, scale: 1, x: 0 }}
-                          exit={{ opacity: 0, scale: 0.9, x: -10 }}
-                          className="absolute top-0 left-10 ml-2 bg-slate-900/80 backdrop-blur-xl border border-white/10 p-3 rounded-2xl shadow-xl w-40 flex flex-col gap-2"
-                        >
-                          <div className="flex justify-between items-center">
-                            <span className="text-[10px] font-bold text-white/60 uppercase">وضوح الخلفية</span>
-                            <span className="text-[10px] font-mono text-primary">{Math.round(stadiumOpacity * 100)}%</span>
-                          </div>
-                          <input 
-                            type="range" 
-                            min="0.05" 
-                            max="0.8" 
-                            step="0.05"
-                            value={stadiumOpacity}
-                            onChange={(e) => setStadiumOpacity(parseFloat(e.target.value))}
-                            className="accent-primary h-1 rounded-full cursor-pointer bg-white/20"
-                          />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
+            {!heroMatch ? (
+              <div className="relative bg-slate-50 dark:bg-surface-dark p-12 rounded-[40px] flex flex-col items-center justify-center text-center gap-3 border border-dashed border-slate-300 dark:border-border-dark shadow-sm">
+                {effectiveSport === "football" ? (
+                  <Trophy size={48} className="text-slate-300 dark:text-slate-600" />
+                ) : (
+                  <Dribbble size={48} className="text-slate-300 dark:text-slate-600" />
+                )}
+                <p className="text-[11px] font-black text-slate-500">
+                  لا توجد مباريات {effectiveSport === "football" ? "كرة قدم" : "كرة سلة"} حالياً
+                </p>
+              </div>
+            ) : (
+              <div className="relative">
+                {isAdmin && (
+                  <button
+                    onClick={() =>
+                      navigate("/admin", {
+                        state: { editCategory: "matches", editId: heroMatch.id },
+                      })
+                    }
+                    className="absolute -top-2 -right-2 z-40 p-2.5 bg-accent text-white rounded-2xl shadow-premium shadow-accent/20 pressable"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                )}
 
-                <div
-                  className={`absolute inset-0 opacity-10 mix-blend-overlay rounded-[inherit] ${effectiveSport === "basketball" ? 'bg-[url("https://www.transparenttextures.com/patterns/carbon-fibre.png")]' : 'bg-[url("https://www.transparenttextures.com/patterns/stardust.png")]'}`}
-                ></div>
-
-                <div className="relative p-5 sm:p-6 z-10">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div
-                      className={`text-[10px] font-black text-white px-2.5 py-1.5 rounded-lg backdrop-blur-md border border-white/10 tracking-tighter flex items-center gap-1.5 ${effectiveSport === "basketball" ? "bg-orange-500/20" : "bg-accent/20"}`}
-                    >
-                      {effectiveSport === "basketball" ? (
-                        <Dribbble size={10} className="text-orange-400" />
-                      ) : (
-                        <Trophy size={10} className="text-accent" />
-                      )}
-                      {heroMatch.competition}
-                    </div>
-
-                    {isUpcoming && (
-                      <div
-                        className="flex items-center gap-1 sm:gap-1.5 text-white dir-ltr"
-                        dir="ltr"
-                      >
-                        <div className="flex flex-col items-center gap-0.5">
-                          <div className="w-5 h-5 sm:w-6 sm:h-6 bg-black/30 rounded flex items-center justify-center border border-white/10 text-[10px] sm:text-xs font-mono font-black tabular-nums backdrop-blur-md">
-                            {timeLeft.d}
-                          </div>
-                          <span className="text-[7px] sm:text-[8px] opacity-70 leading-none tracking-widest font-bold">
-                            يوم
-                          </span>
-                        </div>
-                        <span className="text-white/30 text-[10px] mb-3 font-bold">
-                          :
-                        </span>
-                        <div className="flex flex-col items-center gap-0.5">
-                          <div className="w-5 h-5 sm:w-6 sm:h-6 bg-black/30 rounded flex items-center justify-center border border-white/10 text-[10px] sm:text-xs font-mono font-black tabular-nums backdrop-blur-md">
-                            {timeLeft.h.toString().padStart(2, "0")}
-                          </div>
-                          <span className="text-[7px] sm:text-[8px] opacity-70 leading-none tracking-widest font-bold">
-                            ساعة
-                          </span>
-                        </div>
-                        <span className="text-white/30 text-[10px] mb-3 font-bold">
-                          :
-                        </span>
-                        <div className="flex flex-col items-center gap-0.5">
-                          <div className="w-5 h-5 sm:w-6 sm:h-6 bg-black/30 rounded flex items-center justify-center border border-white/10 text-[10px] sm:text-xs font-mono font-black tabular-nums backdrop-blur-md">
-                            {timeLeft.m.toString().padStart(2, "0")}
-                          </div>
-                          <span className="text-[7px] sm:text-[8px] opacity-70 leading-none tracking-widest font-bold">
-                            دقيقة
-                          </span>
-                        </div>
-                        <span className="text-white/30 text-[10px] mb-3 font-bold">
-                          :
-                        </span>
-                        <div className="flex flex-col items-center gap-0.5">
-                          <div className="w-5 h-5 sm:w-6 sm:h-6 bg-black/30 rounded flex items-center justify-center border border-white/10 text-[10px] sm:text-xs font-mono font-black tabular-nums backdrop-blur-md text-accent">
-                            {timeLeft.s.toString().padStart(2, "0")}
-                          </div>
-                          <span className="text-[7px] sm:text-[8px] opacity-70 leading-none tracking-widest font-bold">
-                            ثانية
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex gap-2 bg-black/70 backdrop-blur-3xl p-1.5 rounded-2xl shadow-2xl border border-white/20 z-[310] relative ring-2 ring-white/5">
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedSport("football");
-                        }}
-                        className={`flex items-center justify-center p-2.5 rounded-xl transition-all duration-200 pointer-events-auto ${effectiveSport === "football" ? "bg-primary text-white shadow-glow" : "text-white/40 hover:bg-white/10 hover:text-white"}`}
-                        aria-label="كرة قدم"
-                      >
-                        <Trophy size={16} />
-                      </motion.button>
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedSport("basketball");
-                        }}
-                        className={`flex items-center justify-center p-2.5 rounded-xl transition-all duration-200 pointer-events-auto ${effectiveSport === "basketball" ? "bg-[#ea580c] text-white shadow-glow" : "text-white/40 hover:bg-white/10 hover:text-white"}`}
-                        aria-label="كرة سلة"
-                      >
-                        <Dribbble size={16} />
-                      </motion.button>
-                    </div>
-                  </div>
-                  <div className="flex justify-between sm:justify-center items-center gap-1 sm:gap-6 py-4 sm:py-6 px-1 sm:px-4">
-                    <div className="flex flex-col items-center gap-2 sm:gap-5 w-[80px] sm:w-44 group/team shrink-0 z-10">
-                      <div
-                        className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium ${heroMatch.status === "upcoming" ? "h-20 w-20 sm:h-40 sm:w-40" : "h-16 w-16 sm:h-32 sm:w-32"}`}
-                      >
-                        <SafeImage
-                          alt={heroMatch.homeTeam}
-                          className="w-full h-full object-contain filter drop-shadow-2xl"
-                          src={heroMatch.homeLogo || undefined}
-                          width={200}
+                <div className="relative rounded-[40px] shadow-2xl overflow-hidden">
+                  <div className={`relative w-full h-full cinematic-glow ${cardBg} border border-white/10 p-5 sm:p-6 rounded-[40px]`}>
+                    {/* Background Effects Container */}
+                    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none rounded-[40px]">
+                      {/* Stadium Image Background */}
+                      <div className="absolute inset-0 z-0 rounded-[40px] overflow-hidden">
+                        <img 
+                          src={heroMatch?.stadiumImage || (effectiveSport === "basketball" ? "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=2000" : "https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=2000")} 
+                          className="w-full h-full object-cover filter saturate-50 transition-all duration-500 rounded-[40px]" 
+                          style={{ 
+                            opacity: heroMatch?.stadiumOpacity ?? stadiumOpacity,
+                            filter: `saturate(0.5) blur(${(heroMatch?.stadiumOpacity ?? stadiumOpacity) > 0.5 ? '0px' : '2px'})`
+                          }}
+                          alt="stadium"
                         />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent rounded-[40px]" />
                       </div>
-                      <span className="text-center text-[10px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">
-                        {heroMatch.homeTeam}
-                      </span>
                     </div>
 
-                    <div className="flex flex-col items-center flex-1 px-1 sm:px-4 z-10 min-w-0">
-                      <div
-                        className={`font-black text-white filter flex flex-col items-center w-full ${effectiveSport === "basketball" ? "drop-shadow-[0_5px_15px_rgba(234,88,12,0.3)]" : "drop-shadow-[0_5px_15px_rgba(46,204,113,0.3)]"}`}
-                      >
-                        {heroMatch.status === "upcoming" ? (
-                          <div className="flex flex-col items-center w-full justify-center gap-1 sm:gap-2">
-                            <div className="text-xl sm:text-3xl opacity-60">
-                              VS
-                            </div>
-                            <div
-                              className="w-fit max-w-[110px] sm:max-w-none mx-auto text-center font-bold text-white/90 bg-black/40 px-2 py-1.5 sm:px-5 sm:py-2.5 rounded-xl border border-white/10 leading-tight"
-                              style={{ fontSize: "clamp(8.5px, 2.5vw, 13px)" }}
-                            >
-                              {heroMatch.date &&
-                              !isNaN(new Date(heroMatch.date).getTime()) ? (
-                                <div className="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5">
-                                  <span className="truncate w-full text-center">
-                                    {format(
-                                      new Date(heroMatch.date),
-                                      "EEEE d MMMM",
-                                      { locale: ar },
-                                    )}
-                                  </span>
-                                  <span className="hidden sm:inline">|</span>
-                                  <span className="text-white/70">
-                                    {format(new Date(heroMatch.date), "h:mm a", {
-                                      locale: ar,
-                                    })}
-                                  </span>
+                    <div className="relative z-10">
+                      <div className="mb-4 flex items-center justify-between relative">
+                        <div className={`text-[10px] font-black text-white px-2.5 py-1.5 rounded-lg backdrop-blur-md border border-white/10 tracking-tighter flex items-center gap-1.5 ${effectiveSport === "basketball" ? "bg-orange-500/20" : "bg-accent/20"}`}>
+                          {effectiveSport === "basketball" ? <Dribbble size={10} className="text-orange-400" /> : <Trophy size={10} className="text-accent" />}
+                          {heroMatch.competition}
+                        </div>
+
+                        {isUpcoming && (
+                          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 sm:gap-1.5 text-white dir-ltr" dir="ltr">
+                            {[
+                              { val: timeLeft.d, label: "يوم" },
+                              { val: timeLeft.h, label: "ساعة" },
+                              { val: timeLeft.m, label: "دقيقة" },
+                              { val: timeLeft.s, label: "ثانية", accent: true }
+                            ].map((unit, idx, arr) => (
+                              <div key={unit.label} className="flex items-center gap-1">
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <div className={`w-5 h-5 sm:w-6 sm:h-6 bg-black/30 rounded flex items-center justify-center border border-white/10 text-[10px] sm:text-xs font-mono font-black tabular-nums backdrop-blur-md ${unit.accent ? 'text-accent' : ''}`}>
+                                    {unit.val.toString().padStart(2, "0")}
+                                  </div>
+                                  <span className="text-[7px] sm:text-[8px] opacity-70 leading-none tracking-widest font-bold">{unit.label}</span>
                                 </div>
-                              ) : (
-                                "غير محدد"
-                              )}
-                            </div>
-                            
-                            {isAdmin && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleStatusUpdate(heroMatch.id, 'live'); }}
-                                className="mt-3 flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl text-[10px] font-black transition-all shadow-lg ring-4 ring-green-500/20"
-                              >
-                                <Play size={12} fill="currentColor" />
-                                بـــدء الآن
-                              </button>
-                            )}
-                          </div>
-                        ) : (
-                          <div
-                            className={`flex items-center justify-center gap-2 sm:gap-4 tracking-widest tabular-nums ${String(heroMatch.homeScore).length > 2 || String(heroMatch.awayScore).length > 2 ? "text-4xl sm:text-7xl" : "text-5xl sm:text-8xl"}`}
-                          >
-                            <div className="flex flex-col items-center gap-1">
-                              {profile?.role === 'admin' && (
-                                <button 
-                                  onClick={(e) => { e.stopPropagation(); handleScoreUpdate(heroMatch.id, 'home', 1); }}
-                                  className="p-1 bg-white/20 hover:bg-white/40 rounded-full transition-colors mb-1"
-                                >
-                                  <Plus size={16} className="text-white" />
-                                </button>
-                              )}
-                              <span>{heroMatch.homeScore}</span>
-                              {profile?.role === 'admin' && (
-                                <button 
-                                  onClick={(e) => { e.stopPropagation(); handleScoreUpdate(heroMatch.id, 'home', -1); }}
-                                  className="p-1 bg-white/20 hover:bg-white/40 rounded-full transition-colors mt-1"
-                                >
-                                  <Minus size={16} className="text-white" />
-                                </button>
-                              )}
-                            </div>
-                            <span
-                              className={
-                                effectiveSport === "basketball"
-                                  ? "text-orange-400"
-                                  : "text-accent"
-                              }
-                            >
-                              :
-                            </span>
-                            <div className="flex flex-col items-center gap-1">
-                              {profile?.role === 'admin' && (
-                                <button 
-                                  onClick={(e) => { e.stopPropagation(); handleScoreUpdate(heroMatch.id, 'away', 1); }}
-                                  className="p-1 bg-white/20 hover:bg-white/40 rounded-full transition-colors mb-1"
-                                >
-                                  <Plus size={16} className="text-white" />
-                                </button>
-                              )}
-                              <span>{heroMatch.awayScore}</span>
-                              {profile?.role === 'admin' && (
-                                <button 
-                                  onClick={(e) => { e.stopPropagation(); handleScoreUpdate(heroMatch.id, 'away', -1); }}
-                                  className="p-1 bg-white/20 hover:bg-white/40 rounded-full transition-colors mt-1"
-                                >
-                                  <Minus size={16} className="text-white" />
-                                </button>
-                              )}
-                            </div>
+                                {idx < arr.length - 1 && <span className="text-white/30 text-[10px] mb-3 font-bold">:</span>}
+                              </div>
+                            ))}
                           </div>
                         )}
+                        <div className="w-10 invisible" />
                       </div>
-                      <div className="mt-2 sm:mt-5 flex flex-col items-center gap-1.5 sm:gap-3">
-                        {heroMatch.status === "live" ? (
-                          <>
-                            <div className="flex items-center gap-1.5 sm:gap-2.5 rounded-full bg-red-600 px-3 py-1.5 text-[9px] sm:text-[11px] font-black text-white shadow-glow">
-                              <div className="relative h-2 w-2 sm:h-2.5 sm:w-2.5">
-                                <div className="animate-ping absolute h-full w-full rounded-full bg-white opacity-75"></div>
-                                <div className="relative rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-white"></div>
+
+                      <div className="flex justify-center items-center gap-2 sm:gap-6 py-4 sm:py-6 px-1 sm:px-4">
+                        <div className="flex flex-col items-center gap-2 sm:gap-5 w-[80px] sm:w-44 group/team shrink-0 z-10">
+                          <div className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium ${heroMatch.status === "upcoming" ? "h-20 w-20 sm:h-40 sm:w-40" : "h-16 w-16 sm:h-32 sm:w-32"}`}>
+                            <SafeImage alt={heroMatch.homeTeam} className="w-full h-full object-contain filter drop-shadow-2xl" src={heroMatch.homeLogo || undefined} width={200} />
+                          </div>
+                          <span className="text-center text-[10px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">{heroMatch.homeTeam}</span>
+                        </div>
+
+                        <div className="flex flex-col items-center flex-1 px-1 sm:px-4 z-10 min-w-0">
+                          <div className={`font-black text-white filter flex flex-col items-center w-full ${effectiveSport === "basketball" ? "drop-shadow-[0_5px_15px_rgba(234,88,12,0.3)]" : "drop-shadow-[0_5px_15px_rgba(46,204,113,0.3)]"}`}>
+                            {heroMatch.status === "upcoming" ? (
+                              <div className="flex flex-col items-center w-full justify-center gap-1 sm:gap-2">
+                                <div className="text-xl sm:text-3xl opacity-60">VS</div>
+                                <div className="w-fit max-w-[110px] sm:max-w-none mx-auto text-center font-bold text-white/90 bg-black/40 px-2 py-1.5 sm:px-5 sm:py-2.5 rounded-xl border border-white/10 leading-tight" style={{ fontSize: "clamp(8.5px, 2.5vw, 13px)" }}>
+                                  {heroMatch.date && !isNaN(new Date(heroMatch.date).getTime()) ? (
+                                    <div className="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5">
+                                      <span className="truncate w-full text-center">{format(new Date(heroMatch.date), "EEEE d MMMM", { locale: ar })}</span>
+                                      <span className="hidden sm:inline">|</span>
+                                      <span className="text-white/70">{format(new Date(heroMatch.date), "h:mm a", { locale: ar })}</span>
+                                    </div>
+                                  ) : "غير محدد"}
+                                </div>
+                                {isAdmin && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleStatusUpdate(heroMatch.id, "live");
+                                    }}
+                                    className="mt-3 flex items-center gap-2 px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl text-[11px] font-black transition-all shadow-lg ring-4 ring-green-500/20 active:scale-95"
+                                  >
+                                    <Play size={14} fill="currentColor" />
+                                    بـــدء الآن
+                                  </button>
+                                )}
                               </div>
-                              بث مباشر
-                            </div>
-                            <div className="px-3 py-1 bg-white/10 rounded-full text-[9px] sm:text-[11px] font-black text-white backdrop-blur-md border border-white/10 flex items-center gap-1">
-                              {heroMatch.isTimerRunning ? (
-                                <motion.span 
-                                  animate={{ opacity: [1, 0.5, 1] }} 
-                                  transition={{ repeat: Infinity, duration: 1 }}
-                                  className="w-1.5 h-1.5 rounded-full bg-green-400"
-                                />
-                              ) : (
-                                <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
-                              )}
-                              {calculateCurrentMinute(heroMatch)}'
-                            </div>
-                            
-                            {isAdmin && (
-                              <div className="flex items-center gap-2 mt-2">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleStatusUpdate(heroMatch.id, 'live', true); }}
-                                  className="flex items-center gap-2 px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-[9px] font-bold border border-white/10 transition-all"
+                            ) : (
+                              <div
+                                className={`flex items-center justify-center gap-2 sm:gap-4 tracking-widest tabular-nums ${String(heroMatch.homeScore).length > 2 || String(heroMatch.awayScore).length > 2 ? "text-4xl sm:text-7xl" : "text-5xl sm:text-8xl"}`}
+                              >
+                                <div className="flex flex-col items-center gap-1">
+                                  {isAdmin && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleScoreUpdate(heroMatch.id, "home", 1);
+                                      }}
+                                      className="p-1 bg-white/20 hover:bg-white/40 rounded-full transition-colors mb-1"
+                                    >
+                                      <Plus size={16} className="text-white" />
+                                    </button>
+                                  )}
+                                  <span>{heroMatch.homeScore}</span>
+                                  {isAdmin && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleScoreUpdate(
+                                          heroMatch.id,
+                                          "home",
+                                          -1,
+                                        );
+                                      }}
+                                      className="p-1 bg-white/20 hover:bg-white/40 rounded-full transition-colors mt-1"
+                                    >
+                                      <Minus size={16} className="text-white" />
+                                    </button>
+                                  )}
+                                </div>
+                                <span
+                                  className={
+                                    effectiveSport === "basketball"
+                                      ? "text-orange-400"
+                                      : "text-accent"
+                                  }
                                 >
-                                  {heroMatch.isTimerRunning ? <Minus size={10} /> : <Play size={10} fill="currentColor" />}
-                                  {heroMatch.isTimerRunning ? 'إيقاف مؤقت' : 'استئناف'}
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleStatusUpdate(heroMatch.id, 'finished'); }}
-                                  className="flex items-center gap-2 px-3 py-1 bg-slate-800/80 hover:bg-slate-900 text-white rounded-lg text-[9px] font-bold border border-white/10 transition-all"
-                                >
-                                  <CheckCircle2 size={10} />
-                                  إنهاء
-                                </button>
+                                  :
+                                </span>
+                                <div className="flex flex-col items-center gap-1">
+                                  {isAdmin && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleScoreUpdate(heroMatch.id, "away", 1);
+                                      }}
+                                      className="p-1 bg-white/20 hover:bg-white/40 rounded-full transition-colors mb-1"
+                                    >
+                                      <Plus size={16} className="text-white" />
+                                    </button>
+                                  )}
+                                  <span>{heroMatch.awayScore}</span>
+                                  {isAdmin && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleScoreUpdate(
+                                          heroMatch.id,
+                                          "away",
+                                          -1,
+                                        );
+                                      }}
+                                      className="p-1 bg-white/20 hover:bg-white/40 rounded-full transition-colors mt-1"
+                                    >
+                                      <Minus size={16} className="text-white" />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             )}
-                          </>
-                        ) : heroMatch.status === "finished" ? (
-                          <div className="flex items-center gap-2 rounded-full bg-black/30 backdrop-blur-md px-3 sm:px-4 py-1 sm:py-1.5 text-[9px] sm:text-[11px] font-black text-white ring-1 ring-white/10 uppercase tracking-tighter text-center">
-                            انتهت
                           </div>
-                        ) : null}
+                        </div>
+
+                        <div className="flex flex-col items-center gap-2 sm:gap-5 w-[80px] sm:w-44 group/team shrink-0 z-10">
+                          <div
+                            className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium ${heroMatch.status === "upcoming" ? "h-20 w-20 sm:h-40 sm:w-40" : "h-16 w-16 sm:h-32 sm:w-32"}`}
+                          >
+                            <SafeImage
+                              alt={heroMatch.awayTeam}
+                              className="w-full h-full object-contain filter drop-shadow-2xl"
+                              src={heroMatch.awayLogo || undefined}
+                              width={200}
+                            />
+                          </div>
+                          <span className="text-center text-[10px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">
+                            {heroMatch.awayTeam}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Restored Action Buttons for Everyone */}
+                      <div className="mt-8 grid grid-cols-2 gap-4 relative z-20">
+                        <Link
+                          to={
+                            heroMatch.status === "live" || liveStream.isActive
+                              ? "/live"
+                              : "/matches"
+                          }
+                          className="h-14 rounded-2xl bg-white text-primary-dark hover:bg-primary-light hover:text-white transition-all duration-300 font-black text-[12px] flex items-center justify-center gap-3 shadow-premium group/btn relative z-30 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined !text-[20px] group-hover/btn:translate-x-1 transition-transform">
+                            {heroMatch.status === "live" || liveStream.isActive
+                              ? "sensors"
+                              : "event"}
+                          </span>
+                          {heroMatch.status === "live" || liveStream.isActive
+                            ? "دخول البث"
+                            : "التفاصيل"}
+                        </Link>
+
+                        {heroMatch.status === "upcoming" ? (
+                          <Link
+                            to="/fan-zone"
+                            state={{ activeTab: "predictions" }}
+                            className={`h-14 rounded-2xl text-white transition-all duration-300 font-black text-[12px] flex items-center justify-center gap-3 shadow-premium animate-pulse relative z-30 cursor-pointer ${effectiveSport === "basketball" ? "bg-orange-600 hover:bg-orange-700" : "bg-accent hover:bg-accent-dark"}`}
+                          >
+                            <span className="material-symbols-outlined !text-[20px]">
+                              stadium
+                            </span>
+                            توقع النتيجة
+                          </Link>
+                        ) : (
+                          <Link
+                            to="/media"
+                            className="h-14 rounded-2xl bg-[#EAB308] text-white hover:bg-[#CA8A04] transition-all duration-300 font-black text-[12px] flex items-center justify-center gap-3 shadow-premium relative z-30 cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined !text-[20px]">
+                              movie
+                            </span>
+                            ملخص المباراة
+                          </Link>
+                        )}
                       </div>
                     </div>
-
-                    <div className="flex flex-col items-center gap-2 sm:gap-5 w-[80px] sm:w-44 group/team shrink-0 z-10">
-                      <div
-                        className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium ${heroMatch.status === "upcoming" ? "h-20 w-20 sm:h-40 sm:w-40" : "h-16 w-16 sm:h-32 sm:w-32"}`}
-                      >
-                        <SafeImage
-                          alt={heroMatch.awayTeam}
-                          className="w-full h-full object-contain filter drop-shadow-2xl"
-                          src={heroMatch.awayLogo || undefined}
-                          width={200}
-                        />
-                      </div>
-                      <span className="text-center text-[10px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">
-                        {heroMatch.awayTeam}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 grid grid-cols-2 gap-3 relative z-20">
-                    <Link
-                      to={
-                        heroMatch.status === "live" || liveStream.isActive
-                          ? "/live"
-                          : "/matches"
-                      }
-                      className="h-14 rounded-2xl bg-white text-primary-dark hover:bg-primary-light hover:text-white transition-all duration-300 font-black text-[11px] flex items-center justify-center gap-2 shadow-premium group/btn relative z-30 cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined !text-[20px] group-hover/btn:translate-x-1 transition-transform">
-                        {heroMatch.status === "live" || liveStream.isActive
-                          ? "sensors"
-                          : "event"}
-                      </span>
-                      {heroMatch.status === "live" || liveStream.isActive
-                        ? "دخول البث"
-                        : "التفاصيل"}
-                    </Link>
-
-                    {heroMatch.status === "upcoming" ? (
-                      <Link
-                        to="/fan-zone"
-                        state={{ activeTab: "predictions" }}
-                        className={`h-14 rounded-2xl text-white transition-all duration-300 font-black text-[11px] flex items-center justify-center gap-2 shadow-premium animate-pulse relative z-30 cursor-pointer ${effectiveSport === "basketball" ? "bg-orange-600 hover:bg-orange-700" : "bg-accent hover:bg-accent-dark"}`}
-                      >
-                        <span className="material-symbols-outlined !text-[20px]">
-                          stadium
-                        </span>
-                        توقع النتيجة
-                      </Link>
-                    ) : (
-                      <Link
-                        to="/media"
-                        className="h-14 rounded-2xl bg-[#EAB308] text-white hover:bg-[#CA8A04] transition-all duration-300 font-black text-[11px] flex items-center justify-center gap-2 shadow-premium relative z-30 cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined !text-[20px]">
-                          movie
-                        </span>
-                        ملخص المباراة
-                      </Link>
-                    )}
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </motion.section>
         );
 
@@ -1290,7 +1138,7 @@ export default function Home() {
 
         const isDay = useAuto ? (autoWeather?.isDay ?? (cairoHour >= 6 && cairoHour < 19)) : (cairoHour >= 6 && cairoHour < 19);
         
-        // Improved mapping for condition to ensure effects trigger correctly even with Arabic text
+        // Simplified mapping for conditions
         const rawCondition = (useAuto ? autoWeather?.condition || "sun" : (cityInfo?.condition || "صافي")).toLowerCase();
         let cond = "sun";
         
@@ -1357,125 +1205,75 @@ export default function Home() {
         let subtextColor = "text-white/80";
         let effectType:
           | "sun"
-          | "clouds"
           | "stars"
           | "rain"
           | "snow"
           | "storm"
-          | "sunset" = "sun";
+          | "clouds" = "sun";
 
-        let timePhase = "day";
-        if (!isDay) {
-          timePhase = "night";
-        } else if (cairoHour >= 4 && cairoHour < 7) {
-          timePhase = "dawn";
-        } else if (cairoHour >= 7 && cairoHour < 11) {
-          timePhase = "morning";
-        } else if (cairoHour >= 16 && cairoHour <= 19) {
-          timePhase = "sunset";
-        }
+        // Simplified time phase to Day and Night only as requested
+        const timePhase = isDay ? "day" : "night";
 
         // Theme Logic based on timePhase and condition
         if (cond === "rainy" || cond === "showers" || cond === "drizzle") {
-          // Winter / Rain
+          // Rain
           cardBg =
             timePhase === "night"
-              ? "from-slate-900 via-indigo-950 to-black border-blue-900/20"
-              : "from-blue-600 via-blue-800 to-indigo-900 border-blue-400/30";
-          iconBg = "bg-white/10";
-          iconColor = "text-blue-200";
+              ? "from-slate-900 via-blue-950 to-black border-blue-900/30"
+              : "from-blue-600 via-blue-800 to-indigo-900 border-blue-400/40";
+          iconBg = "bg-white/10 backdrop-blur-xl ring-1 ring-white/20";
+          iconColor = "text-blue-100";
           IconElement = CloudRain;
           effectType = "rain";
         } else if (cond === "thunderstorm") {
           // Storms
           cardBg =
             timePhase === "night"
-              ? "from-slate-950 via-indigo-950 to-black border-slate-800/40"
-              : "from-slate-800 via-slate-900 to-slate-950 border-slate-700/40";
-          iconBg = "bg-yellow-400/20";
-          iconColor = "text-yellow-400";
+              ? "from-slate-950 via-gray-900 to-black border-slate-700/50"
+              : "from-slate-800 via-slate-900 to-black border-slate-600/50";
+          iconBg = "bg-yellow-400/20 backdrop-blur-xl ring-1 ring-yellow-400/30";
+          iconColor = "text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]";
           IconElement = CloudLightning;
           effectType = "storm";
         } else if (cond === "snowy") {
           // Snow
           cardBg =
             timePhase === "night"
-              ? "from-slate-900 via-blue-950 to-slate-900 border-white/10"
-              : "from-sky-100 via-white to-blue-100 border-white/50";
-          iconBg =
-            timePhase === "night"
-              ? "bg-white/5"
-              : "bg-white/60 shadow-white/30";
+              ? "from-slate-900 via-blue-950 to-slate-900 border-white/20"
+              : "from-sky-50 via-white to-blue-50 border-white/60";
+          iconBg = "bg-white/20 backdrop-blur-xl ring-1 ring-white/30";
           iconColor = timePhase === "night" ? "text-blue-200" : "text-sky-600";
           IconElement = Snowflake;
           effectType = "snow";
-          if (timePhase !== "night") {
-            textColor = "text-slate-800";
-            subtextColor = "text-slate-700";
+          if (timePhase === "day") {
+            textColor = "text-slate-900";
+            subtextColor = "text-slate-600";
           }
-        } else if (
-          cond === "cloudy" ||
-          cond === "partly_cloudy" ||
-          cond === "foggy"
-        ) {
+        } else if (cond === "cloudy" || cond === "partly_cloudy" || cond === "foggy") {
           // Clouds
           IconElement = timePhase === "night" ? CloudMoon : CloudSun;
           effectType = "clouds";
           if (timePhase === "night") {
-            cardBg =
-              "from-slate-900 via-indigo-950 to-black border-slate-800/20";
-            iconBg = "bg-white/5 backdrop-blur-md";
-            iconColor = "text-slate-400";
-          } else if (timePhase === "sunset") {
-            cardBg =
-              "from-orange-800 via-rose-900 to-purple-950 border-orange-500/20";
-            iconBg = "bg-white/10";
-            iconColor = "text-orange-200";
-          } else if (timePhase === "dawn") {
-            cardBg =
-              "from-indigo-800 via-slate-800 to-sky-900 border-indigo-400/20";
-            iconBg = "bg-white/20";
-            iconColor = "text-blue-100";
+            cardBg = "from-slate-900 via-slate-950 to-black border-slate-800/40";
+            iconBg = "bg-indigo-500/10 backdrop-blur-xl ring-1 ring-white/10";
+            iconColor = "text-indigo-300";
           } else {
-            // Day cloudy
-            cardBg = "from-sky-400 via-blue-500 to-indigo-600 border-sky-300/30";
-            iconBg = "bg-white/20 backdrop-blur-md";
+            cardBg = "from-sky-400 via-blue-500 to-indigo-600 border-sky-300/40";
+            iconBg = "bg-white/20 backdrop-blur-xl ring-1 ring-white/30";
             iconColor = "text-white";
           }
         } else {
           // Clear / Sunny
           if (timePhase === "night") {
-            cardBg =
-              "from-slate-950 via-indigo-950 to-black border-indigo-500/10";
-            iconBg = "bg-indigo-900/30 shadow-indigo-500/10";
-            iconColor = "text-indigo-200";
+            cardBg = "from-slate-950 via-indigo-950 to-black border-indigo-500/20";
+            iconBg = "bg-indigo-900/40 backdrop-blur-2xl ring-1 ring-white/20 shadow-lg shadow-indigo-500/20";
+            iconColor = "text-indigo-100";
             IconElement = Moon;
             effectType = "stars";
-          } else if (timePhase === "sunset") {
-            cardBg =
-              "from-orange-500 via-rose-600 to-indigo-950 border-orange-400/20";
-            iconBg = "bg-white/20 shadow-orange-500/30";
-            iconColor = "text-orange-100";
-            IconElement = Sun;
-            effectType = "sunset";
-          } else if (timePhase === "dawn") {
-            cardBg =
-              "from-indigo-900 via-purple-900 to-orange-500 border-indigo-300/30";
-            iconBg = "bg-white/20";
-            iconColor = "text-amber-100";
-            IconElement = Sun;
-            effectType = "sun";
-          } else if (timePhase === "morning") {
-            cardBg = "from-sky-400 via-blue-500 to-sky-600 border-sky-200/40";
-            iconBg = "bg-white/30 shadow-sky-300/50";
-            iconColor = "text-yellow-300";
-            IconElement = Sun;
-            effectType = "sun";
           } else {
-            // Day Clear
-            cardBg = "from-sky-400 via-blue-600 to-indigo-700 border-sky-300/30";
-            iconBg = "bg-yellow-300/30 shadow-yellow-200/50";
-            iconColor = "text-yellow-300";
+            cardBg = "from-sky-400 via-blue-600 to-indigo-700 border-sky-300/40";
+            iconBg = "bg-yellow-400/20 backdrop-blur-2xl ring-1 ring-white/30 shadow-lg shadow-yellow-400/20";
+            iconColor = "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]";
             IconElement = Sun;
             effectType = "sun";
           }
@@ -1502,69 +1300,42 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Background Effects Container */}
-              <div className="absolute inset-0 z-[5] pointer-events-none overflow-hidden select-none rounded-[inherit] bg-black/5">
-                {/* CSS Rain Overlay for extra visibility if needed */}
-                {(effectType === "rain" || effectType === "storm") && (
-                  <div className="rain-css absolute inset-0 rounded-[inherit] z-[6]"></div>
-                )}
-                {effectType === "sun" && (
-                  <motion.div 
-                    animate={{ 
-                      scale: [1, 1.3, 1],
-                      opacity: [0.6, 0.9, 0.6]
-                    }}
-                    transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -top-32 -right-32 w-96 h-96 bg-yellow-400/70 blur-[100px] rounded-full"
-                  />
-                )}
-
-                {/* Sun Rays Effect / Sunset Glow */}
-                {(effectType === "sun" || effectType === "sunset") && (
+                {/* Background Effects Container */}
+              <div className="absolute inset-0 z-[5] pointer-events-none overflow-hidden select-none rounded-[inherit]">
+                {/* Storm Lightning Flash */}
+                {effectType === "storm" && (
                   <motion.div
                     animate={{
-                      rotate: effectType === "sunset" ? 180 : 360,
-                      scale:
-                        effectType === "sunset" ? [1.3, 1.6, 1.3] : [1.1, 1.4, 1.1],
-                      opacity:
-                        effectType === "sunset"
-                          ? [0.8, 1, 0.8]
-                          : [0.6, 0.8, 0.6],
+                      opacity: [0, 0, 0.4, 0, 0.8, 0, 0, 0.3, 0, 0],
                     }}
                     transition={{
-                      duration: 25,
+                      duration: 4,
                       repeat: Infinity,
-                      ease: "linear",
+                      repeatDelay: 2,
                     }}
-                    className={`absolute ${effectType === "sunset" ? "-bottom-60 right-0" : "-top-60 -right-60"} w-[900px] h-[900px] rounded-[inherit]`}
-                    style={{
-                      background:
-                        effectType === "sunset"
-                          ? "radial-gradient(circle, rgba(255,100,50,1) 0%, rgba(255,100,50,0) 75%)"
-                          : "radial-gradient(circle, rgba(255,255,220,1) 0%, rgba(255,255,255,0) 85%)",
-                    }}
+                    className="absolute inset-0 bg-white z-[20] pointer-events-none"
                   />
                 )}
 
                 {/* Night Stars Effect */}
                 {(timePhase === "night" || effectType === "stars") && (
                   <div className="absolute inset-0 rounded-[40px] overflow-hidden z-[6]">
-                    {[...Array(80)].map((_, i) => (
+                    {[...Array(60)].map((_, i) => (
                       <motion.div
                         key={i}
                         className="absolute bg-white rounded-full"
                         style={{
                           top: `${Math.random() * 100}%`,
                           left: `${Math.random() * 100}%`,
-                          width: `${1 + Math.random() * 2}px`,
-                          height: `${1 + Math.random() * 2}px`,
+                          width: `${1 + Math.random() * 1.5}px`,
+                          height: `${1 + Math.random() * 1.5}px`,
                         }}
                         animate={{
-                          opacity: [0.2, 1, 0.2],
-                          scale: [1, 1.3, 1],
+                          opacity: [0.3, 1, 0.3],
+                          scale: [0.8, 1.2, 0.8],
                         }}
                         transition={{
-                          duration: 1.5 + Math.random() * 3,
+                          duration: 2 + Math.random() * 3,
                           repeat: Infinity,
                           delay: Math.random() * 5,
                         }}
@@ -1573,54 +1344,70 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Cloud Effects Improved */}
-                {/* Scattered Clouds Effect */}
-                {(effectType === "clouds" ||
-                  effectType === "rain" ||
-                  effectType === "storm") && (
-                  <div className="absolute inset-0 rounded-[40px] overflow-hidden z-[10]">
-                    {[...Array(8)].map((_, i) => (
+                {/* Sun Glow Effect */}
+                {effectType === "sun" && (
+                  <motion.div 
+                    animate={{ 
+                      scale: [1, 1.2, 1],
+                      opacity: [0.5, 0.8, 0.5]
+                    }}
+                    transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute -top-32 -right-32 w-80 h-80 bg-yellow-400/50 blur-[80px] rounded-full"
+                  />
+                )}
+
+                {/* Rain Particles */}
+                {(effectType === "rain" || effectType === "storm") && (
+                  <div className="absolute inset-0 z-[16] overflow-hidden pointer-events-none">
+                    <div className="absolute inset-0 bg-blue-500/5 mix-blend-overlay opacity-30" />
+                    {[...Array(120)].map((_, i) => (
                       <motion.div
                         key={i}
-                        animate={{ 
-                          x: i % 2 === 0 ? [-300, 900] : [900, -300],
-                          opacity: [0.3, 0.6, 0.3]
+                        className="absolute bg-white/40 w-[1.5px] h-[20px]"
+                        style={{
+                          left: `${Math.random() * 100}%`,
+                          top: `-20px`,
+                        }}
+                        animate={{
+                          top: ["0%", "110%"],
+                          opacity: [0, 0.8, 0],
                         }}
                         transition={{
-                          duration: 25 + i * 5,
+                          duration: 0.4 + Math.random() * 0.3,
                           repeat: Infinity,
                           ease: "linear",
-                          delay: i * 2
-                        }}
-                        className="absolute bg-white/40 blur-[40px] rounded-full"
-                        style={{
-                          width: `${150 + Math.random() * 200}px`,
-                          height: `${80 + Math.random() * 100}px`,
-                          top: `${(i * 15) % 100}%`,
-                          left: `${(i * 20) % 100}%`,
+                          delay: Math.random() * 2,
                         }}
                       />
                     ))}
-                    {/* Darker clouds for storms */}
-                    {effectType === "storm" && [...Array(5)].map((_, i) => (
+                    <div 
+                      className="absolute inset-0 opacity-20 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')] animate-rain"
+                      style={{ backgroundSize: '100px 100px' }}
+                    />
+                  </div>
+                )}
+
+                {/* Cloud Effects */}
+                {effectType === "clouds" && (
+                  <div className="absolute inset-0 z-[10] overflow-hidden opacity-40">
+                    {[...Array(5)].map((_, i) => (
                       <motion.div
-                        key={`storm-${i}`}
+                        key={i}
                         animate={{ 
-                          x: i % 2 === 0 ? [-200, 800] : [800, -200],
+                          x: i % 2 === 0 ? [-200, 600] : [600, -200],
                         }}
                         transition={{
-                          duration: 30 + i * 5,
+                          duration: 20 + i * 10,
                           repeat: Infinity,
                           ease: "linear",
                         }}
-                        className="absolute bg-slate-800/20 blur-[50px] rounded-full"
+                        className="absolute bg-white/30 blur-[40px] rounded-full"
                         style={{
-                          width: `${200 + Math.random() * 300}px`,
-                          height: `${100 + Math.random() * 150}px`,
+                          width: `${150 + Math.random() * 150}px`,
+                          height: `${80 + Math.random() * 80}px`,
                           top: `${(i * 20) % 100}%`,
-                          left: `${(i * 25) % 100}%`,
                         }}
-                        />
+                      />
                     ))}
                   </div>
                 )}

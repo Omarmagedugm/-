@@ -103,13 +103,21 @@ export default function TopHeader() {
     }
   };
 
+  const currentHeaderColor = theme === 'dark' 
+    ? (appSettings?.headerColorDark || '') 
+    : (appSettings?.headerColorLight || '');
+
   const handleOpenNotifications = () => {
     setShowNotifications(true);
   };
 
   return (
     <>
-      <header id="global-header" className="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 py-3 shadow-sm">
+      <header 
+        id="global-header" 
+        className={`sticky top-0 z-50 backdrop-blur-xl border-b border-border-light/40 dark:border-border-dark/40 px-4 py-3 shadow-sm ${!currentHeaderColor ? 'bg-background-light/80 dark:bg-background-dark/80' : ''}`}
+        style={currentHeaderColor ? { backgroundColor: currentHeaderColor } : {}}
+      >
         <div className="flex items-center justify-between max-w-md mx-auto">
           {isHome ? (
             <motion.button 

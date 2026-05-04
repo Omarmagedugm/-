@@ -63,7 +63,7 @@ export default function App() {
       const prevScore = lastGoalCheck[match.id];
 
       // Only trigger if we already had a record for this match (app was open)
-      if (prevScore !== undefined && currentScore > prevScore) {
+      if (prevScore !== undefined && currentScore > prevScore && match.sport !== 'basketball') {
         setScoredTeam(isHome ? match.homeTeam : match.awayTeam);
         setActiveMatch(match);
         setShowGoal(true);
