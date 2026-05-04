@@ -781,6 +781,7 @@ export default function Admin() {
           competition: formData.competition || 'الدوري المصري',
           status: formData.status || 'upcoming',
           stadium: formData.stadium || '',
+          stadiumImage: formData.stadiumImage || '',
           // If we are editing a live match, we refresh the timerStartTime to "now" 
           // and use the provided base minute as the new starting point to ensure continuity
           timerStartTime: (formData.status === 'live' && formData.isTimerRunning) ? new Date().toISOString() : (formData.timerStartTime || null),
@@ -3836,6 +3837,7 @@ export default function Admin() {
                          <input type="text" placeholder="07:15 PM" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-black tabular-nums" value={formData.sunset || ''} onChange={(e) => setFormData({...formData, sunset: e.target.value})} />
                        </div>
                     </div>
+
                     <div>
                       <label className="text-[10px] font-black text-slate-500 mb-1 block">وصف للمدينة</label>
                       <textarea className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm min-h-[100px]" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} />
@@ -4006,6 +4008,9 @@ export default function Admin() {
                        <label className="text-[10px] font-black text-slate-500 mb-1 block">الملعب</label>
                        <input type="text" placeholder="الملعب" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.stadium || ''} onChange={(e) => setFormData({...formData, stadium: e.target.value})} />
                      </div>
+                   </div>
+                   <div className="mt-4 mb-4">
+                     <UploadOrUrlField label="صورة الملعب" fieldName="stadiumImage" currentUrl={formData.stadiumImage} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                    </div>
                    <div>
                      <label className="text-[10px] font-black text-slate-500 mb-1 block">تاريخ ووقت المباراة (بتوقيت مصر)</label>

@@ -32,10 +32,13 @@ import {
   Activity,
   BarChart2,
   Dribbble,
+  Plus,
+  Minus,
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import AdvertiseWidget from "../components/AdvertiseWidget";
 import HtmlWidget from "../components/HtmlWidget";
+import { SafeImage } from "../components/SafeImage";
 import { getOptimizedImage } from "../lib/cloudinary";
 
 export default function Home() {
@@ -100,8 +103,8 @@ export default function Home() {
             return;
 
           const weatherCodeToText = (code: number) => {
-            if (code === 0) return "sunny";
-            if (code === 1) return "mostly_sunny";
+            if (code === 0) return "sun";
+            if (code === 1) return "sun";
             if (code === 2) return "partly_cloudy";
             if (code === 3) return "cloudy";
             if (code === 45 || code === 48) return "foggy";
@@ -153,6 +156,24 @@ export default function Home() {
       Math.floor((new Date().getTime() - start) / 60000),
     );
     return Number(match.timerBaseMinute || 0) + elapsed;
+  };
+
+  const handleScoreUpdate = async (matchId: string, team: 'home' | 'away', change: number) => {
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return;
+
+    const currentScore = team === 'home' ? parseInt(match.homeScore || "0") : parseInt(match.awayScore || "0");
+    const newScore = Math.max(0, currentScore + change);
+
+    try {
+      const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+      await updateDoc(doc(db, 'matches', matchId), {
+        [team === 'home' ? 'homeScore' : 'awayScore']: newScore.toString(),
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error updating score:', error);
+    }
   };
 
   const recentNews = news.slice(0, 5);
@@ -292,11 +313,21 @@ export default function Home() {
               <div
                 className={`relative overflow-hidden rounded-[40px] shadow-2xl cinematic-glow ${effectiveSport === "basketball" ? "bg-gradient-to-br from-orange-600 via-orange-900 to-slate-900 border border-orange-500/30" : "stadium-gradient"}`}
               >
+                {/* Stadium Background */}
+                <div className="absolute inset-0 z-0 rounded-[inherit] overflow-hidden">
+                   <img 
+                      src={heroMatch?.stadiumImage || (effectiveSport === "basketball" ? "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=2000" : "https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=2000")} 
+                      className="w-full h-full object-cover opacity-20 filter saturate-50 blur-[2px] rounded-[inherit]" 
+                      alt="stadium"
+                   />
+                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent rounded-[inherit]"></div>
+                </div>
+
                 <div
-                  className={`absolute inset-0 opacity-20 mix-blend-overlay ${effectiveSport === "basketball" ? 'bg-[url("https://www.transparenttextures.com/patterns/carbon-fibre.png")]' : 'bg-[url("https://www.transparenttextures.com/patterns/stardust.png")]'}`}
+                  className={`absolute inset-0 opacity-10 mix-blend-overlay rounded-[inherit] ${effectiveSport === "basketball" ? 'bg-[url("https://www.transparenttextures.com/patterns/carbon-fibre.png")]' : 'bg-[url("https://www.transparenttextures.com/patterns/stardust.png")]'}`}
                 ></div>
 
-                <div className="relative p-5 sm:p-6">
+                <div className="relative p-5 sm:p-6 z-10">
                   <div className="mb-4 flex items-center justify-between">
                     <div
                       className={`text-[10px] font-black text-white px-2.5 py-1.5 rounded-lg backdrop-blur-md border border-white/10 tracking-tighter flex items-center gap-1.5 ${effectiveSport === "basketball" ? "bg-orange-500/20" : "bg-accent/20"}`}
@@ -378,11 +409,11 @@ export default function Home() {
                       <div
                         className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium ${heroMatch.status === "upcoming" ? "h-20 w-20 sm:h-40 sm:w-40" : "h-16 w-16 sm:h-32 sm:w-32"}`}
                       >
-                        <img
+                        <SafeImage
                           alt={heroMatch.homeTeam}
                           className="w-full h-full object-contain filter drop-shadow-2xl"
-                          src={getOptimizedImage(heroMatch.homeLogo, 200) || undefined}
-                          referrerPolicy="no-referrer"
+                          src={heroMatch.homeLogo || undefined}
+                          width={200}
                         />
                       </div>
                       <span className="text-center text-[10px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">
@@ -423,11 +454,9 @@ export default function Home() {
                                   </span>
                                   <span className="hidden sm:inline">|</span>
                                   <span className="text-white/70">
-                                    {format(new Date(heroMatch.date), "p", {
+                                    {format(new Date(heroMatch.date), "h:mm a", {
                                       locale: ar,
-                                    })
-                                      .replace("ص", "صباحاً")
-                                      .replace("م", "مساءً")}
+                                    })}
                                   </span>
                                 </div>
                               ) : (
@@ -439,7 +468,25 @@ export default function Home() {
                           <div
                             className={`flex items-center justify-center gap-2 sm:gap-4 tracking-widest tabular-nums ${String(heroMatch.homeScore).length > 2 || String(heroMatch.awayScore).length > 2 ? "text-4xl sm:text-7xl" : "text-5xl sm:text-8xl"}`}
                           >
-                            <span>{heroMatch.homeScore}</span>
+                            <div className="flex flex-col items-center gap-1">
+                              {profile?.role === 'admin' && (
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleScoreUpdate(heroMatch.id, 'home', 1); }}
+                                  className="p-1 bg-white/20 hover:bg-white/40 rounded-full transition-colors mb-1"
+                                >
+                                  <Plus size={16} className="text-white" />
+                                </button>
+                              )}
+                              <span>{heroMatch.homeScore}</span>
+                              {profile?.role === 'admin' && (
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleScoreUpdate(heroMatch.id, 'home', -1); }}
+                                  className="p-1 bg-white/20 hover:bg-white/40 rounded-full transition-colors mt-1"
+                                >
+                                  <Minus size={16} className="text-white" />
+                                </button>
+                              )}
+                            </div>
                             <span
                               className={
                                 effectiveSport === "basketball"
@@ -449,7 +496,25 @@ export default function Home() {
                             >
                               :
                             </span>
-                            <span>{heroMatch.awayScore}</span>
+                            <div className="flex flex-col items-center gap-1">
+                              {profile?.role === 'admin' && (
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleScoreUpdate(heroMatch.id, 'away', 1); }}
+                                  className="p-1 bg-white/20 hover:bg-white/40 rounded-full transition-colors mb-1"
+                                >
+                                  <Plus size={16} className="text-white" />
+                                </button>
+                              )}
+                              <span>{heroMatch.awayScore}</span>
+                              {profile?.role === 'admin' && (
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleScoreUpdate(heroMatch.id, 'away', -1); }}
+                                  className="p-1 bg-white/20 hover:bg-white/40 rounded-full transition-colors mt-1"
+                                >
+                                  <Minus size={16} className="text-white" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -479,11 +544,11 @@ export default function Home() {
                       <div
                         className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium ${heroMatch.status === "upcoming" ? "h-20 w-20 sm:h-40 sm:w-40" : "h-16 w-16 sm:h-32 sm:w-32"}`}
                       >
-                        <img
+                        <SafeImage
                           alt={heroMatch.awayTeam}
                           className="w-full h-full object-contain filter drop-shadow-2xl"
-                          src={getOptimizedImage(heroMatch.awayLogo, 200) || undefined}
-                          referrerPolicy="no-referrer"
+                          src={heroMatch.awayLogo || undefined}
+                          width={200}
                         />
                       </div>
                       <span className="text-center text-[10px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">
@@ -648,11 +713,11 @@ export default function Home() {
                     className="block relative overflow-hidden rounded-[32px] bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-premium hover:shadow-2xl transition-all duration-500"
                   >
                     <div className="aspect-[16/10] overflow-hidden relative">
-                      <img
-                        src={getOptimizedImage(item.image, 800) || undefined}
+                      <SafeImage
+                        src={item.image || undefined}
                         alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700"
+                        width={800}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                       <div className="absolute top-4 left-4 z-20 flex gap-1.5 flex-wrap max-w-[90%]">
@@ -741,11 +806,11 @@ export default function Home() {
                     to="/media"
                     className={`relative flex ${idx === 0 ? "aspect-[16/9]" : "aspect-square"} overflow-hidden rounded-[32px] shadow-premium group cinematic-glow`}
                   >
-                    <img
-                      src={getOptimizedImage(item.thumbnailUrl, 600) || undefined}
+                    <SafeImage
+                      src={item.thumbnailUrl || undefined}
                       alt={item.title}
                       className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
-                      referrerPolicy="no-referrer"
+                      width={600}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
 
@@ -826,7 +891,7 @@ export default function Home() {
                           {match.competition}
                         </span>
                         <span className="text-[9px] font-bold text-slate-400">
-                          {format(new Date(match.date), "EEEE d MMMM | p", {
+                          {format(new Date(match.date), "EEEE d MMMM | h:mm a", {
                             locale: ar,
                           })}
                         </span>
@@ -1062,18 +1127,37 @@ export default function Home() {
         if (!isCityActive) return null;
 
         const useAuto = cityInfo?.useAutoWeather ?? true;
-        const isDay = useAuto ? (autoWeather?.isDay ?? true) : true;
-        const cond = useAuto ? autoWeather?.condition || "sunny" : "sunny";
+        
+        // Cairo time for manual day/night determination
+        const cairoHourStr = new Intl.DateTimeFormat("en-US", {
+          timeZone: "Africa/Cairo",
+          hour: "numeric",
+          hour12: false,
+        }).format(new Date());
+        const cairoHour = parseInt(cairoHourStr === "24" ? "0" : cairoHourStr);
+
+        const isDay = useAuto ? (autoWeather?.isDay ?? (cairoHour >= 6 && cairoHour < 19)) : (cairoHour >= 6 && cairoHour < 19);
+        
+        // Improved mapping for condition to ensure effects trigger correctly even with Arabic text
+        const rawCondition = (useAuto ? autoWeather?.condition || "sun" : (cityInfo?.condition || "صافي")).toLowerCase();
+        let cond = "sun";
+        
+        if (rawCondition.includes("rain") || rawCondition.includes("مطر") || rawCondition.includes("زخات")) cond = "rainy";
+        else if (rawCondition.includes("storm") || rawCondition.includes("رعد")) cond = "thunderstorm";
+        else if (rawCondition.includes("snow") || rawCondition.includes("ثلج")) cond = "snowy";
+        else if (rawCondition.includes("cloud") || rawCondition.includes("غائم") || rawCondition.includes("سحب")) cond = "cloudy";
+        else if (rawCondition.includes("fog") || rawCondition.includes("ضباب")) cond = "foggy";
+        else if (rawCondition.includes("clear") || rawCondition.includes("sunny") || rawCondition.includes("صافي") || rawCondition.includes("شمس")) cond = "sun";
 
         const displayCity = {
-          cityName: cityInfo?.cityName || "📍 الاسكندرية",
+          cityName: cityInfo?.cityName || "الاسكندرية",
           temperature:
             useAuto && autoWeather?.temp
               ? autoWeather.temp
               : cityInfo?.temperature || "25",
           conditionText:
             useAuto && autoWeather?.condition
-              ? autoWeather.condition === "sunny"
+              ? autoWeather.condition === "sun"
                 ? "صافي"
                 : autoWeather.condition === "mostly_sunny"
                   ? "غالباً صافي"
@@ -1128,14 +1212,6 @@ export default function Home() {
           | "storm"
           | "sunset" = "sun";
 
-        const cairoHourStr = new Intl.DateTimeFormat("en-US", {
-          timeZone: "Africa/Cairo",
-          hour: "numeric",
-          hour12: false,
-        }).format(new Date());
-        const cairoHour =
-          parseInt(cairoHourStr === "24" ? "0" : cairoHourStr) || 12;
-
         let timePhase = "day";
         if (!isDay) {
           timePhase = "night";
@@ -1152,8 +1228,8 @@ export default function Home() {
           // Winter / Rain
           cardBg =
             timePhase === "night"
-              ? "from-blue-950 via-slate-900 to-black border-blue-900/40"
-              : "from-slate-600 via-blue-800 to-slate-800 border-blue-400/30";
+              ? "from-slate-900 via-indigo-950 to-black border-blue-900/20"
+              : "from-blue-600 via-blue-800 to-indigo-900 border-blue-400/30";
           iconBg = "bg-white/10";
           iconColor = "text-blue-200";
           IconElement = CloudRain;
@@ -1173,12 +1249,12 @@ export default function Home() {
           cardBg =
             timePhase === "night"
               ? "from-slate-900 via-blue-950 to-slate-900 border-white/10"
-              : "from-sky-200 via-blue-200 to-sky-300 border-white/30";
+              : "from-sky-100 via-white to-blue-100 border-white/50";
           iconBg =
             timePhase === "night"
               ? "bg-white/5"
-              : "bg-white/40 shadow-white/30";
-          iconColor = timePhase === "night" ? "text-blue-200" : "text-sky-700";
+              : "bg-white/60 shadow-white/30";
+          iconColor = timePhase === "night" ? "text-blue-200" : "text-sky-600";
           IconElement = Snowflake;
           effectType = "snow";
           if (timePhase !== "night") {
@@ -1195,7 +1271,7 @@ export default function Home() {
           effectType = "clouds";
           if (timePhase === "night") {
             cardBg =
-              "from-slate-800 via-slate-900 to-black border-slate-700/20";
+              "from-slate-900 via-indigo-950 to-black border-slate-800/20";
             iconBg = "bg-white/5 backdrop-blur-md";
             iconColor = "text-slate-400";
           } else if (timePhase === "sunset") {
@@ -1205,12 +1281,12 @@ export default function Home() {
             iconColor = "text-orange-200";
           } else if (timePhase === "dawn") {
             cardBg =
-              "from-indigo-600 via-slate-600 to-sky-700 border-indigo-400/20";
+              "from-indigo-800 via-slate-800 to-sky-900 border-indigo-400/20";
             iconBg = "bg-white/20";
             iconColor = "text-blue-100";
           } else {
             // Day cloudy
-            cardBg = "from-sky-400 via-blue-400 to-sky-600 border-sky-300/30";
+            cardBg = "from-sky-400 via-blue-500 to-indigo-600 border-sky-300/30";
             iconBg = "bg-white/20 backdrop-blur-md";
             iconColor = "text-white";
           }
@@ -1218,34 +1294,34 @@ export default function Home() {
           // Clear / Sunny
           if (timePhase === "night") {
             cardBg =
-              "from-indigo-950 via-slate-900 to-black border-indigo-500/20";
-            iconBg = "bg-indigo-900/50 shadow-indigo-500/20";
+              "from-slate-950 via-indigo-950 to-black border-indigo-500/10";
+            iconBg = "bg-indigo-900/30 shadow-indigo-500/10";
             iconColor = "text-indigo-200";
             IconElement = Moon;
             effectType = "stars";
           } else if (timePhase === "sunset") {
             cardBg =
-              "from-orange-500 via-rose-500 to-purple-800 border-orange-400/30";
+              "from-orange-500 via-rose-600 to-indigo-950 border-orange-400/20";
             iconBg = "bg-white/20 shadow-orange-500/30";
             iconColor = "text-orange-100";
             IconElement = Sun;
             effectType = "sunset";
           } else if (timePhase === "dawn") {
             cardBg =
-              "from-indigo-500 via-purple-500 to-orange-400 border-indigo-300/30";
+              "from-indigo-900 via-purple-900 to-orange-500 border-indigo-300/30";
             iconBg = "bg-white/20";
             iconColor = "text-amber-100";
             IconElement = Sun;
             effectType = "sun";
           } else if (timePhase === "morning") {
-            cardBg = "from-sky-300 via-blue-400 to-sky-500 border-sky-200/40";
+            cardBg = "from-sky-400 via-blue-500 to-sky-600 border-sky-200/40";
             iconBg = "bg-white/30 shadow-sky-300/50";
             iconColor = "text-yellow-300";
             IconElement = Sun;
             effectType = "sun";
           } else {
             // Day Clear
-            cardBg = "from-sky-400 via-blue-500 to-blue-600 border-sky-300/30";
+            cardBg = "from-sky-400 via-blue-600 to-indigo-700 border-sky-300/30";
             iconBg = "bg-yellow-300/30 shadow-yellow-200/50";
             iconColor = "text-yellow-300";
             IconElement = Sun;
@@ -1257,17 +1333,17 @@ export default function Home() {
           <motion.section
             key={section.id}
             variants={itemVariants}
-            className="overflow-hidden"
+            className="p-1" // Add padding to prevent shadow clipping
           >
             <div
-              className={`relative overflow-hidden rounded-[40px] bg-gradient-to-br ${cardBg} shadow-2xl transition-all duration-700 border hover:shadow-[0_20px_50px_rgba(0,0,0,0.2)] hover:scale-[1.02]`}
+              className={`relative overflow-hidden rounded-[40px] bg-gradient-to-br ${cardBg} shadow-2xl transition-all duration-1000 border hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:scale-[1.02]`}
             >
               {/* Optional Background Image */}
               {displayCity.weatherBg && (
-                <div className="absolute inset-0 z-0">
+                <div className="absolute inset-0 z-0 rounded-[inherit] overflow-hidden">
                   <img
-                    src={displayCity.weatherBg || undefined}
-                    className="w-full h-full object-cover opacity-30 mix-blend-overlay"
+                    src={getOptimizedImage(displayCity.weatherBg, 800) || undefined}
+                    className="w-full h-full object-cover opacity-30 mix-blend-overlay rounded-[inherit]"
                     alt=""
                     referrerPolicy="no-referrer"
                   />
@@ -1275,125 +1351,158 @@ export default function Home() {
               )}
 
               {/* Background Effects Container */}
-              <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden select-none">
+              <div className="absolute inset-0 z-[5] pointer-events-none overflow-hidden select-none rounded-[inherit] bg-black/5">
+                {/* CSS Rain Overlay for extra visibility if needed */}
+                {(effectType === "rain" || effectType === "storm") && (
+                  <div className="rain-css absolute inset-0 rounded-[inherit] z-[6]"></div>
+                )}
+                {effectType === "sun" && (
+                  <motion.div 
+                    animate={{ 
+                      scale: [1, 1.3, 1],
+                      opacity: [0.6, 0.9, 0.6]
+                    }}
+                    transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute -top-32 -right-32 w-96 h-96 bg-yellow-400/70 blur-[100px] rounded-full"
+                  />
+                )}
+
                 {/* Sun Rays Effect / Sunset Glow */}
                 {(effectType === "sun" || effectType === "sunset") && (
                   <motion.div
                     animate={{
                       rotate: effectType === "sunset" ? 180 : 360,
                       scale:
-                        effectType === "sunset" ? [1.2, 1.4, 1.2] : [1, 1.2, 1],
+                        effectType === "sunset" ? [1.3, 1.6, 1.3] : [1.1, 1.4, 1.1],
                       opacity:
                         effectType === "sunset"
-                          ? [0.6, 0.8, 0.6]
-                          : [0.5, 0.7, 0.5],
+                          ? [0.8, 1, 0.8]
+                          : [0.6, 0.8, 0.6],
                     }}
                     transition={{
-                      duration: 15,
+                      duration: 25,
                       repeat: Infinity,
                       ease: "linear",
                     }}
-                    className={`absolute ${effectType === "sunset" ? "-bottom-60 right-0" : "-top-60 -right-60"} w-[800px] h-[800px]`}
+                    className={`absolute ${effectType === "sunset" ? "-bottom-60 right-0" : "-top-60 -right-60"} w-[900px] h-[900px] rounded-[inherit]`}
                     style={{
                       background:
                         effectType === "sunset"
-                          ? "radial-gradient(circle, rgba(255,200,100,0.5) 0%, rgba(255,100,50,0) 60%)"
-                          : "radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 70%)",
+                          ? "radial-gradient(circle, rgba(255,100,50,1) 0%, rgba(255,100,50,0) 75%)"
+                          : "radial-gradient(circle, rgba(255,255,220,1) 0%, rgba(255,255,255,0) 85%)",
                     }}
                   />
                 )}
 
-                {/* Stars Effect */}
-                {effectType === "stars" && (
-                  <div className="absolute inset-0">
-                    {[...Array(60)].map((_, i) => (
+                {/* Night Stars Effect */}
+                {(timePhase === "night" || effectType === "stars") && (
+                  <div className="absolute inset-0 rounded-[40px] overflow-hidden z-[6]">
+                    {[...Array(80)].map((_, i) => (
                       <motion.div
                         key={i}
-                        className="absolute h-1.5 w-1.5 bg-white rounded-full"
+                        className="absolute bg-white rounded-full"
                         style={{
                           top: `${Math.random() * 100}%`,
                           left: `${Math.random() * 100}%`,
-                          filter: "blur(0.5px)",
+                          width: `${1 + Math.random() * 2}px`,
+                          height: `${1 + Math.random() * 2}px`,
                         }}
                         animate={{
-                          opacity: [0.4, 1, 0.4],
-                          scale: [1, 1.5, 1],
+                          opacity: [0.2, 1, 0.2],
+                          scale: [1, 1.3, 1],
                         }}
                         transition={{
-                          duration: 1 + Math.random() * 2,
+                          duration: 1.5 + Math.random() * 3,
                           repeat: Infinity,
-                          delay: Math.random() * 3,
+                          delay: Math.random() * 5,
                         }}
                       />
                     ))}
                   </div>
                 )}
 
-                {/* Cloud Effects */}
+                {/* Cloud Effects Improved */}
+                {/* Scattered Clouds Effect */}
                 {(effectType === "clouds" ||
                   effectType === "rain" ||
                   effectType === "storm") && (
-                  <div className="absolute inset-0">
-                    <motion.div
-                      animate={{ x: [-200, 600] }}
-                      transition={{
-                        duration: 25,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }}
-                      className="absolute top-0 -left-40 w-80 h-40 bg-white/40 blur-3xl rounded-full"
-                    />
-                    <motion.div
-                      animate={{ x: [600, -200] }}
-                      transition={{
-                        duration: 40,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }}
-                      className="absolute top-10 -right-40 w-[400px] h-[200px] bg-white/30 blur-3xl rounded-full"
-                    />
-                    <motion.div
-                      animate={{ x: [-300, 700], opacity: [0.2, 0.5, 0.2] }}
-                      transition={{
-                        duration: 60,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }}
-                      className="absolute bottom-0 -left-60 w-[500px] h-[250px] bg-white/20 blur-[80px] rounded-full"
-                    />
+                  <div className="absolute inset-0 rounded-[40px] overflow-hidden z-[10]">
+                    {[...Array(8)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        animate={{ 
+                          x: i % 2 === 0 ? [-300, 900] : [900, -300],
+                          opacity: [0.3, 0.6, 0.3]
+                        }}
+                        transition={{
+                          duration: 25 + i * 5,
+                          repeat: Infinity,
+                          ease: "linear",
+                          delay: i * 2
+                        }}
+                        className="absolute bg-white/40 blur-[40px] rounded-full"
+                        style={{
+                          width: `${150 + Math.random() * 200}px`,
+                          height: `${80 + Math.random() * 100}px`,
+                          top: `${(i * 15) % 100}%`,
+                          left: `${(i * 20) % 100}%`,
+                        }}
+                      />
+                    ))}
+                    {/* Darker clouds for storms */}
+                    {effectType === "storm" && [...Array(5)].map((_, i) => (
+                      <motion.div
+                        key={`storm-${i}`}
+                        animate={{ 
+                          x: i % 2 === 0 ? [-200, 800] : [800, -200],
+                        }}
+                        transition={{
+                          duration: 30 + i * 5,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                        className="absolute bg-slate-800/20 blur-[50px] rounded-full"
+                        style={{
+                          width: `${200 + Math.random() * 300}px`,
+                          height: `${100 + Math.random() * 150}px`,
+                          top: `${(i * 20) % 100}%`,
+                          left: `${(i * 25) % 100}%`,
+                        }}
+                        />
+                    ))}
                   </div>
                 )}
 
                 {/* Rain Drops Effect */}
                 {(effectType === "rain" || effectType === "storm") && (
-                  <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none">
+                  <div className="absolute inset-0 z-[12] overflow-hidden pointer-events-none rounded-[40px]">
                     {/* Background Mist layer during rain */}
                     <motion.div 
                       animate={{ 
-                        opacity: [0.1, 0.2, 0.1],
-                        scale: [1, 1.1, 1]
+                        opacity: [0.45, 0.75, 0.45],
+                        scale: [1, 1.15, 1]
                       }}
                       transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute inset-0 bg-blue-900/10 backdrop-blur-[2px]"
+                      className="absolute inset-0 bg-blue-900/40 backdrop-blur-[3px] rounded-[40px]"
                     />
                     
                     {[...Array(60)].map((_, i) => {
                       const leftPos = Math.random() * 120 - 10;
-                      const duration = 0.8 + Math.random() * 1.2;
+                      const duration = 0.6 + Math.random() * 0.8;
                       const delay = Math.random() * -5;
                       const isMain = i < 30; // 30 main drops, 30 background ones
 
                       return (
                         <motion.div
                           key={i}
-                          className="absolute bg-gradient-to-t from-white/40 to-transparent rounded-full"
+                          className="absolute bg-gradient-to-t from-white/60 to-transparent rounded-full"
                           style={{
                             left: `${leftPos}%`,
                             top: `-100px`,
-                            width: isMain ? '1px' : '0.5px',
-                            height: isMain ? `${20 + Math.random() * 30}px` : `${10 + Math.random() * 15}px`,
+                            width: isMain ? '1.5px' : '0.8px',
+                            height: isMain ? `${30 + Math.random() * 40}px` : `${15 + Math.random() * 20}px`,
                             transform: "rotate(15deg)",
-                            opacity: isMain ? 0.3 + Math.random() * 0.4 : 0.1 + Math.random() * 0.2,
+                            opacity: isMain ? 0.5 + Math.random() * 0.4 : 0.2 + Math.random() * 0.2,
                             filter: isMain ? "none" : "blur(1px)",
                           }}
                           animate={{
@@ -1425,27 +1534,28 @@ export default function Home() {
                       delay: Math.random() * 8,
                       times: [0, 0.8, 0.82, 0.84, 0.86, 0.9, 1],
                     }}
-                    className="absolute inset-0 bg-white/80 z-[10]"
+                    className="absolute inset-0 bg-white/80 z-[15]"
                   />
                 )}
 
                 {/* Snow Effect */}
                 {effectType === "snow" && (
-                  <div className="absolute inset-0">
-                    {[...Array(20)].map((_, i) => (
+                  <div className="absolute inset-0 rounded-[40px] overflow-hidden z-[12]">
+                    {[...Array(30)].map((_, i) => (
                       <motion.div
                         key={i}
-                        className="absolute h-1 w-1 bg-white rounded-full blur-[0.5px]"
+                        className="absolute h-1.5 w-1.5 bg-white rounded-full blur-[0.3px]"
                         style={{
                           left: `${Math.random() * 100}%`,
                           top: `-10px`,
                         }}
                         animate={{
                           top: ["0%", "110%"],
-                          x: [0, Math.random() * 20 - 10, 0],
+                          x: [0, Math.random() * 30 - 15, 0],
+                          rotate: [0, 360],
                         }}
                         transition={{
-                          duration: 3 + Math.random() * 4,
+                          duration: 4 + Math.random() * 6,
                           repeat: Infinity,
                           ease: "linear",
                           delay: Math.random() * 5,
@@ -1455,10 +1565,10 @@ export default function Home() {
                   </div>
                 )}
 
-                <div className="absolute inset-0 bg-black/5 opacity-40"></div>
+                <div className="absolute inset-0 bg-black/5 opacity-10 rounded-[40px] z-[8]"></div>
               </div>
 
-              <div className="relative p-5 z-10">
+              <div className="relative p-5 z-20">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-2">
@@ -1488,7 +1598,7 @@ export default function Home() {
                           schedule
                         </span>
                         <span className="font-black tracking-wider">
-                          {format(new Date(), "p", { locale: ar })}
+                          {format(new Date(), "h:mm a", { locale: ar })}
                         </span>
                       </div>
                     </div>

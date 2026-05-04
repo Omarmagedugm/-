@@ -211,7 +211,7 @@ export default function Profile() {
             <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-125"></div>
             <div 
               className="bg-center bg-no-repeat aspect-square bg-cover rounded-[2.5rem] h-36 w-36 border-4 border-white dark:border-surface-dark shadow-2xl relative z-10" 
-              style={{ backgroundImage: `url('${getOptimizedImage(profile.avatar || auth.currentUser?.photoURL || 'https://ui-avatars.com/api/?name=User', 400)}')` }}
+              style={{ backgroundImage: `url('${getOptimizedImage(profile.avatar || auth.currentUser?.photoURL || 'https://ui-avatars.com/api/?name=User', 120)}')` }}
             >
             </div>
             {(profile.isVerified || profile.role === 'admin') && (
@@ -296,7 +296,7 @@ export default function Profile() {
           <div className="overflow-hidden rounded-3xl bg-white p-6 shadow-sm border border-border-light/60 dark:border-border-dark dark:bg-card-dark flex justify-center">
             <DigitalFanID 
               username={profile.name || auth.currentUser?.displayName || 'مستخدم جديد'}
-              avatarUrl={getOptimizedImage(profile.avatar || auth.currentUser?.photoURL || 'https://ui-avatars.com/api/?name=User', 400)}
+              avatarUrl={getOptimizedImage(profile.avatar || auth.currentUser?.photoURL || 'https://ui-avatars.com/api/?name=User', 120)}
             />
           </div>
         </motion.div>
@@ -470,7 +470,7 @@ export default function Profile() {
                 <div className="relative group cursor-pointer h-24 w-24">
                   <div 
                     className="w-24 h-24 rounded-full bg-cover bg-center border-2 border-primary shadow-md relative overflow-hidden"
-                    style={{ backgroundImage: `url('${getOptimizedImage(editData.avatar, 400)}')` }}
+                    style={{ backgroundImage: `url('${getOptimizedImage(editData.avatar, 120)}')` }}
                   />
                   <div className="absolute -bottom-1 -right-1">
                     <ImageUploader
@@ -495,7 +495,7 @@ export default function Profile() {
                       onClick={() => setEditData({...editData, avatar: preset})}
                       className={`w-10 h-10 rounded-full border-2 transition-all ${editData.avatar === preset ? 'border-primary scale-110' : 'border-transparent'}`}
                     >
-                      <img src={getOptimizedImage(preset, 100)} className="w-full h-full rounded-full" alt="preset" referrerPolicy="no-referrer" />
+                      <img src={getOptimizedImage(preset, 80)} className="w-full h-full rounded-full" alt="preset" referrerPolicy="no-referrer" />
                     </button>
                   ))}
                 </div>

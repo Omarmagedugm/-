@@ -655,7 +655,7 @@ export default function FanZone() {
             
             <div className="flex gap-4 mb-4 relative z-10">
               <div className="w-12 h-12 rounded-2xl overflow-hidden glass-card ring-1 ring-primary/20 shrink-0">
-                <img src={getOptimizedImage(profile.avatar, 200) || undefined} className="w-full h-full object-cover" alt="user" referrerPolicy="no-referrer" />
+                <img src={getOptimizedImage(profile.avatar, 80) || undefined} className="w-full h-full object-cover" alt="user" referrerPolicy="no-referrer" />
               </div>
               <div className="flex-1">
                 <div className="bg-slate-100/50 dark:bg-slate-900/60 rounded-[28px] border border-border-light dark:border-white/5 p-4 focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-inner backdrop-blur-sm">
@@ -767,7 +767,7 @@ export default function FanZone() {
               <div className="flex items-center gap-3">
                 {newPost.image && (
                   <div className="relative w-10 h-10 rounded-xl overflow-hidden glass-card ring-1 ring-primary/20 group">
-                    <img src={getOptimizedImage(newPost.image, 200)} className="w-full h-full object-cover" alt="preview" referrerPolicy="no-referrer" />
+                    <img src={getOptimizedImage(newPost.image, 150)} className="w-full h-full object-cover" alt="preview" referrerPolicy="no-referrer" />
                     <button 
                       onClick={() => setNewPost({ ...newPost, image: '' })}
                       className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -917,7 +917,7 @@ export default function FanZone() {
                           <>
                             <div className="w-12 h-12 rounded-2xl overflow-hidden glass-card ring-1 ring-primary/10 p-0.5 shrink-0">
                               <img 
-                                src={getOptimizedImage(displayAvatar, 200)} 
+                                src={getOptimizedImage(displayAvatar, 80)} 
                                 className="w-full h-full object-cover rounded-2xl bg-slate-100" 
                                 alt={displayName}
                                 referrerPolicy="no-referrer"
@@ -1125,7 +1125,7 @@ export default function FanZone() {
                     >
                       <div className="flex gap-3 mb-6">
                         <div className="w-10 h-10 rounded-xl overflow-hidden glass-card ring-1 ring-primary/20 shrink-0">
-                          <img src={getOptimizedImage(profile.avatar, 200) || undefined} className="w-full h-full object-cover" alt="me" referrerPolicy="no-referrer" />
+                          <img src={getOptimizedImage(profile.avatar, 80) || undefined} className="w-full h-full object-cover" alt="me" referrerPolicy="no-referrer" />
                         </div>
                         <div className="flex-1 flex gap-2 relative">
                           <input 
@@ -1160,7 +1160,7 @@ export default function FanZone() {
                               key={comment.id} 
                               className="flex gap-4 group/comment"
                             >
-                              <img src={getOptimizedImage(displayAvatar, 200)} className="w-9 h-9 rounded-[14px] bg-slate-100 shrink-0 border border-border-light dark:border-border-dark shadow-sm" alt="avatar" referrerPolicy="no-referrer" />
+                              <img src={getOptimizedImage(displayAvatar, 80)} className="w-9 h-9 rounded-[14px] bg-slate-100 shrink-0 border border-border-light dark:border-border-dark shadow-sm" alt="avatar" referrerPolicy="no-referrer" />
                               <div className="flex-1 bg-slate-50 dark:bg-surface-dark p-4 rounded-[24px] border border-border-light dark:border-border-dark shadow-sm group-hover/comment:border-primary/20 transition-colors">
                                 <div className="flex items-center justify-between mb-1">
                                   <h5 className="text-[11px] font-black text-primary uppercase tracking-tighter">{displayName}</h5>
@@ -1282,7 +1282,7 @@ export default function FanZone() {
                         const chatName = chatUser?.name || msg.userName;
                         return (
                           <>
-                            <img src={getOptimizedImage(chatAvatar, 200)} className="w-10 h-10 rounded-[14px] bg-slate-100 shadow-sm border border-border-light dark:border-border-dark shrink-0" alt="avatar" referrerPolicy="no-referrer" />
+                            <img src={getOptimizedImage(chatAvatar, 80)} className="w-10 h-10 rounded-[14px] bg-slate-100 shadow-sm border border-border-light dark:border-border-dark shrink-0" alt="avatar" referrerPolicy="no-referrer" />
                             <div className={`max-w-[80%] ${isOwn ? 'items-end text-left' : 'items-start text-right'} flex flex-col gap-1.5`}>
                               <div className="flex items-center gap-2 px-1">
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{chatName}</span>
@@ -1695,7 +1695,7 @@ export default function FanZone() {
 
                           <div className="flex items-center gap-3">
                             <div className="relative">
-                              <img src={getOptimizedImage(user.userAvatar, 200) || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.userName)}&background=random`} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-slate-800 shadow-sm" alt="user" />
+                              <img src={getOptimizedImage(user.userAvatar, 80) || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.userName)}&background=random`} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-slate-800 shadow-sm" alt="user" />
                               {idx === 0 && (
                                 <div className="absolute -top-1 -left-1 text-yellow-500 bg-white dark:bg-slate-800 rounded-full p-0.5">
                                   <Trophy size={14} fill="currentColor" />
@@ -1747,7 +1747,7 @@ export default function FanZone() {
                           return (
                             <div key={pred.id} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50/50 dark:bg-surface-dark/30 border border-slate-100 dark:border-white/5">
                               <div className="flex items-center gap-3">
-                                <img src={getOptimizedImage(pred.userAvatar, 200) || `https://ui-avatars.com/api/?name=${encodeURIComponent(pred.userName)}&background=random`} className="w-8 h-8 rounded-xl object-cover" alt="user" />
+                                <img src={getOptimizedImage(pred.userAvatar, 80) || `https://ui-avatars.com/api/?name=${encodeURIComponent(pred.userName)}&background=random`} className="w-8 h-8 rounded-xl object-cover" alt="user" />
                                 <div className="flex flex-col">
                                   <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">{pred.userName}</span>
                                   <span className="text-[8px] font-bold text-slate-400">
@@ -2023,7 +2023,7 @@ export default function FanZone() {
                             />
                             {momentPost.image && (
                               <div className="absolute inset-0 rounded-[24px] overflow-hidden group">
-                                <img src={getOptimizedImage(momentPost.image, 400)} className="w-full h-full object-cover" alt="preview" />
+                                <img src={getOptimizedImage(momentPost.image, 150)} className="w-full h-full object-cover" alt="preview" />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                   <button onClick={() => setMomentPost({...momentPost, image: ''})} className="bg-red-500 text-white p-2 rounded-full shadow-lg">
                                     <Trash2 size={16} />
@@ -2076,7 +2076,7 @@ export default function FanZone() {
                     >
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <img src={getOptimizedImage(moment.userAvatar, 200) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${moment.userId}`} className="w-10 h-10 rounded-2xl border border-border-light" alt="user" />
+                          <img src={getOptimizedImage(moment.userAvatar, 80) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${moment.userId}`} className="w-10 h-10 rounded-2xl border border-border-light" alt="user" />
                           <div className="flex flex-col">
                             <span className="text-xs font-black text-slate-800 dark:text-white uppercase leading-none">{moment.userName}</span>
                             <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">

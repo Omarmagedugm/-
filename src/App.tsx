@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import ScrollToTop from './components/ScrollToTop';
@@ -25,10 +25,62 @@ import BottomNav from './components/BottomNav';
 import TopHeader from './components/TopHeader';
 import MusicPlayer from './components/MusicPlayer';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
+import PullToRefresh from './components/PullToRefresh';
+import GoalCelebration from './components/GoalCelebration';
 
 export default function App() {
   useFirestoreSync();
+  const { matches } = useAppStore();
+  const [showGoal, setShowGoal] = useState(false);
+  const [scoredTeam, setScoredTeam] = useState('');
+  const [lastGoalCheck, setLastGoalCheck] = useState<Record<string, number>>({});
+
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    // Check for Al-Ittihad goals in live matches
+    const ittihadMatches = matches.filter(m => 
+      m.status === 'live' && (m.homeTeam.includes('اتحاد') || m.awayTeam.includes('اتحاد'))
+    );
+
+    if (!isInitialized && ittihadMatches.length > 0) {
+      const initialScores: Record<string, number> = {};
+      ittihadMatches.forEach(m => {
+        const isHome = m.homeTeam.includes('اتحاد');
+        initialScores[m.id] = isHome ? parseInt(m.homeScore || "0") : parseInt(m.awayScore || "0");
+      });
+      setLastGoalCheck(initialScores);
+      setIsInitialized(true);
+      return;
+    }
+
+    ittihadMatches.forEach(match => {
+      const isHome = match.homeTeam.includes('اتحاد');
+      const currentScore = isHome ? parseInt(match.homeScore || "0") : parseInt(match.awayScore || "0");
+      const prevScore = lastGoalCheck[match.id];
+
+      // Only trigger if we already had a record for this match (app was open)
+      if (prevScore !== undefined && currentScore > prevScore) {
+        setScoredTeam(isHome ? match.homeTeam : match.awayTeam);
+        setShowGoal(true);
+      }
+      
+      // Update check state
+      if (currentScore !== prevScore) {
+        setLastGoalCheck(prev => ({ ...prev, [match.id]: currentScore }));
+      }
+    });
+  }, [matches, lastGoalCheck, isInitialized]);
+
+  const handleGoalComplete = () => {
+    setShowGoal(false);
+  };
   const { theme, setIsAuthReady, updateProfile } = useAppStore();
+
+  const handleRefresh = async () => {
+    // Simple full page reload for a true app refresh
+    window.location.reload();
+  };
 
   useEffect(() => {
     // We already have testConnection in firebase.ts which logs to console.
@@ -103,27 +155,34 @@ export default function App() {
       />
       <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-[calc(100vh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex flex-col font-display antialiased transition-colors duration-200">
         <TopHeader />
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={<Home />} />
-          <Route path="/feed" element={<FanZone />} />
-          <Route path="/news" element={<News />} />
-          <Route path="/news/:id" element={<NewsDetail />} />
-          <Route path="/media" element={<Media />} />
-          <Route path="/live" element={<Live />} />
-          <Route path="/matches" element={<Matches />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/fan-zone" element={<FanZone />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/store" element={<Store />} />
-          <Route path="/bookmarks" element={<Bookmarks />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <PullToRefresh onRefresh={handleRefresh}>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/feed" element={<FanZone />} />
+            <Route path="/news" element={<News />} />
+            <Route path="/news/:id" element={<NewsDetail />} />
+            <Route path="/media" element={<Media />} />
+            <Route path="/live" element={<Live />} />
+            <Route path="/matches" element={<Matches />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/fan-zone" element={<FanZone />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/store" element={<Store />} />
+            <Route path="/bookmarks" element={<Bookmarks />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </PullToRefresh>
         <AppNav />
         <MusicPlayer />
         <PWAInstallPrompt />
+        <GoalCelebration 
+          show={showGoal} 
+          onComplete={handleGoalComplete} 
+          teamName={scoredTeam} 
+        />
       </div>
     </BrowserRouter>
   );

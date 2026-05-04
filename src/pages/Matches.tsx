@@ -226,7 +226,7 @@ export default function Matches() {
                 {section.newestMatch && (
                   <motion.div variants={itemVariants}>
                     <div className={`relative w-full rounded-[40px] overflow-hidden shadow-2xl ${section.id === 'basketball' ? 'bg-gradient-to-br from-orange-600 via-orange-900 to-slate-900 border border-orange-500/30' : 'stadium-gradient border border-white/5'} cinematic-glow`}>
-                      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-overlay"></div>
+                      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-overlay rounded-[inherit]"></div>
                       
                       <div className="relative p-6">
                         <div className="flex items-center justify-between mb-8">

@@ -62,6 +62,7 @@ export interface MatchItem {
   status: 'live' | 'upcoming' | 'finished';
   competition: string;
   stadium?: string;
+  stadiumImage?: string;
   isMatchDay?: boolean;
   isTimerRunning?: boolean;
   timerStartTime?: string | null;
