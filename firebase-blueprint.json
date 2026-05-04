@@ -227,6 +227,19 @@
         "order": { "type": "number" },
         "createdAt": { "type": "string" }
       }
+    },
+    "CustomPage": {
+      "title": "Custom Page",
+      "description": "Custom HTML/Iframe pages",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "content": { "type": "string" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      }
     }
   },
   "firestore": {
@@ -244,6 +257,7 @@
     "fcm_tokens": { "schema": "FCMToken", "description": "Collection of FCM tokens" },
     "match_day_moments": { "schema": "MatchDayMoment", "description": "Fan photos for match day" },
     "match_day_attendance": { "schema": "MatchDayAttendance", "description": "Match day attendance polls" },
-    "ads": { "schema": "AdBanner", "description": "Advertising banners" }
+    "ads": { "schema": "AdBanner", "description": "Advertising banners" },
+    "custom_pages": { "schema": "CustomPage", "description": "Custom HTML pages" }
   }
 }

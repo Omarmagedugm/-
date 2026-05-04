@@ -354,6 +354,7 @@ export default function Admin() {
   const [rssNews, setRssNews] = useState<any[]>([]);
   const [backups, setBackups] = useState<any[]>([]);
   const [sentNotifications, setSentNotifications] = useState<any[]>([]);
+  const [customPages, setCustomPages] = useState<any[]>([]);
   const [showSidebar, setShowSidebar] = useState(false);
   const [historySubTab, setHistorySubTab] = useState<'stats' | 'titles' | 'timeline' | 'stadiums'>('stats');
   const [musicSubTab, setMusicSubTab] = useState<'songs' | 'albums' | 'playlists'>('songs');
@@ -364,7 +365,13 @@ export default function Admin() {
     const unsub = onSnapshot(q, (snapshot) => {
       setSentNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
-    return () => unsub();
+    
+    const qPages = query(collection(db, 'custom_pages'), orderBy('createdAt', 'desc'));
+    const unsubPages = onSnapshot(qPages, (snapshot) => {
+      setCustomPages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    
+    return () => { unsub(); unsubPages(); };
   }, []);
 
   const handleExportDatabase = async () => {
@@ -540,6 +547,7 @@ export default function Admin() {
     const roleMap: Record<string, AppRole[]> = {
       'news': ['news_editor'],
       'news-categories': ['news_editor'],
+      'news-tags': ['news_editor'],
       'fanzone': ['news_editor', 'user_manager'],
       'media': ['media_editor'],
       'music': ['media_editor'],
@@ -587,7 +595,7 @@ export default function Admin() {
   // Redirection logic based on role permissions
   useEffect(() => {
     if (!isTabAllowed(activeTab)) {
-      const allowedTabs = ['overview', 'news', 'media', 'matches', 'live', 'users', 'settings', 'clubs', 'polls', 'comments', 'posts', 'predictions', 'fanzone', 'history', 'news-categories', 'products', 'orders', 'layout', 'music', 'books', 'city', 'notifications', 'backup'];
+      const allowedTabs = ['overview', 'news', 'media', 'matches', 'live', 'users', 'settings', 'clubs', 'polls', 'comments', 'posts', 'predictions', 'fanzone', 'history', 'news-categories', 'news-tags', 'products', 'orders', 'layout', 'music', 'books', 'city', 'notifications', 'backup'];
       const firstAllowed = allowedTabs.find(tab => isTabAllowed(tab));
       if (firstAllowed) {
         setActiveTab(firstAllowed as any);
@@ -1033,6 +1041,20 @@ export default function Admin() {
           await updateDoc(doc(db, 'books', editingId), cleanPayload(payload));
         } else {
           await addDoc(collection(db, 'books'), cleanPayload(payload));
+        }
+      } else if (activeTab === 'layout' && formData.isCustomPage) {
+        const payload = {
+          title: formData.title || 'صفحة جديدة',
+          slug: formData.slug || formData.title.toLowerCase().replace(/\s+/g, '-'),
+          content: formData.content || '',
+          active: formData.active ?? true,
+          createdAt: isEditing ? (formData.createdAt || new Date().toISOString()) : new Date().toISOString()
+        };
+        
+        if (isEditing && editingId) {
+          await updateDoc(doc(db, 'custom_pages', editingId), cleanPayload(payload));
+        } else {
+          await addDoc(collection(db, 'custom_pages'), cleanPayload(payload));
         }
       }
 
@@ -1822,6 +1844,57 @@ export default function Admin() {
                     </button>
                   </div>
                 </div>
+              </div>
+              
+              <div className="bg-white dark:bg-card-dark rounded-[32px] p-4 border border-border-light dark:border-border-dark shadow-sm mt-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-black uppercase text-slate-800 dark:text-white">الصفحات المخصصة</h3>
+                  <button 
+                    onClick={() => {
+                      setFormData({ __isCustomPage: true, active: true });
+                      setIsEditing(false);
+                      setEditingId(null);
+                      setShowModal(true);
+                    }}
+                    className="flex items-center gap-1 text-xs font-black bg-primary text-white px-3 py-1.5 rounded-xl shadow-sm hover:scale-105 active:scale-95 transition-all"
+                  >
+                    <Plus size={14} /> إضافة
+                  </button>
+                </div>
+                {customPages.length === 0 ? (
+                  <p className="text-xs text-slate-500 font-bold text-center py-6">لا توجد صفحات مخصصة</p>
+                ) : (
+                  <div className="space-y-3">
+                    {customPages.map(page => (
+                      <div key={page.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-50 dark:bg-surface-dark border border-slate-100 dark:border-border-dark rounded-2xl">
+                        <div>
+                          <h4 className="text-sm font-black">{page.title}</h4>
+                          <p className="text-[10px] text-slate-500 font-mono mt-1 w-full max-w-[200px] truncate">{page.slug}</p>
+                          <div className="mt-2 flex items-center gap-2">
+                             <div className={`w-2 h-2 rounded-full ${page.active ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                             <span className="text-[9px] font-bold text-slate-400">{page.active ? 'نشط' : 'مخفي'}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <Link to={`/page/${page.slug}`} target="_blank" className="p-2 bg-white dark:bg-card-dark text-slate-400 rounded-xl border border-border-light dark:border-border-dark hover:text-green-500">
+                            <Eye size={16} />
+                          </Link>
+                          <button onClick={() => {
+                            setFormData({ ...page, __isCustomPage: true });
+                            setIsEditing(true);
+                            setEditingId(page.id);
+                            setShowModal(true);
+                          }} className="p-2 bg-white dark:bg-card-dark text-slate-400 rounded-xl border border-border-light dark:border-border-dark hover:text-primary">
+                            <Edit2 size={16} />
+                          </button>
+                          <button onClick={() => handleDelete('custom_pages', page.id)} className="p-2 bg-white dark:bg-card-dark text-red-400 rounded-xl border border-border-light dark:border-border-dark hover:bg-red-50">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -3726,6 +3799,29 @@ export default function Admin() {
                         ))}
                       </div>
                     </div>
+                 </>
+               )}
+
+               {activeTab === 'layout' && formData.__isCustomPage && (
+                 <>
+                   <div>
+                     <label className="text-[10px] font-black text-slate-500 mb-1 block">عنوان الصفحة</label>
+                     <input type="text" placeholder="عنوان يظهر للأعضاء" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                   </div>
+                   <div>
+                     <label className="text-[10px] font-black text-slate-500 mb-1 block">رابط الصفحة (Slug - تلقائي إذا تُرك فارغاً)</label>
+                     <input type="text" placeholder="مثال: my-custom-page" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-mono text-left dir-ltr" value={formData.slug || ''} onChange={(e) => setFormData({...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})} />
+                   </div>
+                   <div>
+                     <label className="text-[10px] font-black text-slate-500 mb-1 block">محتوى الصفحة (HTML أو Iframe)</label>
+                     <textarea placeholder="<iframe src='...' width='100%' height='500px' /> أو كود HTML مخصص" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-[10px] font-mono min-h-[200px] text-left dir-ltr" value={formData.content || ''} onChange={(e) => setFormData({...formData, content: e.target.value})} />
+                   </div>
+                   <div>
+                     <label className="flex items-center gap-2 mt-4 cursor-pointer">
+                        <input type="checkbox" checked={formData.active ?? true} onChange={(e) => setFormData({...formData, active: e.target.checked})} className="w-4 h-4 rounded text-primary focus:ring-primary" />
+                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200">عرض الصفحة للجمهور</span>
+                     </label>
+                   </div>
                  </>
                )}
 

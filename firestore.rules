@@ -242,6 +242,12 @@ service cloud.firestore {
     match /ads/{adId} { allow read: if true; allow write: if isAdmin(); }
     match /home_sections/{id} { allow read: if true; allow write: if isAdmin(); }
 
+    // Custom Pages
+    match /custom_pages/{pageId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Global Admin Override
     match /{document=**} {
       allow read, write: if isAdmin();

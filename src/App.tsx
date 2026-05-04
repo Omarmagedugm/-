@@ -20,6 +20,7 @@ import History from './pages/History';
 import Store from './pages/Store';
 import Bookmarks from './pages/Bookmarks';
 import Library from './pages/Library';
+import CustomPage from './pages/CustomPage';
 
 import BottomNav from './components/BottomNav';
 import TopHeader from './components/TopHeader';
@@ -190,6 +191,7 @@ export default function App() {
           <Route path="/store" element={<Store />} />
           <Route path="/bookmarks" element={<Bookmarks />} />
           <Route path="/library" element={<Library />} />
+          <Route path="/page/:slug" element={<CustomPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <AppNav />

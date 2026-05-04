@@ -58,102 +58,47 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
 
   const isAdmin = isDev || profile.role === 'admin';
 
-  const allTabs = [
-    { title: 'عام', items: [
+  const groupedTabs = [
+    { title: 'الرئيسية', items: [
       { id: 'overview', icon: <LayoutDashboard size={18} />, label: 'لوحة القيادة', show: true },
       { id: 'layout', icon: <LayoutDashboard size={18} />, label: 'إدارة الصفحة الرئيسية', show: isAdmin || hasRole('layout_editor') },
-      { id: 'settings', icon: <SettingsIcon size={18} />, label: 'إعدادات التطبيق', show: isAdmin },
     ]},
-    { title: 'المحتوى', items: [
-      { id: 'news', icon: <Newspaper size={18} />, label: 'الأخبار', show: isAdmin || hasRole('news_editor') },
+    { title: 'إدارة الأخبار', items: [
+      { id: 'news', icon: <Newspaper size={18} />, label: 'الأخبار والمقالات', show: isAdmin || hasRole('news_editor') },
       { id: 'news-categories', icon: <Tags size={18} />, label: 'أقسام الأخبار', show: isAdmin || hasRole('news_editor') },
       { id: 'news-tags', icon: <Tags size={18} />, label: 'وسوم الأخبار', show: isAdmin || hasRole('news_editor') },
-      { id: 'products', icon: <ShoppingBag size={18} />, label: 'إدارة المتجر', show: isAdmin || hasRole('store_editor') },
-      { id: 'orders', icon: <ShoppingCart size={18} />, label: 'المشتريات', show: isAdmin || hasRole('store_editor') },
-      { id: 'media', icon: <PlayCircle size={18} />, label: 'المالتيميديا', show: isAdmin || hasRole('media_editor') },
+    ]},
+    { title: 'المباريات والفعاليات', items: [
+      { id: 'clubs', icon: <Shield size={18} />, label: 'قائمة الأندية', show: isAdmin || hasRole(['matches_editor', 'layout_editor']) },
       { id: 'matches', icon: <Trophy size={18} />, label: 'المباريات', show: isAdmin || hasRole('matches_editor') },
-      { id: 'city', icon: <CloudSun size={18} />, label: 'طقس الإسكندرية', show: isAdmin || hasRole('layout_editor') },
-      { id: 'history', icon: <HistoryIcon size={18} />, label: 'تاريخ النادي', show: isAdmin || hasRole('layout_editor') },
-      { id: 'music', icon: <Music size={18} />, label: 'المكتبة الموسيقية', show: isAdmin || hasRole('media_editor') },
-      { id: 'books', icon: <BookOpen size={18} />, label: 'الكتب والمجلات', show: isAdmin || hasRole('media_editor') },
       { id: 'live', icon: <Radio size={18} />, label: 'البث المباشر', show: isAdmin || hasRole('matches_editor') },
     ]},
-    { title: 'الجماهير', items: [
+    { title: 'محتوى المنصة', items: [
+      { id: 'media', icon: <PlayCircle size={18} />, label: 'المالتيميديا والفيديو', show: isAdmin || hasRole('media_editor') },
+      { id: 'music', icon: <Music size={18} />, label: 'المكتبة الموسيقية', show: isAdmin || hasRole('media_editor') },
+      { id: 'books', icon: <BookOpen size={18} />, label: 'الكتب والمجلات', show: isAdmin || hasRole('media_editor') },
+      { id: 'history', icon: <HistoryIcon size={18} />, label: 'تاريخ النادي', show: isAdmin || hasRole('layout_editor') },
+      { id: 'city', icon: <CloudSun size={18} />, label: 'طقس الإسكندرية', show: isAdmin || hasRole('layout_editor') },
+    ]},
+    { title: 'التفاعل والجماهير', items: [
       { id: 'fanzone', icon: <UsersIcon size={18} />, label: 'منطقة الجماهير', show: isAdmin || hasRole(['news_editor', 'user_manager']) },
       { id: 'posts', icon: <MessageSquare size={18} />, label: 'المنشورات', show: isAdmin || hasRole(['user_manager']) },
-      { id: 'fan-comments', icon: <MessageCircle size={18} />, label: 'التعليقات', show: isAdmin || hasRole(['user_manager']) },
+      { id: 'fan-comments', icon: <MessageCircle size={18} />, label: 'التعليقات والمناقشات', show: isAdmin || hasRole(['user_manager']) },
       { id: 'polls', icon: <BarChart3 size={18} />, label: 'الاستطلاعات', show: isAdmin || hasRole(['layout_editor', 'user_manager']) },
-      { id: 'predictions', icon: <Trophy size={18} />, label: 'التوقعات', show: isAdmin || hasRole(['matches_editor', 'user_manager']) },
+      { id: 'predictions', icon: <Trophy size={18} />, label: 'توقعات المباريات', show: isAdmin || hasRole(['matches_editor', 'user_manager']) },
+      { id: 'comments', icon: <MessageSquare size={18} />, label: 'تعليقات البث المباشر', show: isAdmin || hasRole(['matches_editor', 'user_manager']) },
     ]},
-    { title: 'المستخدمين', items: [
+    { title: 'المتجر والتجارة', items: [
+      { id: 'products', icon: <ShoppingBag size={18} />, label: 'إدارة المتجر والمنتجات', show: isAdmin || hasRole('store_editor') },
+      { id: 'orders', icon: <ShoppingCart size={18} />, label: 'طلبات الشراء', show: isAdmin || hasRole('store_editor') },
+    ]},
+    { title: 'النظام والإدارة', items: [
       { id: 'users', icon: <UsersIcon size={18} />, label: 'إدارة الأعضاء', show: isAdmin || hasRole('user_manager') },
-      { id: 'comments', icon: <MessageSquare size={18} />, label: 'تعليقات البث', show: isAdmin || hasRole(['matches_editor', 'user_manager']) },
-      { id: 'notifications', icon: <Bell size={18} />, label: 'إرسال إشعار', show: isAdmin || hasRole('user_manager') },
-    ]},
-    { title: 'البيانات', items: [
-      { id: 'clubs', icon: <Shield size={18} />, label: 'قائمة الأندية', show: isAdmin || hasRole(['matches_editor', 'layout_editor']) },
-    ]},
-    { title: 'النظام', items: [
+      { id: 'notifications', icon: <Bell size={18} />, label: 'إرسال إشعارات', show: isAdmin || hasRole('user_manager') },
+      { id: 'settings', icon: <SettingsIcon size={18} />, label: 'إعدادات النظام', show: isAdmin },
       { id: 'backup', icon: <Database size={18} />, label: 'نسخة احتياطية', show: isAdmin },
     ]}
   ];
-
-  const [sidebarOrder, setSidebarOrder] = useState<string[]>([]);
-  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
-
-  useEffect(() => {
-    getDoc(doc(db, 'settings', 'sidebar_order')).then(snap => {
-      if (snap.exists() && snap.data().order) {
-        setSidebarOrder(snap.data().order);
-      }
-    });
-  }, []);
-
-  const handleDragStart = (e: React.DragEvent, id: string) => {
-    setDraggedItemId(id);
-    e.dataTransfer.effectAllowed = 'move';
-    // Small delay to allow the drag image to be captured before we grey out the dragged item
-    setTimeout(() => {
-      const el = document.getElementById(`sidebar-item-${id}`);
-      if (el) el.style.opacity = '0.5';
-    }, 0);
-  };
-
-  const handleDragEnd = (e: React.DragEvent, id: string) => {
-    setDraggedItemId(null);
-    const el = document.getElementById(`sidebar-item-${id}`);
-    if (el) el.style.opacity = '1';
-  };
-
-  const handleDrop = async (e: React.DragEvent, targetId: string) => {
-    e.preventDefault();
-    if (!draggedItemId || draggedItemId === targetId) return;
-
-    const currentOrder = sidebarOrder.length > 0 ? sidebarOrder : flatItems.map(i => i.id);
-    const draggedIndex = currentOrder.indexOf(draggedItemId);
-    const targetIndex = currentOrder.indexOf(targetId);
-
-    if (draggedIndex !== -1 && targetIndex !== -1) {
-      const newOrder = [...currentOrder];
-      newOrder.splice(draggedIndex, 1);
-      newOrder.splice(targetIndex, 0, draggedItemId);
-      setSidebarOrder(newOrder);
-      await setDoc(doc(db, 'settings', 'sidebar_order'), { order: newOrder });
-    }
-  };
-
-  const flatItems = allTabs.flatMap(group => group.items).filter(item => item.show);
-  
-  const sortedItems = [...flatItems].sort((a, b) => {
-    if (sidebarOrder.length > 0) {
-      const aIdx = sidebarOrder.indexOf(a.id);
-      const bIdx = sidebarOrder.indexOf(b.id);
-      if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
-      if (aIdx !== -1) return -1;
-      if (bIdx !== -1) return 1;
-    }
-    return 0;
-  });
 
   return (
     <div className="w-64 bg-white dark:bg-card-dark border-l border-border-light dark:border-border-dark flex flex-col h-full overflow-y-auto no-scrollbar py-6">
@@ -169,39 +114,44 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 px-4">
-        {isAdmin && <p className="text-[9px] font-bold text-slate-400 mb-2 px-2 text-center">يمكنك سحب وإفلات العناصر لترتيبها</p>}
-        {sortedItems.map((item) => (
-          <button
-            key={item.id}
-            id={`sidebar-item-${item.id}`}
-            draggable={isAdmin}
-            onDragStart={(e) => handleDragStart(e, item.id)}
-            onDragEnd={(e) => handleDragEnd(e, item.id)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => handleDrop(e, item.id)}
-            onClick={() => {
-              setActiveTab(item.id as any);
-              if (onClose) onClose();
-            }}
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-bold text-sm ${
-              activeTab === item.id 
-                ? 'bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-surface-dark pressable'
-            } ${draggedItemId === item.id ? 'opacity-50' : ''}`}
-          >
-            <span className={activeTab === item.id ? 'text-primary' : 'text-slate-400'}>
-              {item.icon}
-            </span>
-            {item.label}
-            {activeTab === item.id && (
-              <div className="mr-auto w-1.5 h-1.5 rounded-full bg-primary shadow-glow"></div>
-            )}
-          </button>
-        ))}
+      <div className="flex flex-col px-4 pb-8 space-y-6">
+        {groupedTabs.map((group, gIdx) => {
+          const visibleItems = group.items.filter(item => item.show);
+          if (visibleItems.length === 0) return null;
+          
+          return (
+            <div key={gIdx} className="space-y-1">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase px-4 mb-2 tracking-widest select-none">
+                {group.title}
+              </h3>
+              {visibleItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveTab(item.id as any);
+                    if (onClose) onClose();
+                  }}
+                  className={`flex items-center w-full gap-3 px-4 py-2.5 rounded-2xl transition-all font-bold text-sm ${
+                    activeTab === item.id 
+                      ? 'bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20' 
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-surface-dark pressable'
+                  }`}
+                >
+                  <span className={activeTab === item.id ? 'text-primary' : 'text-slate-400'}>
+                    {item.icon}
+                  </span>
+                  {item.label}
+                  {activeTab === item.id && (
+                    <div className="mr-auto w-1.5 h-1.5 rounded-full bg-primary shadow-glow"></div>
+                  )}
+                </button>
+              ))}
+            </div>
+          );
+        })}
       </div>
 
-      <div className="mt-auto px-4 pt-8">
+      <div className="mt-auto px-4 pt-4 border-t border-slate-100 dark:border-border-dark">
         <div className="bg-slate-50 dark:bg-surface-dark p-4 rounded-3xl border border-slate-100 dark:border-border-dark">
           <div className="flex items-center gap-3 mb-3">
              <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
