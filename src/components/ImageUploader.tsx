@@ -47,12 +47,16 @@ export default function ImageUploader({
     }
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', UPLOAD_PRESET);
-    formData.append('folder', folderName);
 
     try {
+      // Client-side Resize before upload
+      const resizedFile = await resizeImage(file, 1200, 1200);
+      
+      const formData = new FormData();
+      formData.append('file', resizedFile);
+      formData.append('upload_preset', UPLOAD_PRESET);
+      formData.append('folder', folderName);
+
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
         {
@@ -75,12 +79,54 @@ export default function ImageUploader({
       console.error('Upload Error:', error);
       if (onError) onError(error instanceof Error ? error.message : 'فشل الرفع');
     } finally {
-      setIsUploading(true); // Keep uploading true for a bit to show success? No, set false.
-      setPreviewUrl(prev => prev); // trigger re-render
       setIsUploading(false);
       // Reset the value via target to allow picking the same file again
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  };
+
+  // Helper function to resize image
+  const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<Blob | File> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height *= maxWidth / width;
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width *= maxHeight / height;
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+            } else {
+              resolve(file);
+            }
+          }, 'image/jpeg', 0.8); // 80% quality
+        };
+        img.onerror = () => resolve(file);
+      };
+      reader.onerror = () => resolve(file);
+    });
   };
 
   return (

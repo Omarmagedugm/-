@@ -1367,26 +1367,38 @@ export default function Home() {
                 {/* Rain Drops Effect */}
                 {(effectType === "rain" || effectType === "storm") && (
                   <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none">
-                    {[...Array(90)].map((_, i) => {
+                    {/* Background Mist layer during rain */}
+                    <motion.div 
+                      animate={{ 
+                        opacity: [0.1, 0.2, 0.1],
+                        scale: [1, 1.1, 1]
+                      }}
+                      transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute inset-0 bg-blue-900/10 backdrop-blur-[2px]"
+                    />
+                    
+                    {[...Array(60)].map((_, i) => {
                       const leftPos = Math.random() * 120 - 10;
-                      const duration = 1.2 + Math.random() * 1.8;
+                      const duration = 0.8 + Math.random() * 1.2;
                       const delay = Math.random() * -5;
+                      const isMain = i < 30; // 30 main drops, 30 background ones
 
                       return (
                         <motion.div
                           key={i}
-                          className="absolute bg-gradient-to-t from-white/60 to-transparent rounded-full"
+                          className="absolute bg-gradient-to-t from-white/40 to-transparent rounded-full"
                           style={{
                             left: `${leftPos}%`,
-                            top: `-80px`,
-                            width: `${Math.random() > 0.5 ? 2 : 1}px`,
-                            height: `${15 + Math.random() * 25}px`,
-                            transform: "rotate(12deg)",
-                            opacity: 0.3 + Math.random() * 0.7,
+                            top: `-100px`,
+                            width: isMain ? '1px' : '0.5px',
+                            height: isMain ? `${20 + Math.random() * 30}px` : `${10 + Math.random() * 15}px`,
+                            transform: "rotate(15deg)",
+                            opacity: isMain ? 0.3 + Math.random() * 0.4 : 0.1 + Math.random() * 0.2,
+                            filter: isMain ? "none" : "blur(1px)",
                           }}
                           animate={{
-                            top: ["-10%", "130%"],
-                            x: [0, 40],
+                            top: ["-10%", "120%"],
+                            x: [0, 30],
                           }}
                           transition={{
                             duration: duration,
@@ -1397,6 +1409,9 @@ export default function Home() {
                         />
                       );
                     })}
+
+                    {/* Ground Splash effect (simulated) */}
+                    <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-white/10 to-transparent blur-sm" />
                   </div>
                 )}
 

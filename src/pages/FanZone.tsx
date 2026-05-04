@@ -655,7 +655,7 @@ export default function FanZone() {
             
             <div className="flex gap-4 mb-4 relative z-10">
               <div className="w-12 h-12 rounded-2xl overflow-hidden glass-card ring-1 ring-primary/20 shrink-0">
-                <img src={profile.avatar || undefined} className="w-full h-full object-cover" alt="user" referrerPolicy="no-referrer" />
+                <img src={getOptimizedImage(profile.avatar, 200) || undefined} className="w-full h-full object-cover" alt="user" referrerPolicy="no-referrer" />
               </div>
               <div className="flex-1">
                 <div className="bg-slate-100/50 dark:bg-slate-900/60 rounded-[28px] border border-border-light dark:border-white/5 p-4 focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-inner backdrop-blur-sm">
@@ -767,7 +767,7 @@ export default function FanZone() {
               <div className="flex items-center gap-3">
                 {newPost.image && (
                   <div className="relative w-10 h-10 rounded-xl overflow-hidden glass-card ring-1 ring-primary/20 group">
-                    <img src={newPost.image} className="w-full h-full object-cover" alt="preview" referrerPolicy="no-referrer" />
+                    <img src={getOptimizedImage(newPost.image, 200)} className="w-full h-full object-cover" alt="preview" referrerPolicy="no-referrer" />
                     <button 
                       onClick={() => setNewPost({ ...newPost, image: '' })}
                       className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1475,7 +1475,7 @@ export default function FanZone() {
                                <>
                                  <div className="flex flex-col items-center gap-2 w-24">
                                    <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 relative group-hover:border-primary/50 transition-colors">
-                                     <img src={match.homeLogo} className="w-8 h-8 object-contain" alt="home" referrerPolicy="no-referrer" />
+                                     <img src={getOptimizedImage(match.homeLogo, 150)} className="w-8 h-8 object-contain" alt="home" referrerPolicy="no-referrer" />
                                      {predictions.filter(p => p.matchId === match.id).length > 0 && (
                                        <div className="absolute -top-2 -right-2 bg-primary text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
                                          {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.homeScore) > Number(p.awayScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
