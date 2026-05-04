@@ -36,6 +36,7 @@ import {
 import Sidebar from "../components/Sidebar";
 import AdvertiseWidget from "../components/AdvertiseWidget";
 import HtmlWidget from "../components/HtmlWidget";
+import { getOptimizedImage } from "../lib/cloudinary";
 
 export default function Home() {
   const {
@@ -380,7 +381,7 @@ export default function Home() {
                         <img
                           alt={heroMatch.homeTeam}
                           className="w-full h-full object-contain filter drop-shadow-2xl"
-                          src={heroMatch.homeLogo || undefined}
+                          src={getOptimizedImage(heroMatch.homeLogo, 200) || undefined}
                           referrerPolicy="no-referrer"
                         />
                       </div>
@@ -481,7 +482,7 @@ export default function Home() {
                         <img
                           alt={heroMatch.awayTeam}
                           className="w-full h-full object-contain filter drop-shadow-2xl"
-                          src={heroMatch.awayLogo || undefined}
+                          src={getOptimizedImage(heroMatch.awayLogo, 200) || undefined}
                           referrerPolicy="no-referrer"
                         />
                       </div>
@@ -648,7 +649,7 @@ export default function Home() {
                   >
                     <div className="aspect-[16/10] overflow-hidden relative">
                       <img
-                        src={item.image || undefined}
+                        src={getOptimizedImage(item.image, 800) || undefined}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         referrerPolicy="no-referrer"
@@ -741,7 +742,7 @@ export default function Home() {
                     className={`relative flex ${idx === 0 ? "aspect-[16/9]" : "aspect-square"} overflow-hidden rounded-[32px] shadow-premium group cinematic-glow`}
                   >
                     <img
-                      src={item.thumbnailUrl || undefined}
+                      src={getOptimizedImage(item.thumbnailUrl, 600) || undefined}
                       alt={item.title}
                       className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
                       referrerPolicy="no-referrer"

@@ -18,6 +18,7 @@ import { useAppStore, Product } from '../store';
 import { useNavigate } from 'react-router-dom';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { getOptimizedImage } from '../lib/cloudinary';
 
 export default function Store() {
   const navigate = useNavigate();
@@ -157,7 +158,7 @@ export default function Store() {
                 className="h-44 relative bg-slate-100 overflow-hidden cursor-pointer"
                 onClick={() => setSelectedProduct(product)}
               >
-                <img src={product.imageUrl} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={product.name} />
+                <img src={getOptimizedImage(product.imageUrl, 400) || undefined} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={product.name} />
                 <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg shadow-sm border border-border-light">
                    <span className="text-[10px] font-black text-primary tabular-nums">{product.price} ج.م</span>
                 </div>
@@ -226,7 +227,7 @@ export default function Store() {
                   </div>
 
                   <div className="flex gap-4 p-4 rounded-3xl bg-slate-50 dark:bg-surface-dark border border-border-light dark:border-border-dark">
-                    <img src={selectedProduct.imageUrl} referrerPolicy="no-referrer" className="w-20 h-20 rounded-2xl object-cover shadow-sm" alt="" />
+                    <img src={getOptimizedImage(selectedProduct.imageUrl, 200) || undefined} referrerPolicy="no-referrer" className="w-20 h-20 rounded-2xl object-cover shadow-sm" alt="" />
                     <div className="flex-1 flex flex-col justify-center">
                        <h3 className="font-black text-sm text-slate-800 dark:text-white">{selectedProduct.name}</h3>
                        <p className="text-primary font-black text-sm tabular-nums mt-1">{selectedProduct.price * formData.quantity} ج.م</p>

@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { Play, Image as ImageIcon, Video, Radio, Clock, Eye, X, ChevronRight, Calendar, Download, Heart } from 'lucide-react';
+import { getOptimizedImage } from '../lib/cloudinary';
 
 export default function Media() {
   const { media } = useAppStore();
@@ -118,7 +119,7 @@ export default function Media() {
               onClick={() => featuredMedia.type === 'video' && setSelectedVideo(featuredMedia)}
               className="relative w-full aspect-[16/10] rounded-[40px] overflow-hidden group shadow-2xl cinematic-glow border border-white/5 cursor-pointer"
             >
-              <img src={featuredMedia.thumbnailUrl} alt={featuredMedia.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" referrerPolicy="no-referrer" />
+              <img src={getOptimizedImage(featuredMedia.thumbnailUrl, 800) || undefined} alt={featuredMedia.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" referrerPolicy="no-referrer" />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
               
               <div className="absolute top-4 left-4 flex gap-2">
@@ -178,7 +179,7 @@ export default function Media() {
                     onClick={() => setSelectedPhoto(item)}
                     className="group relative aspect-[4/5] rounded-[32px] overflow-hidden shadow-premium border border-border-light/40 dark:border-border-dark/40 cursor-pointer"
                   >
-                    <img src={item.thumbnailUrl} alt={item.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
+                    <img src={getOptimizedImage(item.thumbnailUrl, 600) || undefined} alt={item.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-90"></div>
                     <div className="absolute top-3 right-3 w-8 h-8 rounded-2xl bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center">
                       <ImageIcon size={14} className="text-white" />
@@ -228,7 +229,7 @@ export default function Media() {
 
                   <div className="aspect-[4/5] w-full rounded-[40px] overflow-hidden bg-slate-900 shadow-2xl relative border border-white/10">
                      <img 
-                       src={selectedPhoto.thumbnailUrl} 
+                       src={getOptimizedImage(selectedPhoto.thumbnailUrl, 1000) || undefined} 
                        className="w-full h-full object-contain" 
                        referrerPolicy="no-referrer"
                        alt={selectedPhoto.title}
@@ -255,7 +256,7 @@ export default function Media() {
                     className="group flex gap-4 bg-white dark:bg-surface-dark rounded-[28px] overflow-hidden border border-border-light/40 dark:border-border-dark/40 shadow-premium hover:shadow-2xl transition-all duration-300 p-2.5 cursor-pointer"
                   >
                     <div className="w-[120px] aspect-video overflow-hidden relative rounded-2xl flex-shrink-0 bg-slate-900">
-                      <img src={item.thumbnailUrl} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-70" referrerPolicy="no-referrer" />
+                      <img src={getOptimizedImage(item.thumbnailUrl, 400) || undefined} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-70" referrerPolicy="no-referrer" />
                       <div className="absolute inset-0 flex items-center justify-center">
                          <div className="w-10 h-10 bg-white/30 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/40 group-hover:scale-110 transition-transform">
                            <Play size={16} fill="white" className="ml-1" />

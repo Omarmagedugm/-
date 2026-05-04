@@ -13,6 +13,7 @@ import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Lock, User, AtSign, ArrowLeft, Loader2, ShieldCheck, HelpCircle } from 'lucide-react';
 import { useAppStore } from '../store';
+import { getOptimizedImage } from '../lib/cloudinary';
 
 export default function Auth() {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
@@ -263,7 +264,7 @@ export default function Auth() {
         <div className="flex flex-col items-center mb-10">
           <div className="relative mb-4">
              {(appSettings.logoType || 'image') === 'image' ? (
-                <img src={appSettings.appLogo || undefined} onError={(e) => { e.currentTarget.src = 'https://res.cloudinary.com/dqj6gzwfg/image/upload/v1777716805/favicon_gd0ic4.png'; }} alt="Logo" className="h-20 w-20 object-contain drop-shadow-xl" referrerPolicy="no-referrer" />
+                <img src={getOptimizedImage(appSettings.appLogo, 200) || undefined} onError={(e) => { e.currentTarget.src = 'https://res.cloudinary.com/dqj6gzwfg/image/upload/v1777716805/favicon_gd0ic4.png'; }} alt="Logo" className="h-20 w-20 object-contain drop-shadow-xl" referrerPolicy="no-referrer" />
              ) : (
                 <h1 className="text-4xl font-black text-primary-dark drop-shadow-xl">{appSettings.logoText}</h1>
              )}

@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { Download, Loader2 } from 'lucide-react';
 import { useAppStore } from '../store';
+import { getOptimizedImage } from '../lib/cloudinary';
 
 interface DigitalFanIDProps {
   username: string;
@@ -94,7 +95,7 @@ export default function DigitalFanID({ username, memberId, avatarUrl }: DigitalF
           {/* A small watermark / logo could go here */}
           <div className="h-8 w-8 opacity-50 grayscale brightness-200">
             <img 
-              src={appSettings.appLogo} 
+              src={getOptimizedImage(appSettings.appLogo, 100)} 
               onError={(e) => { e.currentTarget.src = 'https://res.cloudinary.com/dqj6gzwfg/image/upload/v1777716805/favicon_gd0ic4.png'; }}
               alt="Logo" 
               className="w-full h-full object-contain"

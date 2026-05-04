@@ -4,6 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { motion } from 'motion/react';
 import { Share2, Bookmark, Heart, ArrowRight, Rss, Edit2 } from 'lucide-react';
+import { getOptimizedImage } from '../lib/cloudinary';
 
 export default function NewsDetail() {
   const { id } = useParams();
@@ -78,11 +79,11 @@ export default function NewsDetail() {
             {/* Blurred background for contrast */}
             <div 
               className="absolute inset-0 bg-cover bg-center opacity-30 blur-2xl scale-110"
-              style={{ backgroundImage: `url('${article.image}')` }}
+              style={{ backgroundImage: `url('${getOptimizedImage(article.image, 100)}')` }}
             />
             {/* Main Full Image */}
             <img 
-              src={article.image} 
+              src={getOptimizedImage(article.image, 1000)} 
               alt={article.title} 
               className="relative z-10 w-full h-full max-h-[50vh] object-contain drop-shadow-2xl" 
               referrerPolicy="no-referrer"

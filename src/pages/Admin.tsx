@@ -77,6 +77,7 @@ import {
 import AdminSidebar from '../components/AdminSidebar';
 import ScoreSelector from '../components/ScoreSelector';
 import ImageUploader from '../components/ImageUploader';
+import { getOptimizedImage } from '../lib/cloudinary';
 
 const handleFileUploadFn = async (
   e: React.ChangeEvent<HTMLInputElement>, 
@@ -132,7 +133,7 @@ const UploadField = ({
         {currentUrl && currentUrl.trim() !== '' ? (
           <div className="relative w-full h-40 rounded-2xl overflow-hidden border border-border-light dark:border-border-dark group flex items-center justify-center bg-slate-900 shadow-xl">
             {type === 'image' ? (
-              <img src={currentUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              <img src={getOptimizedImage(currentUrl, 400)} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             ) : type === 'video' ? (
               <video src={currentUrl} className="w-full h-full object-cover" controls />
             ) : (
@@ -292,7 +293,7 @@ const UploadOrUrlField = ({
           {currentUrl && currentUrl.trim() !== '' && (
             <div className="relative w-full h-32 rounded-xl overflow-hidden border border-border-light dark:border-border-dark flex items-center justify-center bg-slate-900 group shadow-inner">
               {type === 'image' ? (
-                <img src={currentUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                <img src={getOptimizedImage(currentUrl, 400)} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               ) : type === 'video' ? (
                 <div className="w-full h-full flex items-center justify-center bg-slate-900">
                   <PlayCircle size={32} className="text-white opacity-50 group-hover:scale-110 group-hover:opacity-100 transition-all" />

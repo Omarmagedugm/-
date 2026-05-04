@@ -41,6 +41,7 @@ import { ar } from 'date-fns/locale';
 import Sidebar from '../components/Sidebar';
 import ScoreSelector from '../components/ScoreSelector';
 import ImageUploader from '../components/ImageUploader';
+import { getOptimizedImage } from '../lib/cloudinary';
 import { 
   doc, 
   updateDoc, 
@@ -916,7 +917,7 @@ export default function FanZone() {
                           <>
                             <div className="w-12 h-12 rounded-2xl overflow-hidden glass-card ring-1 ring-primary/10 p-0.5 shrink-0">
                               <img 
-                                src={displayAvatar} 
+                                src={getOptimizedImage(displayAvatar, 200)} 
                                 className="w-full h-full object-cover rounded-2xl bg-slate-100" 
                                 alt={displayName}
                                 referrerPolicy="no-referrer"
@@ -1062,7 +1063,7 @@ export default function FanZone() {
                   {post.image && (
                     <div className="relative w-full aspect-[16/10] rounded-[36px] overflow-hidden mb-6 border border-border-light dark:border-border-dark shadow-premium group/img bg-slate-50 dark:bg-slate-900/40">
                       <img 
-                        src={post.image} 
+                        src={getOptimizedImage(post.image, 800)} 
                         className="w-full h-full object-contain transition-transform duration-1000" 
                         alt="post attachment" 
                         referrerPolicy="no-referrer" 
@@ -1124,7 +1125,7 @@ export default function FanZone() {
                     >
                       <div className="flex gap-3 mb-6">
                         <div className="w-10 h-10 rounded-xl overflow-hidden glass-card ring-1 ring-primary/20 shrink-0">
-                          <img src={profile.avatar || undefined} className="w-full h-full object-cover" alt="me" referrerPolicy="no-referrer" />
+                          <img src={getOptimizedImage(profile.avatar, 200) || undefined} className="w-full h-full object-cover" alt="me" referrerPolicy="no-referrer" />
                         </div>
                         <div className="flex-1 flex gap-2 relative">
                           <input 
@@ -1159,7 +1160,7 @@ export default function FanZone() {
                               key={comment.id} 
                               className="flex gap-4 group/comment"
                             >
-                              <img src={displayAvatar} className="w-9 h-9 rounded-[14px] bg-slate-100 shrink-0 border border-border-light dark:border-border-dark shadow-sm" alt="avatar" referrerPolicy="no-referrer" />
+                              <img src={getOptimizedImage(displayAvatar, 200)} className="w-9 h-9 rounded-[14px] bg-slate-100 shrink-0 border border-border-light dark:border-border-dark shadow-sm" alt="avatar" referrerPolicy="no-referrer" />
                               <div className="flex-1 bg-slate-50 dark:bg-surface-dark p-4 rounded-[24px] border border-border-light dark:border-border-dark shadow-sm group-hover/comment:border-primary/20 transition-colors">
                                 <div className="flex items-center justify-between mb-1">
                                   <h5 className="text-[11px] font-black text-primary uppercase tracking-tighter">{displayName}</h5>
@@ -1281,7 +1282,7 @@ export default function FanZone() {
                         const chatName = chatUser?.name || msg.userName;
                         return (
                           <>
-                            <img src={chatAvatar} className="w-10 h-10 rounded-[14px] bg-slate-100 shadow-sm border border-border-light dark:border-border-dark shrink-0" alt="avatar" referrerPolicy="no-referrer" />
+                            <img src={getOptimizedImage(chatAvatar, 200)} className="w-10 h-10 rounded-[14px] bg-slate-100 shadow-sm border border-border-light dark:border-border-dark shrink-0" alt="avatar" referrerPolicy="no-referrer" />
                             <div className={`max-w-[80%] ${isOwn ? 'items-end text-left' : 'items-start text-right'} flex flex-col gap-1.5`}>
                               <div className="flex items-center gap-2 px-1">
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{chatName}</span>
@@ -1437,7 +1438,7 @@ export default function FanZone() {
                                    className={`flex-1 flex flex-col items-center gap-3 p-6 rounded-[32px] border-2 transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home > selectedPrediction.away ? 'bg-orange-500 border-orange-400 text-white shadow-lg scale-105' : 'bg-white dark:bg-surface-dark border-border-light dark:border-border-dark text-slate-500 hover:border-orange-500/50'}`}
                                  >
                                    <div className="relative w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center p-2 mb-1">
-                                      <img src={match.homeLogo} className="w-full h-full object-contain" alt="home" referrerPolicy="no-referrer" />
+                                      <img src={getOptimizedImage(match.homeLogo, 200)} className="w-full h-full object-contain" alt="home" referrerPolicy="no-referrer" />
                                       {predictions.filter(p => p.matchId === match.id).length > 0 && (
                                         <div className="absolute -top-2 -right-2 bg-orange-600 text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg border border-white/20">
                                           {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.homeScore) > Number(p.awayScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
@@ -1459,7 +1460,7 @@ export default function FanZone() {
                                    className={`flex-1 flex flex-col items-center gap-3 p-6 rounded-[32px] border-2 transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.away > selectedPrediction.home ? 'bg-orange-500 border-orange-400 text-white shadow-lg scale-105' : 'bg-white dark:bg-surface-dark border-border-light dark:border-border-dark text-slate-500 hover:border-orange-500/50'}`}
                                  >
                                    <div className="relative w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center p-2 mb-1">
-                                      <img src={match.awayLogo} className="w-full h-full object-contain" alt="away" referrerPolicy="no-referrer" />
+                                      <img src={getOptimizedImage(match.awayLogo, 200)} className="w-full h-full object-contain" alt="away" referrerPolicy="no-referrer" />
                                       {predictions.filter(p => p.matchId === match.id).length > 0 && (
                                         <div className="absolute -top-2 -left-2 bg-orange-600 text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg border border-white/20">
                                           {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.awayScore) > Number(p.homeScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
@@ -1529,7 +1530,7 @@ export default function FanZone() {
                                  </div>
                                  <div className="flex flex-col items-center gap-2 w-24">
                                    <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 relative group-hover:border-accent/50 transition-colors">
-                                     <img src={match.awayLogo} className="w-8 h-8 object-contain" alt="away" referrerPolicy="no-referrer" />
+                                     <img src={getOptimizedImage(match.awayLogo, 200)} className="w-8 h-8 object-contain" alt="away" referrerPolicy="no-referrer" />
                                      {predictions.filter(p => p.matchId === match.id).length > 0 && (
                                        <div className="absolute -top-2 -left-2 bg-accent text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
                                          {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.awayScore) > Number(p.homeScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
@@ -1694,7 +1695,7 @@ export default function FanZone() {
 
                           <div className="flex items-center gap-3">
                             <div className="relative">
-                              <img src={user.userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.userName)}&background=random`} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-slate-800 shadow-sm" alt="user" />
+                              <img src={getOptimizedImage(user.userAvatar, 200) || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.userName)}&background=random`} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-slate-800 shadow-sm" alt="user" />
                               {idx === 0 && (
                                 <div className="absolute -top-1 -left-1 text-yellow-500 bg-white dark:bg-slate-800 rounded-full p-0.5">
                                   <Trophy size={14} fill="currentColor" />
@@ -1746,7 +1747,7 @@ export default function FanZone() {
                           return (
                             <div key={pred.id} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50/50 dark:bg-surface-dark/30 border border-slate-100 dark:border-white/5">
                               <div className="flex items-center gap-3">
-                                <img src={pred.userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(pred.userName)}&background=random`} className="w-8 h-8 rounded-xl object-cover" alt="user" />
+                                <img src={getOptimizedImage(pred.userAvatar, 200) || `https://ui-avatars.com/api/?name=${encodeURIComponent(pred.userName)}&background=random`} className="w-8 h-8 rounded-xl object-cover" alt="user" />
                                 <div className="flex flex-col">
                                   <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">{pred.userName}</span>
                                   <span className="text-[8px] font-bold text-slate-400">
@@ -1869,7 +1870,7 @@ export default function FanZone() {
                     <div className="flex justify-center items-center gap-6 sm:gap-12 relative z-10">
                       <div className="flex flex-col items-center w-20 sm:w-24">
                         <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-3xl flex items-center justify-center mb-3 sm:mb-4 backdrop-blur-md border border-white/20 shadow-premium">
-                          <img src={nextMatch.homeLogo} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-lg" alt="home" referrerPolicy="no-referrer" />
+                          <img src={getOptimizedImage(nextMatch.homeLogo, 200)} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-lg" alt="home" referrerPolicy="no-referrer" />
                         </div>
                         <span className="text-[10px] sm:text-[11px] font-black text-center line-clamp-1 uppercase tracking-tight">{nextMatch.homeTeam}</span>
                       </div>
@@ -1891,7 +1892,7 @@ export default function FanZone() {
 
                       <div className="flex flex-col items-center w-20 sm:w-24">
                         <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-3xl flex items-center justify-center mb-3 sm:mb-4 backdrop-blur-md border border-white/20 shadow-premium">
-                          <img src={nextMatch.awayLogo} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-lg" alt="away" referrerPolicy="no-referrer" />
+                          <img src={getOptimizedImage(nextMatch.awayLogo, 200)} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-lg" alt="away" referrerPolicy="no-referrer" />
                         </div>
                         <span className="text-[10px] sm:text-[11px] font-black text-center line-clamp-1 uppercase tracking-tight">{nextMatch.awayTeam}</span>
                       </div>
@@ -2022,7 +2023,7 @@ export default function FanZone() {
                             />
                             {momentPost.image && (
                               <div className="absolute inset-0 rounded-[24px] overflow-hidden group">
-                                <img src={momentPost.image} className="w-full h-full object-cover" alt="preview" />
+                                <img src={getOptimizedImage(momentPost.image, 400)} className="w-full h-full object-cover" alt="preview" />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                   <button onClick={() => setMomentPost({...momentPost, image: ''})} className="bg-red-500 text-white p-2 rounded-full shadow-lg">
                                     <Trash2 size={16} />
@@ -2075,7 +2076,7 @@ export default function FanZone() {
                     >
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <img src={moment.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${moment.userId}`} className="w-10 h-10 rounded-2xl border border-border-light" alt="user" />
+                          <img src={getOptimizedImage(moment.userAvatar, 200) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${moment.userId}`} className="w-10 h-10 rounded-2xl border border-border-light" alt="user" />
                           <div className="flex flex-col">
                             <span className="text-xs font-black text-slate-800 dark:text-white uppercase leading-none">{moment.userName}</span>
                             <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">
@@ -2103,7 +2104,7 @@ export default function FanZone() {
 
                       {moment.image && (
                         <div className="rounded-[28px] overflow-hidden border-2 border-white dark:border-border-dark aspect-video sm:aspect-square relative group/img shadow-md">
-                          <img src={moment.image} className="w-full h-full object-cover transition-transform duration-1000 group-hover/img:scale-110" alt="moment" referrerPolicy="no-referrer" />
+                          <img src={getOptimizedImage(moment.image, 800)} className="w-full h-full object-cover transition-transform duration-1000 group-hover/img:scale-110" alt="moment" referrerPolicy="no-referrer" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end p-4">
                              <div className="flex items-center gap-2 text-white text-[10px] font-black uppercase tracking-widest bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20">
                                <Camera size={14} className="text-accent" /> Full Perspective
