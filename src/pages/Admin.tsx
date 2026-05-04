@@ -836,13 +836,13 @@ export default function Admin() {
         await setDoc(doc(db, 'city_info', 'alexandria'), payload);
       } else if (activeTab === 'settings') {
         const payload = {
-          appName: formData.appName || appSettings.appName,
-          appLogo: formData.appLogo || appSettings.appLogo,
-          headerLogoLight: formData.headerLogoLight !== undefined ? formData.headerLogoLight : (appSettings.headerLogoLight || ''),
-          headerLogoDark: formData.headerLogoDark !== undefined ? formData.headerLogoDark : (appSettings.headerLogoDark || ''),
-          logoType: formData.logoType || appSettings.logoType || 'image',
-          logoText: formData.logoText || appSettings.logoText || '',
-          defaultSport: formData.defaultSport || appSettings.defaultSport || 'auto'
+          appName: formData.appName ?? appSettings.appName ?? 'قناة الاتحاد',
+          appLogo: formData.appLogo ?? appSettings.appLogo ?? '',
+          headerLogoLight: formData.headerLogoLight ?? appSettings.headerLogoLight ?? '',
+          headerLogoDark: formData.headerLogoDark ?? appSettings.headerLogoDark ?? '',
+          logoType: formData.logoType ?? appSettings.logoType ?? 'image',
+          logoText: formData.logoText ?? appSettings.logoText ?? '',
+          defaultSport: formData.defaultSport ?? appSettings.defaultSport ?? 'auto'
         };
         await setDoc(doc(db, 'settings', 'global'), payload);
         const { setSettings } = useAppStore.getState();
@@ -850,9 +850,9 @@ export default function Admin() {
       } else if (activeTab === 'live') {
         await setDoc(doc(db, 'settings', 'liveStream'), {
           isActive: formData.isActive ?? liveStream.isActive,
-          url: formData.url || liveStream.url,
-          title: formData.title || liveStream.title,
-          viewers: Number(formData.viewers || liveStream.viewers)
+          url: formData.url ?? liveStream.url ?? '',
+          title: formData.title ?? liveStream.title ?? '',
+          viewers: Number(formData.viewers ?? liveStream.viewers ?? 0)
         });
       } else if (activeTab === 'clubs') {
         const payload = {
