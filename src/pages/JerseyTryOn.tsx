@@ -16,6 +16,7 @@ import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, onSnapshot, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+
 import { GoogleGenAI } from "@google/genai";
 
 import Sidebar from '../components/Sidebar';
@@ -30,10 +31,6 @@ const JerseyTryOn: React.FC = () => {
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [aiConfig, setAiConfig] = useState<any>({ enabled: true, clubLogo: '' });
   const [loading, setLoading] = useState(true);
-
-  // Initialize AI client
-  // In AI Studio Build, GEMINI_API_KEY is automatically available
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
 
   useEffect(() => {
     // Fetch AI config
@@ -179,10 +176,8 @@ const JerseyTryOn: React.FC = () => {
     }, 100);
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error('مفتاح API الخاص بـ Gemini غير متوفر. يرجى مراجعة إعدادات المشروع.');
-      }
+      const apiKey = process.env.GEMINI_API_KEY as string;
+      const ai = new GoogleGenAI({ apiKey });
 
       // Compress and convert user image
       console.log('Compressing user image...');
@@ -211,34 +206,35 @@ const JerseyTryOn: React.FC = () => {
           const responseLogo = await fetch(aiConfig.clubLogo);
           if (responseLogo.ok) {
             const logoBlob = await responseLogo.blob();
-            logoImageBase64 = await new Promise<string>((resolve) => {
+            const logoDataUrl = await new Promise<string>((resolve) => {
               const reader = new FileReader();
-              reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+              reader.onloadend = () => resolve(reader.result as string);
               reader.readAsDataURL(logoBlob);
             });
+            logoImageBase64 = await compressImage(logoDataUrl);
           }
         } catch (e) {
           console.warn("Could not fetch club logo for AI reference", e);
         }
       }
 
-      console.log('Sending request to Gemini AI with background:', selectedBackground);
-      
+      console.log('Generating prompts...');
       let backgroundDetail = '';
       if (selectedBackground === 'room') {
         backgroundDetail = `
 SCENE: STANDING IN A WARM, AUTHENTIC "ISKANDARI FAN ROOM" (ZAEEM EL-THAGHR):
 - The background is a homey room belonging to a passionate Al Ittihad fan in Alexandria.
-- Walls decorated with many green and white flags and official club scarves (Alittihad Alex SC / Etthadawy).
+- Walls decorated with many green and white flags and official Alittihad Alexandria club scarves (Etthadawy).
 - Include framed photos of club legends and newspaper clippings of famous victories.
 - Modern high-contrast lighting with a soft green ambient glow.`;
       } else if (selectedBackground === 'studio') {
         backgroundDetail = `
 SCENE: STANDING IN A SLEEK MODERN BRANDED STUDIO:
-- Minimalist, high-end professional photo studio.
-- Artistic display of Al Ittihad scarves and flags as cinematic backdrops.
-- Prominent "Official Club Logo" integrated into the backlit decor.
-- Clean studio shadows and professional sports photography lighting.`;
+- Minimalist, high-end professional photo studio with a clean aesthetic.
+- A curated wall featuring a stylish arrangement of vintage club articles and newspaper clippings.
+- Artistic display of Al Ittihad (Etthadawy) scarves and flags as cinematic backdrops.
+- Prominent Al Ittihad Alexandria club logo integrated into the backlit decor.
+- Clean studio shadows and professional sports photography lighting with green neon touches.`;
       } else if (selectedBackground === 'stadium') {
         backgroundDetail = `
 SCENE: STANDING ON THE PITCH OF THE ALEXANDRIA STADIUM:
@@ -255,58 +251,44 @@ SCENE: CELEBRATING A "SIDI EL-BALAD" THEMED BIRTHDAY:
 - The person is holding a club scarf, looking happy in a celebration setting.`;
       }
 
-      const prompt = `Perform a professional, high-end CLOTHING REPLACEMENT and SCENE TRANSFORMATION.
+      const prompt = `Perform a professional, high-end CLOTHING REPLACEMENT and FULL-BODY SCENE TRANSFORMATION.
 
-IDENTITY PRESERVATION (ABSOLUTE): You MUST perfectly preserve the person's face, features, hair, and unique identity from "Customer Image". The face must be 100% IDENTICAL to the original.
+IDENTITY PRESERVATION (ABSOLUTE): You MUST perfectly preserve the person's face, features, hair, eyes, and unique identity from "Customer Image". The face must be 100% IDENTICAL to the original. NO adjustments to facial structure.
 
-BODY POSE & ADAPTATION: You ARE ALLOWED to adapt the person's body pose and posture to fit the environment naturally (e.g., a fan's proud stance, a studio model pose, or an athlete's pose on the pitch).
+BODY POSE & FULL-BODY COMPLETION (CRITICAL): 
+1. If the "Customer Image" is a portrait or half-body, you MUST generate the rest of the body to create a full-body standing pose.
+2. Adapt the person's posture to fit the environment naturally (e.g., a fan's proud stance, a studio model pose, or an athlete's pose on the pitch).
 
-JERSEY SWAP (CRITICAL):
-1. Replace the person's current outfit with the EXACT Al Ittihad Alexandria green and white jersey kit provided in "Target Jersey to Wear".
-2. The jersey must be PERFECTLY fitted to the person's body in their new pose. Ensure realistic fabric textures, folds, and natural lighting/shadows.
-3. Use the "Official Club Logo" as the mandatory reference for the crest/badge on the jersey to ensure authenticity.
+JERSEY & LOWER OUTFIT (MANDATORY):
+1. UPPER BODY: Replace the person's current outfit with the EXACT Al Ittihad Alexandria (Etthadawy) green and white jersey kit provided in "Target Jersey to Wear".
+2. LOWER BODY: Complete the outfit by dressing the person in matching black Adidas sports pants (featuring the iconic three white stripes) and clean white Nike Air sneakers.
+3. FIT: The entire outfit (jersey + Adidas pants + Nike shoes) must be PERFECTLY fitted to the person's generated body. Ensure realistic fabric textures, natural folds, and integrated lighting/shadows.
+4. BRANDING: Use the "Official Club Logo" as the mandatory reference for the crest/badge on the jersey to ensure authenticity.
 
 ${backgroundDetail}
 
-STYLE: 8k resolution, ultra-photorealistic studio/sports photography. It must look like a high-budget professional photo session. No digital artifacts, no collage appearance.
+STYLE: 8k resolution, ultra-photorealistic sports/studio photography. It must look like a real photograph taken with a professional DSLR camera. No digital artifacts, no AI distortions, and no collage look.
 
 OUTPUT: Return ONLY the transformed image.`;
 
       const aiParts: any[] = [
         { text: "Customer Image (Identity to preserve):" },
-        {
-          inlineData: {
-            data: userImageBase64,
-            mimeType: 'image/jpeg',
-          },
-        },
+        { inlineData: { data: userImageBase64, mimeType: 'image/jpeg' } },
         { text: "Target Jersey to Wear:" },
-        {
-          inlineData: {
-            data: jerseyImageBase64,
-            mimeType: 'image/jpeg',
-          },
-        },
+        { inlineData: { data: jerseyImageBase64, mimeType: 'image/jpeg' } }
       ];
 
-      // Add logo reference if available
       if (logoImageBase64) {
         aiParts.push({ text: "Official Club Logo (Brand Reference):" });
-        aiParts.push({
-          inlineData: {
-            data: logoImageBase64,
-            mimeType: 'image/jpeg',
-          },
-        });
+        aiParts.push({ inlineData: { data: logoImageBase64, mimeType: 'image/jpeg' } });
       }
 
       aiParts.push({ text: prompt });
 
+      console.log('Calling Gemini AI (3.1 Image Model)...');
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-          parts: aiParts,
-        },
+        model: 'gemini-3.1-flash-image-preview',
+        contents: [{ role: 'user', parts: aiParts }],
         config: {
           imageConfig: {
             aspectRatio: "3:4"
@@ -329,14 +311,17 @@ OUTPUT: Return ONLY the transformed image.`;
         setResultImage(`data:image/jpeg;base64,${generatedImageBase64}`);
         toast.success('تمت العملية بنجاح! نورت استوديو سيد البلد');
       } else {
-        console.error('No image data in response:', response);
         throw new Error('الذكاء الاصطناعي لم يتمكن من توليد الصورة. حاول مرة أخرى بصورة أوضح.');
       }
 
     } catch (error: any) {
       console.error('AI Processing error details:', error);
-      const errorMessage = error.message || 'حدث خطأ غير معروف في الذكاء الاصطناعي';
-      toast.error(`عذراً: ${errorMessage}`);
+      const errorMessage = error.message || '';
+      if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
+        toast.error('عذراً، تم الوصول للحد الأقصى للصور المتاحة حالياً. يرجى المحاولة مرة أخرى بعد قليل.');
+      } else {
+        toast.error('حدث خطأ أثناء معالجة الصورة. تأكد من جودة الصورة المرفوعة وحاول مرة أخرى.');
+      }
     } finally {
       setIsProcessing(false);
     }
