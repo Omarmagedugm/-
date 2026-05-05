@@ -14,11 +14,40 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  const notificationTitle = payload.notification?.title || 'Notification';
+  const notificationTitle = payload.notification?.title || 'إشعار جديد';
   const notificationOptions = {
     body: payload.notification?.body,
-    icon: '/icon.png'
+    icon: '/icon.png',
+    data: payload.data, // Attach data for the click handler
+    badge: '/icon.png'
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// Handle notification click
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  
+  // Default target URL
+  const targetUrl = event.notification.data?.url || '/';
+  
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // If a window is already open, focus it and navigate
+        if (clientList.length > 0) {
+          let client = clientList[0];
+          for (let i = 0; i < clientList.length; i++) {
+            if (clientList[i].focused) {
+              client = clientList[i];
+              break;
+            }
+          }
+          return client.focus().then(() => client.navigate(targetUrl));
+        }
+        // Otherwise, open a new window
+        return clients.openWindow(targetUrl);
+      })
+  );
 });

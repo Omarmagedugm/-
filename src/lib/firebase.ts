@@ -148,29 +148,47 @@ testConnection();
 export const messaging = messagingInstance;
 
 export const requestNotificationPermission = async () => {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  
   const activeMessaging = messagingInstance || await initializeMessaging();
   if (!activeMessaging) return;
   
   try {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
-      const registration = await navigator.serviceWorker.ready;
+      // Get service worker registration
+      let registration;
+      if ('serviceWorker' in navigator) {
+        registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+        if (!registration) {
+          registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+            scope: '/'
+          });
+        }
+      }
+
       const currentToken = await getToken(activeMessaging, { 
         vapidKey: 'BLpfNtPFcOkDCoXJ0F_vmM3RmtPtWy24cGby0tw-XL2EeZz3xxa_2DXYjS8uw_dRSsZIrcq-05Rv68nTJbJgrzg',
         serviceWorkerRegistration: registration 
       });
       
       if (currentToken) {
-        import('firebase/firestore').then(({ doc, setDoc, serverTimestamp }) => {
-          const user = getAuth().currentUser;
-          setDoc(doc(db, 'fcm_tokens', currentToken), {
-            token: currentToken,
-            userId: user ? user.uid : 'anonymous',
-            createdAt: serverTimestamp(),
-            platform: navigator.platform,
-            userAgent: navigator.userAgent
-          }).catch(err => console.error("Could not save FCM token:", err));
-        });
+        console.log('FCM Token generated:', currentToken);
+        const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+        const user = getAuth().currentUser;
+        
+        // Save token with more metadata
+        await setDoc(doc(db, 'fcm_tokens', currentToken), {
+          token: currentToken,
+          userId: user ? user.uid : 'anonymous',
+          lastSeen: serverTimestamp(),
+          platform: navigator.platform,
+          userAgent: navigator.userAgent,
+          isPWA: window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true,
+          status: 'active'
+        }, { merge: true });
+
+        return currentToken;
       }
     }
   } catch (err) {

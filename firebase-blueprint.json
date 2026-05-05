@@ -174,9 +174,11 @@
       "properties": {
         "token": { "type": "string" },
         "userId": { "type": "string" },
-        "createdAt": { "type": "string" },
+        "lastSeen": { "type": "string" },
         "platform": { "type": "string" },
-        "userAgent": { "type": "string" }
+        "userAgent": { "type": "string" },
+        "isPWA": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["active", "inactive"] }
       }
     },
     "MatchDayMoment": {

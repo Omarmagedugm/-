@@ -100,6 +100,16 @@ export default function App() {
   const handleGoalComplete = () => {
     setShowGoal(false);
   };
+  useEffect(() => {
+    // If permission is already granted, refresh the token and update metadata
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const timer = setTimeout(() => {
+        requestNotificationPermission();
+      }, 5000); // Wait a bit after load
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   const { theme, setIsAuthReady, updateProfile } = useAppStore();
 
   useEffect(() => {

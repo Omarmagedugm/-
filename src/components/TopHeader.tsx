@@ -17,6 +17,9 @@ export default function TopHeader() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [imageError, setImageError] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission>(
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied'
+  );
   const initialLoadRef = useRef(true);
 
   const lightLogo = appSettings?.headerLogoLight || appSettings?.appLogo;
@@ -26,6 +29,17 @@ export default function TopHeader() {
   useEffect(() => {
     setImageError(false);
   }, [currentLogo]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      const timer = setInterval(() => {
+        if (Notification.permission !== permission) {
+          setPermission(Notification.permission);
+        }
+      }, 2000);
+      return () => clearInterval(timer);
+    }
+  }, [permission]);
 
   useEffect(() => {
     if (!profile?.uid) return;
@@ -165,6 +179,27 @@ export default function TopHeader() {
               >
                 <Settings size={20} strokeWidth={2.5} />
               </Link>
+            )}
+            {permission === 'default' && (
+              <motion.button 
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                  import('../lib/firebase').then(({ requestNotificationPermission }) => {
+                    requestNotificationPermission().then(() => {
+                      if ('Notification' in window) setPermission(Notification.permission);
+                    });
+                  });
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all duration-300 shadow-sm relative group"
+                title="تفعيل الإشعارات"
+              >
+                <Bell size={20} strokeWidth={2.5} className="animate-pulse" />
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                </span>
+                <span className="absolute top-12 scale-0 group-hover:scale-100 transition-all rounded bg-slate-800 p-2 text-xs text-white whitespace-nowrap z-[100]">تفعيل الإشعارات</span>
+              </motion.button>
             )}
             <motion.button 
               id="theme-toggle-button"
