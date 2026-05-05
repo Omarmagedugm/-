@@ -132,60 +132,78 @@ const JerseyTryOn: React.FC = () => {
 
     try {
       const apiKey = (process.env as any).GEMINI_API_KEY;
-      if (!apiKey) throw new Error('Gemini API Key is missing');
+      if (!apiKey) {
+        console.error('GEMINI_API_KEY is missing from environment');
+        throw new Error('مفتاح API الخاص بـ Gemini غير متوفر. يرجى مراجعة الإعدادات.');
+      }
 
       const ai = new GoogleGenAI({ apiKey });
 
       // Compress and convert user image
+      console.log('Compressing user image...');
       const userImageBase64 = await compressImage(userImage);
       const userMimeType = 'image/jpeg';
       
       // Fetch jersey image and convert to base64
+      console.log('Fetching jersey image:', selectedJersey.url);
       const responseJersey = await fetch(selectedJersey.url);
-      if (!responseJersey.ok) throw new Error('فشل تحميل صورة القميص');
+      if (!responseJersey.ok) {
+        console.error('Failed to fetch jersey image:', responseJersey.statusText);
+        throw new Error('فشل تحميل صورة القميص المختار');
+      }
       const jerseyBlob = await responseJersey.blob();
-      const jerseyDataUrl = await new Promise<string>((resolve) => {
+      const jerseyDataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
         reader.readAsDataURL(jerseyBlob);
       });
       const jerseyImageBase64 = await compressImage(jerseyDataUrl);
       const jerseyMimeType = 'image/jpeg';
 
-      const prompt = `I am providing two images.
-IMAGE 1: A portrait of a person.
-IMAGE 2: An Al Ittihad Alexandria (Unionawy) club jersey.
+      const prompt = `Merge these two images into one professional portrait.
+STRICT INSTRUCTIONS:
+1. Use the person's face from the first image EXACTLY. Maintain their identity, hair, and facial features 100%.
+2. Dress them in the Al Ittihad Alexandria club jersey shown in the second image. The jersey must look like it's realistically worn by the person.
+3. Place the person in a cinematic, highly detailed "Al Ittihad Alexandria" supporter's room in Alexandria, Egypt. 
+4. Include green and white club colors, flags, and a scarf with "Unionawy" or "Itthad" branding in the background.
+5. Lighting should be professional studio lighting, 8k resolution, photorealistic.`;
 
-Your task is to create a highly realistic composite photo. Transform the person from IMAGE 1 into a passionate Al Ittihad Alexandria fan.
-
-STRICT IDENTITY RULES:
-1. FACE PERSISTENCE: You MUST keep the person's face EXACTLY as it appears in IMAGE 1. 100% identical facial features, identity, and skin tone.
-2. CLOTHING: The person MUST be wearing the EXACT jersey from IMAGE 2. Fit it naturally on their body.
-3. SCENE: Set the scene in a realistic Alexandria supporter room (Unionawy) with green and white flags, scarves, and club memorabilia. Scarves should have "Alittihad Alexandria club" written on them.
-4. QUALITY: Professional 4K portrait photography with realistic lighting and cinematic colors.`;
-
+      console.log('Sending request to Gemini...');
       const result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image', 
+        model: 'gemini-3.1-flash-image-preview', 
         contents: {
           parts: [
             { inlineData: { data: userImageBase64, mimeType: userMimeType } },
             { inlineData: { data: jerseyImageBase64, mimeType: jerseyMimeType } },
             { text: prompt }
           ]
+        },
+        config: {
+          imageConfig: {
+            aspectRatio: "3:4"
+          }
         }
       });
+
+      if (!result.candidates || result.candidates.length === 0) {
+        throw new Error('لم يتم إصدار أي نتائج من الذكاح الاصطناعي');
+      }
 
       const imagePart = result.candidates[0].content.parts.find(p => p.inlineData);
       if (imagePart?.inlineData) {
         setResultImage(`data:image/png;base64,${imagePart.inlineData.data}`);
-        toast.success('تمت العملية بنجاح! نورت غرفة العصافيري');
+        toast.success('تمت العملية بنجاح! نورت استوديو سيد البلد');
       } else {
-        throw new Error('لم يتم استلام صورة من الذكاء الاصطناعي');
+        const textResponse = result.text;
+        console.warn('AI returned text instead of image:', textResponse);
+        throw new Error('الذكاء الاصطناعي لم يتمكن من توليد الصورة، ربما بسبب قيود المحتوى أو جودة الصورة المرفوعة.');
       }
 
     } catch (error: any) {
-      console.error('AI Processing error:', error);
-      toast.error('حدث خطأ أثناء معالجة الصورة. يرجى المحاولة مرة أخرى.');
+      console.error('AI Processing error details:', error);
+      const errorMessage = error.message || 'حدث خطأ غير معروف في الذكاء الاصطناعي';
+      toast.error(`عذراً: ${errorMessage}`);
     } finally {
       setIsProcessing(false);
     }
@@ -361,7 +379,7 @@ STRICT IDENTITY RULES:
                 {isProcessing ? (
                   <>
                     <RefreshCw className="animate-spin" size={24} />
-                    <span>جاري صنع السحر...</span>
+                    <span>جاري معالجة الصورة...</span>
                   </>
                 ) : uploadLoading ? (
                   <>
@@ -423,9 +441,9 @@ STRICT IDENTITY RULES:
                           <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary" size={48} />
                         </div>
                         <div className="space-y-3">
-                          <h4 className="text-2xl font-black italic">ثواني يا عريس</h4>
+                          <h4 className="text-2xl font-black italic">لحظات من فضلك...</h4>
                           <p className="text-slate-500 font-bold leading-relaxed px-4">
-                            الذكاء الاصطناعي بيجهزلنا أحلى صورة في غرفة زعيم الثغر.. مدمجة بملامحك وبفانلة الاتحاد
+                            يجري الآن دمج ملامحك مع قميص نادي الاتحاد السكندري باستخدام أحدث تقنيات الذكاء الاصطناعي، لخلق تجربة مشجع واقعية وفريدة.
                           </p>
                         </div>
                         <div className="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden max-w-xs mx-auto">
