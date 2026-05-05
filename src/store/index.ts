@@ -628,6 +628,10 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'ittihad-app-storage',
+      partialize: (state) => {
+        const { isAuthReady, ...rest } = state;
+        return rest;
+      },
     }
   )
 );

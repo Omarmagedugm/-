@@ -109,7 +109,9 @@ export default function App() {
     }
   }, []);
 
-  const { theme, setIsAuthReady, updateProfile } = useAppStore();
+  const theme = useAppStore(state => state.theme);
+  const setIsAuthReady = useAppStore(state => state.setIsAuthReady);
+  const updateProfile = useAppStore(state => state.updateProfile);
 
   useEffect(() => {
     // We already have testConnection in firebase.ts which logs to console.
@@ -224,7 +226,8 @@ export default function App() {
 }
 
 function AuthRedirector() {
-  const { profile, isAuthReady } = useAppStore();
+  const profile = useAppStore(state => state.profile);
+  const isAuthReady = useAppStore(state => state.isAuthReady);
   const location = useLocation();
   const navigate = useNavigate();
 

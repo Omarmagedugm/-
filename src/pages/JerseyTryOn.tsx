@@ -110,6 +110,7 @@ const JerseyTryOn: React.FC = () => {
   };
 
   const handleBackgroundSelect = (bg: string) => {
+    // Ensure it's called 'مود' or 'الخلفية' as per user request
     setSelectedBackground(bg);
     // Automatic progression: Scroll to process button
     setTimeout(() => {
@@ -285,10 +286,12 @@ OUTPUT: Return ONLY the transformed image.`;
 
       aiParts.push({ text: prompt });
 
-      console.log('Calling Gemini AI (3.1 Image Model)...');
+      console.log('Calling Gemini AI (2.5 Image Model)...');
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-image-preview',
-        contents: [{ role: 'user', parts: aiParts }],
+        model: 'gemini-2.5-flash-image',
+        contents: {
+          parts: aiParts
+        },
         config: {
           imageConfig: {
             aspectRatio: "3:4"
@@ -311,7 +314,10 @@ OUTPUT: Return ONLY the transformed image.`;
         setResultImage(`data:image/jpeg;base64,${generatedImageBase64}`);
         toast.success('تمت العملية بنجاح! نورت استوديو سيد البلد');
       } else {
-        throw new Error('الذكاء الاصطناعي لم يتمكن من توليد الصورة. حاول مرة أخرى بصورة أوضح.');
+        // If no image was found, check if there was text that explained why
+        const responseText = response.text || '';
+        console.warn('AI Response did not contain an image. Text response:', responseText);
+        throw new Error(responseText || 'الذكاء الاصطناعي لم يتمكن من توليد الصورة. حاول مرة أخرى بصورة أوضح.');
       }
 
     } catch (error: any) {
@@ -319,8 +325,10 @@ OUTPUT: Return ONLY the transformed image.`;
       const errorMessage = error.message || '';
       if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
         toast.error('عذراً، تم الوصول للحد الأقصى للصور المتاحة حالياً. يرجى المحاولة مرة أخرى بعد قليل.');
+      } else if (errorMessage.includes('safety') || errorMessage.includes('blocked')) {
+        toast.error('تم حظر الصورة لأسباب تتعلق بالسلامة. فضلاً ارفع صورة شخصية لائقة.');
       } else {
-        toast.error('حدث خطأ أثناء معالجة الصورة. تأكد من جودة الصورة المرفوعة وحاول مرة أخرى.');
+        toast.error(`حدث خطأ أثناء معالجة الصورة: ${errorMessage.substring(0, 50)}${errorMessage.length > 50 ? '...' : ''}. تأكد من جودة الصورة وحاول مرة أخرى.`);
       }
     } finally {
       setIsProcessing(false);
@@ -498,7 +506,7 @@ OUTPUT: Return ONLY the transformed image.`;
               >
                 <h3 className="text-xl font-black mb-6 flex items-center gap-3">
                   <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-white text-sm shadow-lg shadow-primary/30">3</span>
-                  اختر مكان الصورة
+                  اختر المود (بيئة الصورة)
                 </h3>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -617,10 +625,6 @@ OUTPUT: Return ONLY the transformed image.`;
                         </div>
                         <h3 className="font-black text-2xl text-slate-800 dark:text-white mb-3 italic">استوديو سيد البلد</h3>
                         <p className="text-lg font-bold opacity-60 max-w-sm">ارفع صورتك وهتظهر هنا بلبس الاتحاد ونورنا في أحسن استوديو مشجعين</p>
-                        <div className="mt-12 flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 rounded-full border border-slate-100 dark:border-border-dark text-xs font-bold text-primary shadow-sm">
-                          <Sparkles size={14} />
-                          <span>Gemini AI Integration</span>
-                        </div>
                       </div>
                     )}
                   </AnimatePresence>
