@@ -12,6 +12,7 @@ interface ImageUploaderProps {
   showPreview?: boolean;
   buttonClassName?: string;
   iconOnly?: boolean;
+  skipResize?: boolean;
 }
 
 export default function ImageUploader({ 
@@ -23,7 +24,8 @@ export default function ImageUploader({
   previewImageUrl = '',
   showPreview = true,
   buttonClassName = '',
-  iconOnly = false
+  iconOnly = false,
+  skipResize = false
 }: ImageUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>(previewImageUrl);
@@ -49,8 +51,8 @@ export default function ImageUploader({
     setIsUploading(true);
 
     try {
-      // Client-side Resize before upload
-      const resizedFile = await resizeImage(file, 1200, 1200);
+      // Client-side Resize before upload (only if not skipping)
+      const resizedFile = skipResize ? file : await resizeImage(file, 1200, 1200);
       
       const formData = new FormData();
       formData.append('file', resizedFile);

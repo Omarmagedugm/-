@@ -114,7 +114,8 @@ const UploadField = ({
   type = 'image', 
   uploading, 
   handleFileUpload,
-  setFormData
+  setFormData,
+  skipResize = false
 }: { 
   label: string, 
   fieldName: string, 
@@ -122,7 +123,8 @@ const UploadField = ({
   type?: 'image' | 'video' | 'audio',
   uploading: boolean,
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, type: 'image' | 'video' | 'audio') => void,
-  setFormData: (data: any) => void
+  setFormData: (data: any) => void,
+  skipResize?: boolean
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -170,6 +172,7 @@ const UploadField = ({
                   onUploadSuccess={(url) => setFormData((prev: any) => ({ ...prev, [fieldName]: url }))}
                   buttonText={uploading ? "جاري الرفع..." : "اختر صورة للرفع"}
                   showPreview={false}
+                  skipResize={skipResize}
                 />
               </div>
             ) : (
@@ -212,7 +215,8 @@ const UploadOrUrlField = ({
   uploading, 
   handleFileUpload,
   setFormData,
-  formData
+  formData,
+  skipResize = false
 }: { 
   label: string, 
   fieldName: string, 
@@ -221,15 +225,16 @@ const UploadOrUrlField = ({
   uploading: boolean,
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, type: 'image' | 'video' | 'audio') => void,
   setFormData: (fn: any) => void,
-  formData: any
+  formData: any,
+  skipResize?: boolean
 }) => {
-  const isExternalUrl = currentUrl && currentUrl.startsWith('http') && !currentUrl.includes('firebasestorage');
+  const isExternalUrl = currentUrl && currentUrl.startsWith('http') && !currentUrl.includes('cloudinary.com');
   const [internalMode, setInternalMode] = useState<'upload' | 'url'>(isExternalUrl ? 'url' : 'upload');
 
   // Keep internal mode in sync ONLY when field is initialized (e.g. opening different edit modals)
   useEffect(() => {
     if (currentUrl) {
-      const isExt = currentUrl.startsWith('http') && !currentUrl.includes('firebasestorage');
+      const isExt = currentUrl.startsWith('http') && !currentUrl.includes('cloudinary.com');
       if (isExt) setInternalMode('url');
     }
   }, [fieldName]); // Re-evaluate only when the field being edited changes
@@ -278,6 +283,7 @@ const UploadOrUrlField = ({
           uploading={uploading} 
           handleFileUpload={handleFileUpload} 
           setFormData={setFormData}
+          skipResize={skipResize}
         />
       ) : (
         <div className="space-y-2">
@@ -2867,6 +2873,7 @@ export default function Admin() {
                       setFormData={setFormData}
                       uploading={uploading} 
                       handleFileUpload={handleFileUpload} 
+                      skipResize={true}
                     />
                     
                     <UploadOrUrlField 
@@ -2877,6 +2884,7 @@ export default function Admin() {
                       setFormData={setFormData}
                       uploading={uploading} 
                       handleFileUpload={handleFileUpload} 
+                      skipResize={true}
                     />
 
                     <UploadOrUrlField 
@@ -2887,6 +2895,7 @@ export default function Admin() {
                       setFormData={setFormData}
                       uploading={uploading} 
                       handleFileUpload={handleFileUpload} 
+                      skipResize={true}
                     />
                   </div>
                 ) : (
@@ -4022,10 +4031,10 @@ export default function Admin() {
                     </div>
                    <div className="grid grid-cols-2 gap-2">
                      <div>
-                       <UploadOrUrlField label="لوجو صاحب الأرض" fieldName="homeLogo" currentUrl={formData.homeLogo} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                       <UploadOrUrlField label="لوجو صاحب الأرض" fieldName="homeLogo" currentUrl={formData.homeLogo} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} skipResize={true} />
                      </div>
                      <div>
-                       <UploadOrUrlField label="لوجو الخصم" fieldName="awayLogo" currentUrl={formData.awayLogo} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                       <UploadOrUrlField label="لوجو الخصم" fieldName="awayLogo" currentUrl={formData.awayLogo} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} skipResize={true} />
                      </div>
                    </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -4161,7 +4170,7 @@ export default function Admin() {
                        <input type="text" placeholder="مثلاً: نادي الاتحاد" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} />
                      </div>
                      <div>
-                      <UploadOrUrlField label="شعار النادي" fieldName="logo" currentUrl={formData.logo} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                      <UploadOrUrlField label="شعار النادي" fieldName="logo" currentUrl={formData.logo} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} skipResize={true} />
 
                      </div>
                    </>
