@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { db, auth } from '../lib/firebase';
 import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
@@ -75,15 +76,20 @@ export default function Live() {
       console.error("Error sending message:", error);
       // Restore message if failed
       setChatMessage(messageText);
-      alert('فشل إرسال التعليق، يرجى المحاولة مرة أخرى');
+      toast.error('فشل إرسال التعليق، يرجى المحاولة مرة أخرى');
     } finally {
       setIsSending(false);
     }
   };
 
   const handleDeleteComment = async (id: string) => {
-    if (confirm('هل تريد حذف هذا التعليق؟')) {
-      await deleteDoc(doc(db, 'live_comments', id));
+    if (window.confirm('هل تريد حذف هذا التعليق؟')) {
+      try {
+        await deleteDoc(doc(db, 'live_comments', id));
+        toast.success('تم حذف التعليق');
+      } catch (e) {
+        toast.error('فشل حذف التعليق');
+      }
     }
   };
 

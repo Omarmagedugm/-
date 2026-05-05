@@ -38,6 +38,7 @@ import {
 import { db, auth, handleFirestoreError, OperationType, uploadImage } from '../lib/firebase';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import toast from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
 import ScoreSelector from '../components/ScoreSelector';
 import ImageUploader from '../components/ImageUploader';
@@ -259,9 +260,10 @@ export default function FanZone() {
     if (!confirm('هل أنت متأكد من رغبتك في حذف هذا المنشور؟')) return;
     try {
       await deleteDoc(doc(db, 'fan_posts', postId));
+      toast.success('تم حذف المنشور');
     } catch (error) {
       console.error('Error deleting post:', error);
-      alert('فشل في حذف المنشور');
+      toast.error('فشل في حذف المنشور');
     }
   };
 
@@ -272,9 +274,10 @@ export default function FanZone() {
         content: editingContent
       });
       setEditingPostId(null);
+      toast.success('تم تعديل المنشور');
     } catch (error) {
       console.error('Error updating post:', error);
-      alert('فشل في تعديل المنشور');
+      toast.error('فشل في تعديل المنشور');
     }
   };
 
@@ -299,9 +302,10 @@ export default function FanZone() {
       });
       setEditingCommentId(null);
       setEditingCommentText('');
+      toast.success('تم تعديل التعليق');
     } catch (error) {
       console.error('Error updating comment:', error);
-      alert('فشل في تعديل التعليق');
+      toast.error('فشل في تعديل التعليق');
     }
   };
 
@@ -401,12 +405,12 @@ export default function FanZone() {
 
   const handleCopyText = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('تم نسخ النص!');
+    toast.success('تم نسخ النص');
   };
 
   const handleBookmark = async (post: any) => {
     if (!auth.currentUser) {
-      alert('يجب تسجيل الدخول لحفظ المنشور');
+      toast.error('يجب تسجيل الدخول لحفظ المنشور');
       return;
     }
     
@@ -424,10 +428,10 @@ export default function FanZone() {
         postAuthor: post.userName,
         createdAt: serverTimestamp()
       });
-      alert('تم حفظ المنشور في المفضلة!');
+      toast.success('تم حفظ المنشور في المفضلة!');
     } catch (error) {
       console.error('Error bookmarking:', error);
-      alert('حدث خطأ أثناء الحفظ');
+      toast.error('حدث خطأ أثناء الحفظ');
     }
   };
 
@@ -437,7 +441,7 @@ export default function FanZone() {
     if (newPost.poll) {
       const validOptions = newPost.poll.options.filter(o => o.trim());
       if (validOptions.length < 2) {
-        alert('يرجى إضافة خيارين على الأقل للاستطلاع');
+        toast.error('يرجى إضافة خيارين على الأقل للاستطلاع');
         return;
       }
     }
@@ -464,10 +468,10 @@ export default function FanZone() {
         createdAt: serverTimestamp()
       });
       setNewPost({ content: '', image: '', location: '', poll: null });
-      alert('تم النشر بنجاح!');
+      toast.success('تم النشر بنجاح!');
     } catch (error) {
       console.error('Error creating post:', error);
-      alert('فشل في النشر، يرجى المحاولة مرة أخرى');
+      toast.error('فشل في النشر، يرجى المحاولة مرة أخرى');
     } finally {
       setIsSubmitting(false);
     }
@@ -525,7 +529,7 @@ export default function FanZone() {
 
     const hasPredicted = predictions.some(p => p.matchId === selectedPrediction.matchId && p.userId === auth.currentUser?.uid);
     if (hasPredicted) {
-      alert('لقد قمت بالتوقع لهذه المباراة مسبقاً');
+      toast.error('لقد قمت بالتوقع لهذه المباراة مسبقاً');
       return;
     }
 
@@ -541,7 +545,7 @@ export default function FanZone() {
         awayScore: selectedPrediction.away,
         createdAt: serverTimestamp()
       });
-      alert('تم تسجيل توقعك بنجاح!');
+      toast.success('تم تسجيل توقعك بنجاح!');
       setSelectedPrediction(null);
     } catch (error) {
       console.error('Error predicting:', error);
@@ -606,10 +610,10 @@ export default function FanZone() {
       });
       setMomentPost({ content: '', image: '' });
       setShowMomentForm(false);
-      alert('تمت مشاركة اللحظة بنجاح!');
+      toast.success('تمت مشاركة اللحظة بنجاح!');
     } catch (error) {
       console.error('Error creating moment:', error);
-      alert('فشل في النشر');
+      toast.error('فشل في النشر');
     } finally {
       setIsPostingMoment(false);
     }
@@ -750,7 +754,7 @@ export default function FanZone() {
                   onUploadSuccess={(url) => {
                     setNewPost(prev => ({ ...prev, image: url }));
                   }}
-                  onError={(err) => alert(err)}
+                  onError={(err) => toast.error(err)}
                 />
                 <button onClick={handleAddPoll} className={`flex h-10 w-10 items-center justify-center rounded-xl hover:bg-primary/10 transition-all ${newPost.poll ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:text-primary'}`}>
                   <BarChart2 size={20} />

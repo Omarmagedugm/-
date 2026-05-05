@@ -6,6 +6,7 @@ import { Camera, X, Check, Lock, ShieldCheck, Mail, Loader2, Save, Upload, Edit2
 import { db, auth, uploadImage, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { updatePassword, updateProfile as updateAuthProfile } from 'firebase/auth';
+import toast from 'react-hot-toast';
 import ImageUploader from '../components/ImageUploader';
 import DigitalFanID from '../components/DigitalFanID';
 import { getOptimizedImage } from '../lib/cloudinary';
@@ -415,7 +416,7 @@ export default function Profile() {
           </h3>
           <div className="mb-6 overflow-hidden rounded-3xl bg-white shadow-sm border border-border-light/60 dark:border-border-dark dark:bg-card-dark">
             <button 
-              onClick={() => { alert('يمكنك مراسلتنا عبر: info@itthadalextv.com\nأو عبر رسائل الصفحة الرسمية على فيسبوك'); }}
+              onClick={() => { toast('يمكنك مراسلتنا عبر: info@itthadalextv.com أو عبر رسائل الصفحة الرسمية على فيسبوك', { icon: '✉️' }); }}
               className="flex w-full items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-surface-dark pressable group"
             >
               <div className="flex items-center gap-4">
@@ -481,7 +482,7 @@ export default function Profile() {
                       iconOnly={true}
                       buttonClassName="bg-primary text-white p-1.5 rounded-full shadow-lg border-2 border-white dark:border-card-dark cursor-pointer transition-transform hover:scale-110 flex items-center justify-center w-7 h-7"
                       onUploadSuccess={(url) => setEditData({...editData, avatar: url})}
-                      onError={() => alert('فشل في رفع الصورة')}
+                      onError={() => toast.error('فشل في رفع الصورة')}
                     />
                   </div>
                 </div>

@@ -71,8 +71,9 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                   <img src={getOptimizedImage((isAnonymous ? appSettings.appLogo : profile.avatar), 200) || undefined} onError={(e) => { e.currentTarget.src = 'https://res.cloudinary.com/dqj6gzwfg/image/upload/v1777716805/favicon_gd0ic4.png'; }} alt="Profile" className="w-full h-full object-contain rounded-[14px]" referrerPolicy="no-referrer" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black">{isAnonymous ? "زائر اتحاداوي" : profile.name}</h3>
-                  <p className="text-white/70 text-[10px] font-bold">{isAnonymous ? "سيد البلد" : "عضو ماسي • سيد البلد"}</p>
+                  <h3 className="text-lg font-black text-white">
+                    {isAnonymous ? "أهلاً مشجع اتحاداوي" : `أهلاً، ${profile.name || 'مشجع إتحادي'}`}
+                  </h3>
                 </div>
               </Link>
             </div>
@@ -163,7 +164,22 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                 <span className="material-symbols-outlined !text-[20px]">bookmark</span>
                 <span className="text-sm font-bold">محفوظاتي</span>
               </Link>
-              <button onClick={() => { alert('يمكنك مراسلتنا عبر: info@itthadalextv.com\nأو عبر رسائل الصفحة الرسمية على فيسبوك'); onClose(); }} className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable text-right">
+              <button onClick={() => { 
+                toast((t) => (
+                  <div className="flex flex-col gap-2 p-1">
+                    <p className="font-black text-sm text-slate-800">يمكنك مراسلتنا عبر:</p>
+                    <p className="text-xs font-bold text-primary">info@itthadalextv.com</p>
+                    <p className="text-[10px] font-bold text-slate-500">أو عبر رسائل الصفحة الرسمية على فيسبوك</p>
+                    <button 
+                      onClick={() => toast.dismiss(t.id)}
+                      className="mt-2 bg-slate-100 py-1.5 rounded-lg text-[10px] font-black uppercase"
+                    >
+                      إغلاق
+                    </button>
+                  </div>
+                ), { duration: 6000 });
+                onClose(); 
+              }} className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable text-right">
                 <Mail size={20} />
                 <span className="text-sm font-bold">اتصل بنا</span>
               </button>

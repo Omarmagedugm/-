@@ -14,6 +14,7 @@ import {
   User,
   CreditCard
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAppStore, Product } from '../store';
 import { useNavigate } from 'react-router-dom';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
@@ -80,6 +81,7 @@ export default function Store() {
       });
 
       setOrderSuccess(true);
+      toast.success('تم استلام طلبك بنجاح');
       setTimeout(() => {
         setOrderSuccess(false);
         setShowOrderForm(false);
@@ -88,7 +90,7 @@ export default function Store() {
       }, 3000);
     } catch (error) {
       console.error('Error placing order:', error);
-      alert('حدث خطأ أثناء إرسال الطلب');
+      toast.error('حدث خطأ أثناء إرسال الطلب');
     }
   };
 

@@ -25,6 +25,7 @@ import {
   Heart,
   Check
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAppStore } from '../store';
 import { collection, onSnapshot, query, where, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
@@ -65,7 +66,7 @@ export default function Library() {
 
   const handleLikeMedia = async (e: React.MouseEvent, item: any) => {
     e.stopPropagation();
-    if (!auth.currentUser) return alert('يرجى تسجيل الدخول أولاً');
+    if (!auth.currentUser) return toast.error('يرجى تسجيل الدخول أولاً');
     
     setIsLiking(item.id);
     const hasLiked = item.likes?.includes(auth.currentUser.uid);

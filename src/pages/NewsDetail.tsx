@@ -45,24 +45,24 @@ export default function NewsDetail() {
   return (
     <div className="relative flex-1 flex flex-col bg-background-light dark:bg-background-dark min-h-screen pb-32 overflow-x-hidden">
       {/* Floating Header */}
-      <header style={{ paddingTop: 'calc(env(safe-area-inset-top) + 16px)' }} className="fixed top-0 inset-x-0 w-full max-w-md mx-auto z-50 flex items-center justify-between px-4 pb-4 backdrop-blur-xl bg-background-light/80 dark:bg-background-dark/80 border-b border-border-light/40 dark:border-border-dark/40 shadow-sm">
-        <Link to="/news" className="p-2.5 rounded-full bg-slate-100 dark:bg-surface-dark text-slate-800 dark:text-white shadow-sm pressable border border-border-light dark:border-border-dark">
-          <ArrowRight size={22} />
+      <header className="fixed top-0 inset-x-0 w-full max-w-md mx-auto z-50 flex items-center justify-between px-4 h-16 backdrop-blur-xl bg-background-light/80 dark:bg-background-dark/80 border-b border-border-light/40 dark:border-border-dark/40 shadow-sm pt-[env(safe-area-inset-top)]">
+        <Link to="/news" className="p-2 rounded-full bg-slate-100 dark:bg-surface-dark text-slate-800 dark:text-white shadow-sm pressable border border-border-light dark:border-border-dark ml-2">
+          <ArrowRight size={20} />
         </Link>
-        <div className="flex gap-2">
+        <div className="flex gap-2 mr-2">
            {profile?.role === 'admin' && (
              <button 
                onClick={() => navigate('/admin', { state: { editCategory: 'news', editId: article.id } })}
-               className="p-2.5 rounded-full bg-primary text-white shadow-sm pressable border border-primary/20"
+               className="p-2 rounded-full bg-primary text-white shadow-sm pressable border border-primary/20"
              >
-               <Edit2 size={18} />
+               <Edit2 size={16} />
              </button>
            )}
-           <button className="p-2.5 rounded-full bg-slate-100 dark:bg-surface-dark text-slate-800 dark:text-white shadow-sm pressable border border-border-light dark:border-border-dark">
-             <Share2 size={18} />
+           <button className="p-2 rounded-full bg-slate-100 dark:bg-surface-dark text-slate-800 dark:text-white shadow-sm pressable border border-border-light dark:border-border-dark">
+             <Share2 size={16} />
            </button>
-           <button className="p-2.5 rounded-full bg-slate-100 dark:bg-surface-dark text-slate-800 dark:text-white shadow-sm pressable border border-border-light dark:border-border-dark">
-             <Bookmark size={18} />
+           <button className="p-2 rounded-full bg-slate-100 dark:bg-surface-dark text-slate-800 dark:text-white shadow-sm pressable border border-border-light dark:border-border-dark">
+             <Bookmark size={16} />
            </button>
         </div>
       </header>
@@ -71,7 +71,7 @@ export default function NewsDetail() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-20 px-4 pt-6"
+        className="relative z-20 px-4 pt-[calc(env(safe-area-inset-top)+72px)]"
       >
         <motion.div variants={itemVariants} className="bg-white dark:bg-card-dark rounded-[32px] overflow-hidden shadow-2xl border border-border-light dark:border-border-dark">
           {/* Full Professional Image Container */}

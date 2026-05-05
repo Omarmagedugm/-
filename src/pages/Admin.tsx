@@ -101,7 +101,7 @@ const handleFileUploadFn = async (
     }
   } catch (err) {
     console.error(err);
-    alert('فشل في رفع الملف');
+    toast.error('فشل في رفع الملف');
   } finally {
     setUploading(false);
   }
@@ -418,10 +418,10 @@ export default function Admin() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      alert('تم تحميل النسخة الاحتياطية بنجاح');
+      toast.success('تم تحميل النسخة الاحتياطية بنجاح');
     } catch (error) {
       console.error('Backup error:', error);
-      alert('فشل في إنشاء النسخة الاحتياطية');
+      toast.error('فشل في إنشاء النسخة الاحتياطية');
     } finally {
       setIsExporting(false);
     }
@@ -431,7 +431,7 @@ export default function Admin() {
   const [isSending, setIsSending] = useState(false);
 
   const handleSendNotification = async () => {
-    if (!notificationForm.title.trim() || !notificationForm.body.trim()) return alert('يرجى ملء جميع الحقول');
+    if (!notificationForm.title.trim() || !notificationForm.body.trim()) return toast.error('يرجى ملء جميع الحقول');
     setIsSending(true);
     try {
       await addDoc(collection(db, 'notifications'), {
@@ -441,11 +441,11 @@ export default function Admin() {
         readBy: [],
         createdAt: new Date().toISOString()
       });
-      alert('تم إرسال الإشعار بنجاح');
+      toast.success('تم إرسال الإشعار بنجاح');
       setNotificationForm({ title: '', body: '', target: 'all' });
     } catch (e) {
       console.error(e);
-      alert('حدث خطأ أثناء الإرسال');
+      toast.error('حدث خطأ أثناء الإرسال');
     } finally {
       setIsSending(false);
     }
@@ -842,8 +842,8 @@ export default function Admin() {
         await setDoc(doc(db, 'city_info', 'alexandria'), payload);
       } else if (activeTab === 'settings') {
         const payload = {
-          appName: formData.appName || appSettings.appName,
-          appLogo: formData.appLogo || appSettings.appLogo,
+          appName: formData.appName || appSettings.appName || '',
+          appLogo: formData.appLogo || appSettings.appLogo || '',
           headerLogoLight: formData.headerLogoLight !== undefined ? formData.headerLogoLight : (appSettings.headerLogoLight || ''),
           headerLogoDark: formData.headerLogoDark !== undefined ? formData.headerLogoDark : (appSettings.headerLogoDark || ''),
           logoType: formData.logoType || appSettings.logoType || 'image',
@@ -858,7 +858,7 @@ export default function Admin() {
           isActive: formData.isActive ?? liveStream.isActive,
           url: formData.url || liveStream.url,
           title: formData.title || liveStream.title,
-          viewers: Number(formData.viewers || liveStream.viewers)
+          viewers: Number(formData.viewers || liveStream.viewers || 0)
         });
       } else if (activeTab === 'clubs') {
         const payload = {
@@ -1064,14 +1064,14 @@ export default function Admin() {
         }
       }
 
-      alert('تم الحفظ بنجاح');
+      toast.success('تم الحفظ بنجاح');
       setShowModal(false);
       setFormData({});
       setIsEditing(false);
       setEditingId(null);
     } catch (err: any) {
       console.error(err);
-      alert('حدث خطأ أثناء الحفظ: ' + (err?.message || err));
+      toast.error('حدث خطأ أثناء الحفظ: ' + (err?.message || err));
     } finally {
       setLoading(false);
     }
@@ -1108,9 +1108,10 @@ export default function Admin() {
         if (item) pushToUndoStack({ collection: coll, action: 'delete', data: { ...item } });
 
         await deleteDoc(docRef);
+        toast.success('تم الحذف بنجاح');
       } catch (err) {
         console.error(err);
-        alert('فشل الحذف');
+        toast.error('فشل الحذف');
       }
     }
   };
@@ -1122,14 +1123,14 @@ export default function Admin() {
       await updateDoc(doc(db, coll, item.id), { hidden: newHidden });
     } catch (err) {
       console.error(err);
-      alert('فشل تغيير الحالة');
+      toast.error('فشل تغيير الحالة');
     }
   };
 
   const handleUndo = async () => {
     const op = popFromUndoStack();
     if (!op) {
-      alert('لا توجد عمليات للتراجع عنها');
+      toast.error('لا توجد عمليات للتراجع عنها');
       return;
     }
 
@@ -1147,10 +1148,10 @@ export default function Admin() {
         const { id, ...data } = op.data;
         await updateDoc(doc(db, op.collection, id), data);
       }
-      alert('تم التراجع بنجاح');
+      toast.success('تم التراجع بنجاح');
     } catch (err) {
       console.error(err);
-      alert('فشل التراجع');
+      toast.error('فشل التراجع');
     } finally {
       setLoading(false);
     }
@@ -1186,7 +1187,7 @@ export default function Admin() {
       await updateDoc(doc(db, 'matches', match.id), updates);
     } catch (err) {
       console.error(err);
-      alert('فشل تحديث المؤقت');
+      toast.error('فشل تحديث المؤقت');
     }
   };
 
@@ -1563,10 +1564,10 @@ export default function Admin() {
                     try {
                       const cleanSections = homeSections.map(section => JSON.parse(JSON.stringify(section)));
                       await setDoc(doc(db, 'settings', 'homeLayout'), { sections: cleanSections });
-                      alert('تم حفظ التغييرات بنجاح');
+                      toast.success('تم حفظ التغييرات بنجاح');
                     } catch (err: any) {
                       console.error(err);
-                      alert('فشل في الحفظ: ' + (err?.message || err));
+                      toast.error('فشل في الحفظ: ' + (err?.message || err));
                     } finally {
                       setLoading(false);
                     }
@@ -2264,10 +2265,10 @@ export default function Admin() {
                               const { updateDoc, doc } = await import('firebase/firestore');
                               const { db } = await import('../lib/firebase');
                               await updateDoc(doc(db, 'orders', order.id), { status: e.target.value as any });
-                              alert('تم تحديث الحالة بنجاح');
+                              toast.success('تم تحديث الحالة بنجاح');
                             } catch (err) {
                               console.error(err);
-                              alert('فشل تحديث الحالة');
+                              toast.error('فشل تحديث الحالة');
                             }
                           }}
                         >
