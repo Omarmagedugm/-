@@ -414,13 +414,16 @@ export default function Profile() {
             الدعم
           </h3>
           <div className="mb-6 overflow-hidden rounded-3xl bg-white shadow-sm border border-border-light/60 dark:border-border-dark dark:bg-card-dark">
-            <button className="flex w-full items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-surface-dark pressable group">
+            <button 
+              onClick={() => { alert('يمكنك مراسلتنا عبر: info@itthadalextv.com\nأو عبر رسائل الصفحة الرسمية على فيسبوك'); }}
+              className="flex w-full items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-surface-dark pressable group"
+            >
               <div className="flex items-center gap-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-surface-dark dark:text-slate-300 group-hover:text-primary transition-colors">
-                  <span className="material-symbols-outlined !text-[20px]">help_center</span>
+                  <span className="material-symbols-outlined !text-[20px]">mail</span>
                 </div>
                 <div className="flex flex-col items-start">
-                  <span className="text-sm font-bold text-slate-900 dark:text-white">مركز المساعدة</span>
+                  <span className="text-sm font-bold text-slate-900 dark:text-white">تواصل معنا</span>
                 </div>
               </div>
               <span className="material-symbols-outlined text-slate-400 !text-[20px]">chevron_left</span>

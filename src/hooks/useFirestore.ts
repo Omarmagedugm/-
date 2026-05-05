@@ -77,35 +77,35 @@ export function useFirestoreSync() {
 
     // Sync Custom Pages (Real-time to show new pages immediately)
     const unsubCustomPages = onSnapshot(collection(db, 'custom_pages'), (snapshot) => {
-      const pages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      const pages = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
       setCustomPages(pages);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'custom_pages'));
 
     // Sync News (Real-time with limit to save quota)
     const newsQuery = query(collection(db, 'news'), orderBy('date', 'desc'), limit(50));
     const unsubNews = onSnapshot(newsQuery, (snapshot) => {
-      const news = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      const news = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
       setNews(news);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'news'));
 
     // Sync Media (Real-time with limit)
     const mediaQuery = query(collection(db, 'media'), orderBy('date', 'desc'), limit(50));
     const unsubMedia = onSnapshot(mediaQuery, (snapshot) => {
-      const mediaItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      const mediaItems = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
       setMedia(mediaItems);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'media'));
 
     // Sync Matches (Real-time)
     const matchesQuery = query(collection(db, 'matches'), orderBy('date', 'desc'));
     const unsubMatches = onSnapshot(matchesQuery, (snapshot) => {
-      const matches = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      const matches = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
       setMatches(matches);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'matches'));
 
     // Sync Fan Posts (Real-time)
     const fanPostsQuery = query(collection(db, 'fan_posts'), orderBy('createdAt', 'desc'), limit(50));
     const unsubFanPosts = onSnapshot(fanPostsQuery, (snapshot) => {
-      const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      const posts = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
       setFanPosts(posts);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'fan_posts'));
 
@@ -170,7 +170,7 @@ export function useFirestoreSync() {
             try {
               const data = await fetchWithCache(colName, async () => {
                 const snap = await getDocs(q || collection(db, colName));
-                return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                return snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
               });
               setter(data as any);
             } catch (err) {

@@ -79,11 +79,11 @@ export default function NewsDetail() {
             {/* Blurred background for contrast */}
             <div 
               className="absolute inset-0 bg-cover bg-center opacity-30 blur-2xl scale-110"
-              style={{ backgroundImage: `url('${getOptimizedImage(article.image, 100)}')` }}
+              style={{ backgroundImage: `url('${getOptimizedImage(article.image, 50)}')` }}
             />
             {/* Main Full Image */}
             <img 
-              src={getOptimizedImage(article.image, 1000)} 
+              src={getOptimizedImage(article.image, 800)} 
               alt={article.title} 
               className="relative z-10 w-full h-full max-h-[50vh] object-contain drop-shadow-2xl" 
               referrerPolicy="no-referrer"

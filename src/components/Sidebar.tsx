@@ -163,7 +163,7 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                 <span className="material-symbols-outlined !text-[20px]">bookmark</span>
                 <span className="text-sm font-bold">محفوظاتي</span>
               </Link>
-              <button onClick={() => { alert('يمكنك مراسلتنا عبر: support@itthifan.app'); onClose(); }} className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable text-right">
+              <button onClick={() => { alert('يمكنك مراسلتنا عبر: info@itthadalextv.com\nأو عبر رسائل الصفحة الرسمية على فيسبوك'); onClose(); }} className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable text-right">
                 <Mail size={20} />
                 <span className="text-sm font-bold">اتصل بنا</span>
               </button>
