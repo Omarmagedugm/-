@@ -6,7 +6,7 @@ import { useAppStore } from '../store';
 export function useFirestoreSync() {
   const { 
     setNews, setMedia, setMatches, setClubs, setPolls, setPredictions, setFanPosts,
-    setUsers, setSettings, updateLiveStream, updateProfile, setCityInfo, setAds 
+    setUsers, setSettings, updateLiveStream, updateProfile, setCityInfo, setAds, setCustomPages 
   } = useAppStore();
 
   const isFetchedRef = useRef(false);
@@ -124,6 +124,9 @@ export function useFirestoreSync() {
             }
           };
 
+          // Custom Pages
+          fetchCol('custom_pages', setCustomPages, query(collection(db, 'custom_pages'), orderBy('createdAt', 'desc')));
+          
           // Helper for fetching docs
           const fetchDoc = async (docPath: string, setter: (data: any) => void, mapFn?: (data: any) => any) => {
              try {

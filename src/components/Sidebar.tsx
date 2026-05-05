@@ -15,26 +15,10 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
-  const { appSettings } = useAppStore();
+  const { appSettings, customPages } = useAppStore();
   const navigate = useNavigate();
-  const [customPages, setCustomPages] = useState<any[]>([]);
   
-  useEffect(() => {
-    const fetchPages = async () => {
-      try {
-        const q = collection(db, 'custom_pages');
-        const snapshot = await getDocs(q);
-        const pages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
-        const activePages = pages.filter(p => p.active !== false).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setCustomPages(activePages);
-      } catch (err) {
-        console.error('Error fetching custom pages:', err);
-      }
-    };
-    if (isOpen) {
-      fetchPages();
-    }
-  }, [isOpen]);
+  // No longer needing local fetch as it's synced in useFirestoreSync
   
   // High-level admin check
   const isOmar = auth.currentUser?.email === 'omarmagedugm@ittihad.club';

@@ -307,6 +307,7 @@ interface AppState {
   products: Product[];
   orders: StoreOrder[];
   ads: AdBanner[];
+  customPages: any[];
   homeSections: HomeSection[];
   songs: Song[];
   albums: Album[];
@@ -352,6 +353,7 @@ interface AppState {
   setProducts: (products: Product[]) => void;
   setOrders: (orders: StoreOrder[]) => void;
   setAds: (ads: AdBanner[]) => void;
+  setCustomPages: (pages: any[]) => void;
   setHomeSections: (sections: HomeSection[]) => void;
   setSongs: (songs: Song[]) => void;
   setAlbums: (albums: Album[]) => void;
@@ -533,6 +535,7 @@ export const useAppStore = create<AppState>()(
       products: [],
       orders: [],
       ads: [],
+      customPages: [],
       homeSections: [
         { id: 'hero', type: 'hero', active: true, order: 0 },
         { id: 'matches', type: 'matches', active: true, order: 1 },
@@ -596,6 +599,7 @@ export const useAppStore = create<AppState>()(
       setProducts: (products) => set({ products }),
       setOrders: (orders) => set({ orders }),
       setAds: (ads) => set({ ads }),
+      setCustomPages: (customPages) => set({ customPages }),
       setHomeSections: (homeSections) => set({ homeSections }),
       setSongs: (songs) => set({ songs }),
       setAlbums: (albums) => set({ albums }),

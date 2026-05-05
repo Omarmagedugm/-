@@ -1,41 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 import TopHeader from '../components/TopHeader';
 import BottomNav from '../components/BottomNav';
+import { useAppStore } from '../store';
 
 export default function CustomPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const customPages = useAppStore(state => state.customPages);
   const [pageData, setPageData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPage = async () => {
-      if (!slug) return;
-      try {
-        const q = collection(db, 'custom_pages');
-        const querySnapshot = await getDocs(q);
-        const docs = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() } as any));
-        const matchedPage = docs.find(p => p.slug === slug && p.active !== false);
-        
-        if (matchedPage) {
-          setPageData(matchedPage);
-        } else {
-          // If no active page found with that slug, head home
-          navigate('/');
-        }
-      } catch (error) {
-        console.error('Error fetching custom page:', error);
+    if (customPages.length > 0) {
+      const matchedPage = customPages.find(p => p.slug === slug && p.active !== false);
+      if (matchedPage) {
+        setPageData(matchedPage);
+      } else {
         navigate('/');
-      } finally {
-        setLoading(false);
       }
-    };
-    
-    fetchPage();
-  }, [slug, navigate]);
+      setLoading(false);
+    } else {
+      // If store is empty, maybe wait a bit or try to head home after a timeout
+      const timer = setTimeout(() => {
+        if (loading) setLoading(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [slug, customPages, navigate]);
 
   useEffect(() => {
     if (pageData && !loading) {

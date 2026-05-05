@@ -113,15 +113,23 @@ export default function ImageUploader({
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Clear canvas for transparent images
+          if (ctx) {
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+          }
+          
+          // Determine type - if it's png or gif, keep it, otherwise use jpeg
+          const outputType = (file.type === 'image/png' || file.type === 'image/gif') ? file.type : 'image/jpeg';
           
           canvas.toBlob((blob) => {
             if (blob) {
-              resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+              resolve(new File([blob], file.name, { type: outputType }));
             } else {
               resolve(file);
             }
-          }, 'image/jpeg', 0.8); // 80% quality
+          }, outputType, 0.9); // 90% quality
         };
         img.onerror = () => resolve(file);
       };

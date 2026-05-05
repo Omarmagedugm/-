@@ -836,13 +836,13 @@ export default function Admin() {
         await setDoc(doc(db, 'city_info', 'alexandria'), payload);
       } else if (activeTab === 'settings') {
         const payload = {
-          appName: formData.appName ?? appSettings.appName ?? 'قناة الاتحاد',
-          appLogo: formData.appLogo ?? appSettings.appLogo ?? '',
-          headerLogoLight: formData.headerLogoLight ?? appSettings.headerLogoLight ?? '',
-          headerLogoDark: formData.headerLogoDark ?? appSettings.headerLogoDark ?? '',
-          logoType: formData.logoType ?? appSettings.logoType ?? 'image',
-          logoText: formData.logoText ?? appSettings.logoText ?? '',
-          defaultSport: formData.defaultSport ?? appSettings.defaultSport ?? 'auto'
+          appName: formData.appName || appSettings.appName,
+          appLogo: formData.appLogo || appSettings.appLogo,
+          headerLogoLight: formData.headerLogoLight !== undefined ? formData.headerLogoLight : (appSettings.headerLogoLight || ''),
+          headerLogoDark: formData.headerLogoDark !== undefined ? formData.headerLogoDark : (appSettings.headerLogoDark || ''),
+          logoType: formData.logoType || appSettings.logoType || 'image',
+          logoText: formData.logoText || appSettings.logoText || '',
+          defaultSport: formData.defaultSport || appSettings.defaultSport || 'auto'
         };
         await setDoc(doc(db, 'settings', 'global'), payload);
         const { setSettings } = useAppStore.getState();
@@ -850,9 +850,9 @@ export default function Admin() {
       } else if (activeTab === 'live') {
         await setDoc(doc(db, 'settings', 'liveStream'), {
           isActive: formData.isActive ?? liveStream.isActive,
-          url: formData.url ?? liveStream.url ?? '',
-          title: formData.title ?? liveStream.title ?? '',
-          viewers: Number(formData.viewers ?? liveStream.viewers ?? 0)
+          url: formData.url || liveStream.url,
+          title: formData.title || liveStream.title,
+          viewers: Number(formData.viewers || liveStream.viewers)
         });
       } else if (activeTab === 'clubs') {
         const payload = {
@@ -2859,62 +2859,53 @@ export default function Admin() {
 
                 {(formData.logoType || appSettings.logoType || 'image') === 'image' ? (
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-500 mb-1.5 block">لوجو التطبيق الأساسي (يظهر خارج الهيدر)</label>
-                       <ImageUploader 
-                         folderName="brand"
-                         onUploadSuccess={(url) => setFormData({...formData, appLogo: url})}
-                         onError={(err) => toast.error(err)}
-                       />
-                       {formData.appLogo && (
-                         <input 
-                           type="text" 
-                           value={formData.appLogo} 
-                           onChange={(e) => setFormData({...formData, appLogo: e.target.value})}
-                           className="w-full p-2 mt-2 rounded-lg border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-[10px] font-mono focus:border-primary outline-none"
-                         />
-                       )}
-                    </div>
+                    <UploadOrUrlField 
+                      label="لوجو التطبيق الأساسي (يظهر خارج الهيدر)" 
+                      fieldName="appLogo" 
+                      currentUrl={formData.appLogo || appSettings.appLogo} 
+                      formData={{...appSettings, ...formData}} 
+                      setFormData={(fn: any) => {
+                        if (typeof fn === 'function') {
+                          setFormData((prev: any) => fn({...appSettings, ...prev}));
+                        } else {
+                          setFormData({...formData, ...fn});
+                        }
+                      }} 
+                      uploading={uploading} 
+                      handleFileUpload={handleFileUpload} 
+                    />
                     
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-500 mb-1.5 block">لوجو الهيدر (الوضع الفاتح)</label>
-                       <ImageUploader 
-                         folderName="brand"
-                         onUploadSuccess={(url) => setFormData({...formData, headerLogoLight: url})}
-                         onError={(err) => toast.error(err)}
-                       />
-                       {(formData.headerLogoLight ?? appSettings.headerLogoLight) && (
-                         <div className="flex gap-2 items-center">
-                           <input 
-                             type="text" 
-                             value={formData.headerLogoLight ?? appSettings.headerLogoLight} 
-                             onChange={(e) => setFormData({...formData, headerLogoLight: e.target.value})}
-                             className="w-full p-2 rounded-lg border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-[10px] font-mono focus:border-primary outline-none"
-                           />
-                           <button onClick={() => setFormData({...formData, headerLogoLight: ''})} className="text-red-500 p-2"><X size={16} /></button>
-                         </div>
-                       )}
-                    </div>
+                    <UploadOrUrlField 
+                      label="لوجو الهيدر (الوضع الفاتح)" 
+                      fieldName="headerLogoLight" 
+                      currentUrl={formData.headerLogoLight ?? appSettings.headerLogoLight} 
+                      formData={{...appSettings, ...formData}} 
+                      setFormData={(fn: any) => {
+                        if (typeof fn === 'function') {
+                          setFormData((prev: any) => fn({...appSettings, ...prev}));
+                        } else {
+                          setFormData({...formData, ...fn});
+                        }
+                      }} 
+                      uploading={uploading} 
+                      handleFileUpload={handleFileUpload} 
+                    />
 
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-500 mb-1.5 block">لوجو الهيدر (الوضع المظلم)</label>
-                       <ImageUploader 
-                         folderName="brand"
-                         onUploadSuccess={(url) => setFormData({...formData, headerLogoDark: url})}
-                         onError={(err) => toast.error(err)}
-                       />
-                       {(formData.headerLogoDark ?? appSettings.headerLogoDark) && (
-                         <div className="flex gap-2 items-center">
-                           <input 
-                             type="text" 
-                             value={formData.headerLogoDark ?? appSettings.headerLogoDark} 
-                             onChange={(e) => setFormData({...formData, headerLogoDark: e.target.value})}
-                             className="w-full p-2 rounded-lg border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-[10px] font-mono focus:border-primary outline-none"
-                           />
-                           <button onClick={() => setFormData({...formData, headerLogoDark: ''})} className="text-red-500 p-2"><X size={16} /></button>
-                         </div>
-                       )}
-                    </div>
+                    <UploadOrUrlField 
+                      label="لوجو الهيدر (الوضع المظلم)" 
+                      fieldName="headerLogoDark" 
+                      currentUrl={formData.headerLogoDark ?? appSettings.headerLogoDark} 
+                      formData={{...appSettings, ...formData}} 
+                      setFormData={(fn: any) => {
+                        if (typeof fn === 'function') {
+                          setFormData((prev: any) => fn({...appSettings, ...prev}));
+                        } else {
+                          setFormData({...formData, ...fn});
+                        }
+                      }} 
+                      uploading={uploading} 
+                      handleFileUpload={handleFileUpload} 
+                    />
                   </div>
                 ) : (
                   <>
