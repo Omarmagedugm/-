@@ -41,6 +41,60 @@ export function useFirestoreSync() {
       }
     }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/liveStream'));
 
+    // Sync Settings (Real-time - essential for Admin UX)
+    const unsubSettings = onSnapshot(doc(db, 'settings', 'global'), (docSnap) => {
+      if (docSnap.exists()) {
+        setSettings(docSnap.data() as any);
+      }
+    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/global'));
+
+    const unsubHomeLayout = onSnapshot(doc(db, 'settings', 'homeLayout'), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data && data.sections) {
+          const uniqueSectionsMap = new Map();
+          data.sections.forEach((s: any) => { if (s && s.id) uniqueSectionsMap.set(s.id, s); });
+          const mergedSections = Array.from(uniqueSectionsMap.values());
+          const initialSections = [
+            { id: 'hero', type: 'hero', active: true, order: 0 },
+            { id: 'ads', type: 'ads', active: true, order: 0.5 },
+            { id: 'matches', type: 'matches', active: true, order: 1 },
+            { id: 'city', type: 'city', active: true, order: 1.5, title: 'عروس البحر المتوسط' },
+            { id: 'news', type: 'news', active: true, order: 2 },
+            { id: 'media', type: 'media', active: true, order: 3 },
+          ];
+          initialSections.forEach(ds => { if (!uniqueSectionsMap.has(ds.id)) mergedSections.push(ds); });
+          useAppStore.getState().setHomeSections(mergedSections);
+        }
+      }
+    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/homeLayout'));
+
+    const unsubNewsCategories = onSnapshot(doc(db, 'settings', 'newsCategories'), (docSnap) => {
+      if (docSnap.exists()) {
+        useAppStore.getState().setNewsCategories(docSnap.data().list || []);
+      }
+    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/newsCategories'));
+
+    // Sync Custom Pages (Real-time to show new pages immediately)
+    const unsubCustomPages = onSnapshot(collection(db, 'custom_pages'), (snapshot) => {
+      const pages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      setCustomPages(pages);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'custom_pages'));
+
+    // Sync News (Real-time with limit to save quota)
+    const newsQuery = query(collection(db, 'news'), orderBy('date', 'desc'), limit(50));
+    const unsubNews = onSnapshot(newsQuery, (snapshot) => {
+      const news = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      setNews(news);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'news'));
+
+    // Sync Media (Real-time with limit)
+    const mediaQuery = query(collection(db, 'media'), orderBy('date', 'desc'), limit(50));
+    const unsubMedia = onSnapshot(mediaQuery, (snapshot) => {
+      const mediaItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      setMedia(mediaItems);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'media'));
+
     // Sync Matches (Real-time)
     const matchesQuery = query(collection(db, 'matches'), orderBy('date', 'desc'));
     const unsubMatches = onSnapshot(matchesQuery, (snapshot) => {
@@ -124,9 +178,6 @@ export function useFirestoreSync() {
             }
           };
 
-          // Custom Pages
-          fetchCol('custom_pages', setCustomPages, query(collection(db, 'custom_pages'), orderBy('createdAt', 'desc')));
-          
           // Helper for fetching docs
           const fetchDoc = async (docPath: string, setter: (data: any) => void, mapFn?: (data: any) => any) => {
              try {
@@ -144,10 +195,6 @@ export function useFirestoreSync() {
              }
           };
 
-          // News & Media
-          fetchCol('news', setNews, query(collection(db, 'news'), orderBy('date', 'desc')));
-          fetchCol('media', setMedia, query(collection(db, 'media'), orderBy('date', 'desc')));
-          
           // Clubs 
           fetchCol('clubs', setClubs);
           
@@ -176,31 +223,10 @@ export function useFirestoreSync() {
             fetchCol('users', setUsers);
           }
 
-          // Settings
-          fetchDoc('settings/global', setSettings, d => { const { id, ...rest } = d; return rest; });
-          fetchDoc('settings/newsCategories', useAppStore.getState().setNewsCategories, d => d.list || []);
+          // Settings (Only fixed static ones, the rest are real-time)
           fetchDoc('settings/newsTags', useAppStore.getState().setNewsTags, d => d.tags || []);
           fetchDoc('city_info/alexandria', setCityInfo);
           
-          fetchDoc('settings/homeLayout', useAppStore.getState().setHomeSections, d => {
-            let mergedSections: any[] = [];
-            if (d && d.sections) {
-              const uniqueSectionsMap = new Map();
-              d.sections.forEach((s: any) => { if (s && s.id) uniqueSectionsMap.set(s.id, s); });
-              mergedSections = Array.from(uniqueSectionsMap.values());
-              const initialSections = [
-                { id: 'hero', type: 'hero', active: true, order: 0 },
-                { id: 'ads', type: 'ads', active: true, order: 0.5 },
-                { id: 'matches', type: 'matches', active: true, order: 1 },
-                { id: 'city', type: 'city', active: true, order: 1.5, title: 'عروس البحر المتوسط' },
-                { id: 'news', type: 'news', active: true, order: 2 },
-                { id: 'media', type: 'media', active: true, order: 3 },
-              ];
-              initialSections.forEach(ds => { if (!uniqueSectionsMap.has(ds.id)) mergedSections.push(ds); });
-            }
-            return mergedSections.length ? mergedSections : undefined;
-          });
-
         } catch (error) {
           handleFirestoreError(error, OperationType.GET, 'static_data');
         }
@@ -212,6 +238,12 @@ export function useFirestoreSync() {
     return () => {
       unsubProfile();
       unsubLive();
+      unsubNews();
+      unsubMedia();
+      unsubSettings();
+      unsubHomeLayout();
+      unsubNewsCategories();
+      unsubCustomPages();
       unsubMatches();
       unsubFanPosts();
       unsubOrders();

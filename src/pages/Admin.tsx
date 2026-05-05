@@ -2862,15 +2862,9 @@ export default function Admin() {
                     <UploadOrUrlField 
                       label="لوجو التطبيق الأساسي (يظهر خارج الهيدر)" 
                       fieldName="appLogo" 
-                      currentUrl={formData.appLogo || appSettings.appLogo} 
-                      formData={{...appSettings, ...formData}} 
-                      setFormData={(fn: any) => {
-                        if (typeof fn === 'function') {
-                          setFormData((prev: any) => fn({...appSettings, ...prev}));
-                        } else {
-                          setFormData({...formData, ...fn});
-                        }
-                      }} 
+                      currentUrl={formData.appLogo !== undefined ? formData.appLogo : (appSettings.appLogo || '')} 
+                      formData={formData} 
+                      setFormData={setFormData}
                       uploading={uploading} 
                       handleFileUpload={handleFileUpload} 
                     />
@@ -2878,15 +2872,9 @@ export default function Admin() {
                     <UploadOrUrlField 
                       label="لوجو الهيدر (الوضع الفاتح)" 
                       fieldName="headerLogoLight" 
-                      currentUrl={formData.headerLogoLight ?? appSettings.headerLogoLight} 
-                      formData={{...appSettings, ...formData}} 
-                      setFormData={(fn: any) => {
-                        if (typeof fn === 'function') {
-                          setFormData((prev: any) => fn({...appSettings, ...prev}));
-                        } else {
-                          setFormData({...formData, ...fn});
-                        }
-                      }} 
+                      currentUrl={formData.headerLogoLight !== undefined ? formData.headerLogoLight : (appSettings.headerLogoLight || '')} 
+                      formData={formData} 
+                      setFormData={setFormData}
                       uploading={uploading} 
                       handleFileUpload={handleFileUpload} 
                     />
@@ -2894,15 +2882,9 @@ export default function Admin() {
                     <UploadOrUrlField 
                       label="لوجو الهيدر (الوضع المظلم)" 
                       fieldName="headerLogoDark" 
-                      currentUrl={formData.headerLogoDark ?? appSettings.headerLogoDark} 
-                      formData={{...appSettings, ...formData}} 
-                      setFormData={(fn: any) => {
-                        if (typeof fn === 'function') {
-                          setFormData((prev: any) => fn({...appSettings, ...prev}));
-                        } else {
-                          setFormData({...formData, ...fn});
-                        }
-                      }} 
+                      currentUrl={formData.headerLogoDark !== undefined ? formData.headerLogoDark : (appSettings.headerLogoDark || '')} 
+                      formData={formData} 
+                      setFormData={setFormData}
                       uploading={uploading} 
                       handleFileUpload={handleFileUpload} 
                     />
