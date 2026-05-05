@@ -229,7 +229,7 @@ const JerseyTryOn: React.FC = () => {
         backgroundDetail = `
 SCENE: STANDING IN A WARM, AUTHENTIC "ISKANDARI FAN ROOM" (ZAEEM EL-THAGHR):
 - The background is a homey room belonging to a passionate Al Ittihad fan in Alexandria.
-- Walls decorated with many green and white flags and official club scarves (Unionawy / Green Eagles).
+- Walls decorated with many green and white flags and official club scarves (Alittihad Alex SC / Etthadawy).
 - Include framed photos of club legends and newspaper clippings of famous victories.
 - Modern high-contrast lighting with a soft green ambient glow.`;
       } else if (selectedBackground === 'studio') {
@@ -255,18 +255,20 @@ SCENE: CELEBRATING A "SIDI EL-BALAD" THEMED BIRTHDAY:
 - The person is holding a club scarf, looking happy in a celebration setting.`;
       }
 
-      const prompt = `Perform a high-end, photorealistic CLOTHING REPLACEMENT and SCENE TRANSFORMATION.
+      const prompt = `Perform a professional, high-end CLOTHING REPLACEMENT and SCENE TRANSFORMATION.
 
-IDENTITY PRESERVATION (CRITICAL): You MUST perfectly preserve the person's face, features, hair, and unique identity from "Customer Image". The person's face should be 100% IDENTICAL to the source. NO changes to ethnicity, age, or bone structure.
+IDENTITY PRESERVATION (ABSOLUTE): You MUST perfectly preserve the person's face, features, hair, and unique identity from "Customer Image". The face must be 100% IDENTICAL to the original.
 
-JERSEY SWAP:
+BODY POSE & ADAPTATION: You ARE ALLOWED to adapt the person's body pose and posture to fit the environment naturally (e.g., a fan's proud stance, a studio model pose, or an athlete's pose on the pitch).
+
+JERSEY SWAP (CRITICAL):
 1. Replace the person's current outfit with the EXACT Al Ittihad Alexandria green and white jersey kit provided in "Target Jersey to Wear".
-2. Use the "Official Club Logo" as the mandatory reference for the crest/badge on the jersey.
-3. The jersey fabric, fit, and shadows MUST blend naturally with the person's body and posture for absolute realism.
+2. The jersey must be PERFECTLY fitted to the person's body in their new pose. Ensure realistic fabric textures, folds, and natural lighting/shadows.
+3. Use the "Official Club Logo" as the mandatory reference for the crest/badge on the jersey to ensure authenticity.
 
 ${backgroundDetail}
 
-STYLE: 8k resolution, ultra-photorealistic. It must look like a real photograph taken with a professional DSLR camera. No digital artifacts or AI distortions.
+STYLE: 8k resolution, ultra-photorealistic studio/sports photography. It must look like a high-budget professional photo session. No digital artifacts, no collage appearance.
 
 OUTPUT: Return ONLY the transformed image.`;
 
