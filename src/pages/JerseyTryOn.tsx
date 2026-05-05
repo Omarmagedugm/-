@@ -12,7 +12,6 @@ import {
   AlertCircle,
   ArrowRight
 } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, onSnapshot, query, orderBy, doc, getDoc } from 'firebase/firestore';
@@ -27,7 +26,6 @@ const JerseyTryOn: React.FC = () => {
   const [selectedJersey, setSelectedJersey] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultImage, setResultImage] = useState<string | null>(null);
-  const [uploadLoading, setUploadLoading] = useState(false);
   const [aiConfig, setAiConfig] = useState<any>({ enabled: true, clubLogo: '' });
   const [loading, setLoading] = useState(true);
 
@@ -69,26 +67,6 @@ const JerseyTryOn: React.FC = () => {
       setUserImage(event.target?.result as string);
     };
     reader.readAsDataURL(file);
-
-    // Upload to Cloudinary via Backend
-    setUploadLoading(true);
-    const formData = new FormData();
-    formData.append('image', file);
-
-    try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      if (!response.ok) throw new Error('فشل رفع الصورة');
-      const data = await response.json();
-      console.log('Uploaded to Cloudinary:', data.secure_url);
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('حدث خطأ أثناء رفع الصورة للسيرفر');
-    } finally {
-      setUploadLoading(false);
-    }
   };
 
   const compressImage = async (dataUrl: string): Promise<string> => {
@@ -131,18 +109,9 @@ const JerseyTryOn: React.FC = () => {
     setResultImage(null);
 
     try {
-      const apiKey = (process.env as any).GEMINI_API_KEY;
-      if (!apiKey) {
-        console.error('GEMINI_API_KEY is missing from environment');
-        throw new Error('مفتاح API الخاص بـ Gemini غير متوفر. يرجى مراجعة الإعدادات.');
-      }
-
-      const ai = new GoogleGenAI({ apiKey });
-
       // Compress and convert user image
       console.log('Compressing user image...');
       const userImageBase64 = await compressImage(userImage);
-      const userMimeType = 'image/jpeg';
       
       // Fetch jersey image and convert to base64
       console.log('Fetching jersey image:', selectedJersey.url);
@@ -159,44 +128,29 @@ const JerseyTryOn: React.FC = () => {
         reader.readAsDataURL(jerseyBlob);
       });
       const jerseyImageBase64 = await compressImage(jerseyDataUrl);
-      const jerseyMimeType = 'image/jpeg';
 
-      const prompt = `Merge these two images into one professional portrait.
-STRICT INSTRUCTIONS:
-1. Use the person's face from the first image EXACTLY. Maintain their identity, hair, and facial features 100%.
-2. Dress them in the Al Ittihad Alexandria club jersey shown in the second image. The jersey must look like it's realistically worn by the person.
-3. Place the person in a cinematic, highly detailed "Al Ittihad Alexandria" supporter's room in Alexandria, Egypt. 
-4. Include green and white club colors, flags, and a scarf with "Unionawy" or "Itthad" branding in the background.
-5. Lighting should be professional studio lighting, 8k resolution, photorealistic.`;
-
-      console.log('Sending request to Gemini...');
-      const result = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-image-preview', 
-        contents: {
-          parts: [
-            { inlineData: { data: userImageBase64, mimeType: userMimeType } },
-            { inlineData: { data: jerseyImageBase64, mimeType: jerseyMimeType } },
-            { text: prompt }
-          ]
+      console.log('Sending request to server AI endpoint...');
+      const response = await fetch('/api/ai/jersey-tryon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        config: {
-          imageConfig: {
-            aspectRatio: "3:4"
-          }
-        }
+        body: JSON.stringify({
+          userImageBase64,
+          jerseyImageBase64,
+        }),
       });
 
-      if (!result.candidates || result.candidates.length === 0) {
-        throw new Error('لم يتم إصدار أي نتائج من الذكاح الاصطناعي');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'فشل الاتصال بخادم الذكاء الاصطناعي');
       }
 
-      const imagePart = result.candidates[0].content.parts.find(p => p.inlineData);
-      if (imagePart?.inlineData) {
-        setResultImage(`data:image/png;base64,${imagePart.inlineData.data}`);
+      const data = await response.json();
+      if (data.image) {
+        setResultImage(data.image);
         toast.success('تمت العملية بنجاح! نورت استوديو سيد البلد');
       } else {
-        const textResponse = result.text;
-        console.warn('AI returned text instead of image:', textResponse);
         throw new Error('الذكاء الاصطناعي لم يتمكن من توليد الصورة، ربما بسبب قيود المحتوى أو جودة الصورة المرفوعة.');
       }
 
@@ -373,18 +327,13 @@ STRICT INSTRUCTIONS:
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={processWithAI}
-                disabled={!userImage || isProcessing || uploadLoading}
-                className={`w-full py-5 rounded-[24px] font-black text-xl flex items-center justify-center gap-3 transition-all relative overflow-hidden ${!userImage || isProcessing || uploadLoading ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-primary text-white shadow-[0_20px_40px_-10px_rgba(34,197,94,0.4)]'}`}
+                disabled={!userImage || isProcessing}
+                className={`w-full py-5 rounded-[24px] font-black text-xl flex items-center justify-center gap-3 transition-all relative overflow-hidden ${!userImage || isProcessing ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-primary text-white shadow-[0_20px_40px_-10px_rgba(34,197,94,0.4)]'}`}
               >
                 {isProcessing ? (
                   <>
                     <RefreshCw className="animate-spin" size={24} />
                     <span>جاري معالجة الصورة...</span>
-                  </>
-                ) : uploadLoading ? (
-                  <>
-                    <RefreshCw className="animate-spin" size={24} />
-                    <span>جاري التحضير...</span>
                   </>
                 ) : (
                   <>

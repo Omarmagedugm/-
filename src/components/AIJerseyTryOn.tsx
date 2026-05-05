@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Upload, ImageIcon, Sparkles, RefreshCw, Check, Download, Camera } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
+import { Upload, Sparkles, RefreshCw, Check, Download, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const JERSEYS = [
@@ -15,7 +14,6 @@ const AIJerseyTryOn: React.FC = () => {
   const [selectedJersey, setSelectedJersey] = useState(JERSEYS[0]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultImage, setResultImage] = useState<string | null>(null);
-  const [uploadLoading, setUploadLoading] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -27,28 +25,6 @@ const AIJerseyTryOn: React.FC = () => {
       setUserImage(event.target?.result as string);
     };
     reader.readAsDataURL(file);
-
-    // Upload to Cloudinary via Backend
-    setUploadLoading(true);
-    const formData = new FormData();
-    formData.append('image', file);
-
-    try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      if (!response.ok) throw new Error('فشل رفع الصورة');
-      const data = await response.json();
-      // We can store the Cloudinary URL if needed for "Try another jersey"
-      console.log('Uploaded to Cloudinary:', data.secure_url);
-      toast.success('تم رفع الصورة بنجاح');
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('حدث خطأ أثناء رفع الصورة للسيرفر');
-    } finally {
-      setUploadLoading(false);
-    }
   };
 
   const compressImage = async (dataUrl: string): Promise<string> => {
@@ -89,14 +65,8 @@ const AIJerseyTryOn: React.FC = () => {
     setResultImage(null);
 
     try {
-      const apiKey = (process.env as any).GEMINI_API_KEY;
-      if (!apiKey) throw new Error('Gemini API Key is missing');
-
-      const ai = new GoogleGenAI({ apiKey });
-
       // Compress and convert user image
       const userImageBase64 = await compressImage(userImage);
-      const userMimeType = 'image/jpeg';
       
       // Fetch jersey image and convert to base64
       const responseJersey = await fetch(selectedJersey.url);
@@ -108,43 +78,35 @@ const AIJerseyTryOn: React.FC = () => {
         reader.readAsDataURL(jerseyBlob);
       });
       const jerseyImageBase64 = await compressImage(jerseyDataUrl);
-      const jerseyMimeType = 'image/jpeg';
 
-      const prompt = `I am providing two images.
-IMAGE 1: A portrait of a person.
-IMAGE 2: An Al Ittihad Alexandria (Unionawy) club jersey.
-
-Your task is to create a highly realistic composite photo. Transform the person from IMAGE 1 into a passionate Al Ittihad Alexandria fan.
-
-STRICT IDENTITY RULES:
-1. FACE PERSISTENCE: You MUST keep the person's face EXACTLY as it appears in IMAGE 1. 100% identical facial features, identity, and skin tone.
-2. CLOTHING: The person MUST be wearing the EXACT jersey from IMAGE 2. Fit it naturally on their body.
-3. SCENE: Set the scene in a realistic Alexandria supporter room (Unionawy) with green and white flags, scarves, and club memorabilia. Scarves should have "Alittihad Alexandria club" written on them.
-4. QUALITY: Professional 4K portrait photography with realistic lighting and cinematic colors.`;
-
-      const result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image', 
-        contents: {
-          parts: [
-            { inlineData: { data: userImageBase64, mimeType: userMimeType } },
-            { inlineData: { data: jerseyImageBase64, mimeType: jerseyMimeType } },
-            { text: prompt }
-          ]
-        }
+      console.log('Sending request to server AI endpoint...');
+      const response = await fetch('/api/ai/jersey-tryon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userImageBase64,
+          jerseyImageBase64,
+        }),
       });
 
-      // Find the image part
-      const imagePart = result.candidates[0].content.parts.find(p => p.inlineData);
-      if (imagePart?.inlineData) {
-        setResultImage(`data:image/png;base64,${imagePart.inlineData.data}`);
-        toast.success('تمت العملية بنجاح! نورت غرفة العصافيري');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'فشل الاتصال بخادم الذكاء الاصطناعي');
+      }
+
+      const data = await response.json();
+      if (data.image) {
+        setResultImage(data.image);
+        toast.success('تمت العملية بنجاح! نورت استوديو سيد البلد');
       } else {
-        throw new Error('لم يتم استلام صورة من الذكاء الاصطناعي');
+        throw new Error('الذكاء الاصطناعي لم يتمكن من توليد الصورة، ربما بسبب قيود المحتوى أو جودة الصورة المرفوعة.');
       }
 
     } catch (error: any) {
       console.error('AI Processing error:', error);
-      toast.error('حدث خطأ أثناء معالجة الصورة. يرجى المحاولة مرة أخرى.');
+      toast.error(`حدث خطأ: ${error.message || 'يرجى المحاولة مرة أخرى.'}`);
     } finally {
       setIsProcessing(false);
     }
@@ -244,18 +206,13 @@ STRICT IDENTITY RULES:
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={processWithAI}
-          disabled={!userImage || isProcessing || uploadLoading}
-          className={`w-full py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all relative overflow-hidden ${!userImage || isProcessing || uploadLoading ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-primary text-white shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] hover:scale-[1.02]'} ${isProcessing ? 'animate-shimmer' : ''}`}
+          disabled={!userImage || isProcessing}
+          className={`w-full py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all relative overflow-hidden ${!userImage || isProcessing ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-primary text-white shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] hover:scale-[1.02]'} ${isProcessing ? 'animate-shimmer' : ''}`}
         >
           {isProcessing ? (
             <>
               <RefreshCw className="animate-spin" size={24} />
               <span>جاري الدمج السحرى...</span>
-            </>
-          ) : uploadLoading ? (
-            <>
-              <RefreshCw className="animate-spin" size={24} />
-              <span>جاري رفع الصورة...</span>
             </>
           ) : (
             <>
