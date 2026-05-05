@@ -197,6 +197,12 @@ service cloud.firestore {
     }
 
     // FCM Tokens
+    // AI Transformation
+    match /jerseys/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /fcm_tokens/{tokenId} {
       allow read: if isAdmin();
       allow create: if true;

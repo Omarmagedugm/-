@@ -59,6 +59,7 @@ export function useFirestoreSync() {
             { id: 'hero', type: 'hero', active: true, order: 0 },
             { id: 'ads', type: 'ads', active: true, order: 0.5 },
             { id: 'matches', type: 'matches', active: true, order: 1 },
+            { id: 'ai_banner', type: 'ai_banner', active: true, order: 1.2 },
             { id: 'city', type: 'city', active: true, order: 1.5, title: 'عروس البحر المتوسط' },
             { id: 'news', type: 'news', active: true, order: 2 },
             { id: 'media', type: 'media', active: true, order: 3 },

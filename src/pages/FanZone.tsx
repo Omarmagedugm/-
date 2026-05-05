@@ -33,7 +33,8 @@ import {
   Check,
   HelpCircle,
   Grid,
-  Upload
+  Upload,
+  Sparkles
 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType, uploadImage } from '../lib/firebase';
 import { format } from 'date-fns';
@@ -94,6 +95,19 @@ export default function FanZone() {
   const [isPostingMoment, setIsPostingMoment] = useState(false);
   const [momentPost, setMomentPost] = useState({ content: '', image: '' });
   const [showMomentForm, setShowMomentForm] = useState(false);
+  const [aiConfig, setAiConfig] = useState<any>({ 
+    enabled: true, 
+    bannerTitle: 'استوديو المشجع الاتحادي', 
+    bannerDescription: 'حول صورتك بالذكاء الاصطناعي وارتدي تيشيرت نادي الاتحاد في معقل زعيم الثغر',
+    bannerImage: ''
+  });
+
+  useEffect(() => {
+    const unsubAiConfig = onSnapshot(doc(db, 'settings', 'ai_config'), (snap) => {
+      if (snap.exists()) setAiConfig(snap.data());
+    });
+    return () => unsubAiConfig();
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setTick(t => t + 1), 1000);
@@ -648,6 +662,38 @@ export default function FanZone() {
   return (
     <div className="flex-1 pb-32 flex flex-col bg-background-light dark:bg-background-dark min-h-screen text-slate-800 dark:text-white">
       <main className="p-4 space-y-8">
+        {/* AI Jersey Try-On Banner: Prominent call to action */}
+        {aiConfig.enabled && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-[32px] bg-[#072418] border border-primary/20 p-6 md:p-8"
+            style={aiConfig.bannerImage ? { backgroundImage: `url(${aiConfig.bannerImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+          >
+            {aiConfig.bannerImage && <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 text-center md:text-right">
+              <div className="h-24 w-24 md:h-32 md:w-32 rounded-3xl bg-primary/10 flex items-center justify-center border border-primary/30 flex-shrink-0 animate-pulse relative">
+                <Sparkles className="text-primary" size={48} />
+                <div className="absolute inset-0 bg-primary/5 rounded-3xl animate-ping opacity-20"></div>
+              </div>
+              <div className="flex-1 space-y-2">
+                <h2 className="text-2xl md:text-4xl font-black text-white italic">{aiConfig.bannerTitle || 'استوديو المشجع الاتحادي'}</h2>
+                <p className="text-slate-400 text-sm md:text-base font-bold leading-relaxed">
+                  {aiConfig.bannerDescription || 'حول صورتك بالذكاء الاصطناعي وارتدي تيشيرت نادي الاتحاد في معقل زعيم الثغر'}
+                </p>
+              </div>
+              <Link 
+                to="/jersey-tryon" 
+                className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-lg shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:scale-105 transition-all flex items-center gap-3"
+              >
+                <Sparkles size={24} />
+                <span>جرب الآن</span>
+              </Link>
+            </div>
+          </motion.div>
+        )}
+
         {/* Post Creation Box Upgrade */}
         {auth.currentUser && (
           <motion.div 

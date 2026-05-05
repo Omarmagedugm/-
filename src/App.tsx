@@ -16,6 +16,7 @@ import Matches from './pages/Matches';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import FanZone from './pages/FanZone';
+import JerseyTryOn from './pages/JerseyTryOn';
 import History from './pages/History';
 import Store from './pages/Store';
 import Bookmarks from './pages/Bookmarks';
@@ -197,6 +198,7 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/fan-zone" element={<FanZone />} />
+          <Route path="/jersey-tryon" element={<JerseyTryOn />} />
           <Route path="/history" element={<History />} />
           <Route path="/store" element={<Store />} />
           <Route path="/bookmarks" element={<Bookmarks />} />

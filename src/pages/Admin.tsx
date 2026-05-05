@@ -72,7 +72,10 @@ import {
   Minus,
   Search,
   Calendar,
-  Zap
+  Zap,
+  Sparkles,
+  Image as ImageIcon,
+  CheckCircle2
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import ScoreSelector from '../components/ScoreSelector';
@@ -361,6 +364,8 @@ export default function Admin() {
   const [backups, setBackups] = useState<any[]>([]);
   const [sentNotifications, setSentNotifications] = useState<any[]>([]);
   const [customPages, setCustomPages] = useState<any[]>([]);
+  const [jerseys, setJerseys] = useState<any[]>([]);
+  const [aiConfig, setAiConfig] = useState<any>({ enabled: true, clubLogo: '' });
   const [showSidebar, setShowSidebar] = useState(false);
   const [historySubTab, setHistorySubTab] = useState<'stats' | 'titles' | 'timeline' | 'stadiums'>('stats');
   const [musicSubTab, setMusicSubTab] = useState<'songs' | 'albums' | 'playlists'>('songs');
@@ -376,8 +381,16 @@ export default function Admin() {
     const unsubPages = onSnapshot(qPages, (snapshot) => {
       setCustomPages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
+
+    const unsubJerseys = onSnapshot(collection(db, 'jerseys'), (snapshot) => {
+      setJerseys(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    const unsubAiConfig = onSnapshot(doc(db, 'settings', 'ai_config'), (snap) => {
+      if (snap.exists()) setAiConfig(snap.data());
+    });
     
-    return () => { unsub(); unsubPages(); };
+    return () => { unsub(); unsubPages(); unsubJerseys(); unsubAiConfig(); };
   }, []);
 
   const handleExportDatabase = async () => {
@@ -1062,6 +1075,17 @@ export default function Admin() {
         } else {
           await addDoc(collection(db, 'custom_pages'), cleanPayload(payload));
         }
+      } else if (activeTab === 'ai-studio') {
+        const payload = {
+          name: formData.name || 'تيشيرت جديد',
+          url: formData.url || '',
+          createdAt: isEditing ? (formData.createdAt || new Date().toISOString()) : new Date().toISOString()
+        };
+        if (isEditing && editingId) {
+          await updateDoc(doc(db, 'jerseys', editingId), cleanPayload(payload));
+        } else {
+          await addDoc(collection(db, 'jerseys'), cleanPayload(payload));
+        }
       }
 
       toast.success('تم الحفظ بنجاح');
@@ -1104,6 +1128,7 @@ export default function Admin() {
         else if (coll === 'songs') item = songs.find(i => i.id === id);
         else if (coll === 'albums') item = albums.find(i => i.id === id);
         else if (coll === 'books') item = books.find(i => i.id === id);
+        else if (coll === 'jerseys') item = jerseys.find(i => i.id === id);
 
         if (item) pushToUndoStack({ collection: coll, action: 'delete', data: { ...item } });
 
@@ -1382,9 +1407,10 @@ export default function Admin() {
              activeTab === 'history' ? 'تاريخ النادي' :
              activeTab === 'city' ? 'طقس الإسكندرية' :
              activeTab === 'live' ? 'البث المباشر' :
+             activeTab === 'ai-studio' ? 'إعدادات استوديو الصور (AI)' :
              activeTab === 'comments' ? 'تعليقات البث المباشر' : 'لوحة التحكم'}
           </h1>
-          {['news', 'media', 'matches', 'clubs', 'polls', 'predictions', 'products', 'history', 'music', 'books'].includes(activeTab) && (
+          {['news', 'media', 'matches', 'clubs', 'polls', 'predictions', 'products', 'history', 'music', 'books', 'ai-studio'].includes(activeTab) && (
             <button 
               onClick={openAddModal}
               className="flex items-center gap-1 bg-primary text-white px-3 py-1.5 rounded-lg font-bold shadow-sm shadow-primary/20 hover:scale-105 transition-all text-xs"
@@ -1625,7 +1651,9 @@ export default function Admin() {
                         
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                             <span className="text-[10px] font-black uppercase text-slate-400">{section.type}</span>
+                             <span className="text-[10px] font-black uppercase text-slate-400">
+                               {section.type === 'ai_banner' ? 'بانر الذكاء الاصطناعي' : section.type}
+                             </span>
                              {section.pinned && <Pin size={10} className="text-accent fill-accent" />}
                              <h4 className="text-xs font-black">{section.title || 'بدون عنوان'}</h4>
                           </div>
@@ -1782,6 +1810,7 @@ export default function Admin() {
                         <option value="image">صورة بانر </option>
                         <option value="city">طقس وتاريخ الإسكندرية</option>
                         <option value="advertise">أعلن معنا (Widget)</option>
+                        <option value="ai_banner">بانر استوديو الذكاء الاصطناعي</option>
                       </select>
                     </div>
                     <div className="space-y-2">
@@ -1902,6 +1931,158 @@ export default function Admin() {
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'ai-studio' && (
+            <div className="space-y-6">
+              {/* AI Global Settings */}
+              <div className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-6 shadow-sm">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <Zap size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-sm">إعدادات استوديو الذكاء الاصطناعي</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">AI Feature Configuration</p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-surface-dark rounded-2xl border border-slate-100 dark:border-border-dark">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-3 h-3 rounded-full ${aiConfig.enabled ? 'bg-green-500' : 'bg-red-500'} shadow-glow`}></div>
+                      <span className="text-sm font-black tracking-tight">{aiConfig.enabled ? 'الميزة مفعلة' : 'الميزة معطلة'}</span>
+                    </div>
+                    <button 
+                      onClick={async () => {
+                        try {
+                          await setDoc(doc(db, 'settings', 'ai_config'), { ...aiConfig, enabled: !aiConfig.enabled }, { merge: true });
+                          toast.success('تم تحديث حالة الميزة');
+                        } catch (err) {
+                          toast.error('فشل التحديث');
+                        }
+                      }}
+                      className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all ${
+                        aiConfig.enabled ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                      }`}
+                    >
+                      {aiConfig.enabled ? 'إيقاف الميزة' : 'تفعيل الميزة'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">عنوان البانر (FanZone)</label>
+                      <input 
+                        type="text" 
+                        value={aiConfig.bannerTitle || ''}
+                        onChange={(e) => setAiConfig({ ...aiConfig, bannerTitle: e.target.value })}
+                        className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-xs font-bold text-right"
+                        placeholder="استوديو المشجع الاتحادي"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">وصف البانر (FanZone)</label>
+                      <input 
+                        type="text" 
+                        value={aiConfig.bannerDescription || ''}
+                        onChange={(e) => setAiConfig({ ...aiConfig, bannerDescription: e.target.value })}
+                        className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-xs font-bold text-right"
+                        placeholder="حول صورتك بالذكاء الاصطناعي..."
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">صورة البانر واللوجو</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 bg-slate-50 dark:bg-surface-dark rounded-2xl border border-dashed border-slate-200 dark:border-border-dark">
+                        <UploadOrUrlField 
+                          label="صورة البانر" 
+                          fieldName="bannerImage" 
+                          currentUrl={aiConfig.bannerImage} 
+                          formData={aiConfig} 
+                          setFormData={setAiConfig} 
+                          uploading={uploading} 
+                          handleFileUpload={handleFileUpload} 
+                        />
+                      </div>
+                      <div className="p-4 bg-slate-50 dark:bg-surface-dark rounded-2xl border border-dashed border-slate-200 dark:border-border-dark">
+                        <UploadOrUrlField 
+                          label="لوجو النادي (AI)" 
+                          fieldName="clubLogo" 
+                          currentUrl={aiConfig.clubLogo} 
+                          formData={aiConfig} 
+                          setFormData={setAiConfig} 
+                          uploading={uploading} 
+                          handleFileUpload={handleFileUpload} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button 
+                       onClick={async () => {
+                         try {
+                           await setDoc(doc(db, 'settings', 'ai_config'), { ...aiConfig }, { merge: true });
+                           toast.success('تم حفظ الإعدادات بنجاح');
+                         } catch (err) {
+                           toast.error('فشل حفظ الإعدادات');
+                         }
+                       }}
+                       className="bg-primary text-white px-8 py-3 rounded-2xl text-sm font-black shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2"
+                    >
+                      <CheckCircle2 size={18} />
+                      <span>حفظ الإعدادات العامة</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Jerseys Management */}
+              <div className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
+                      <ImageIcon size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-sm">إدارة قمصان النادي</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Manage AI Jerseys</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={openAddModal}
+                    className="bg-primary text-white p-2 rounded-xl"
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {jerseys.map(jersey => (
+                    <div key={jersey.id} className="bg-slate-50 dark:bg-surface-dark p-3 rounded-2xl border border-slate-100 dark:border-border-dark flex flex-col gap-3 relative group">
+                      <div className="aspect-square rounded-xl overflow-hidden bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark">
+                        <img src={jersey.url} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black truncate">{jersey.name}</span>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => openEditModal(jersey, jersey.id)} className="p-1.5 bg-blue-100 text-blue-600 rounded-lg"><Edit2 size={12} /></button>
+                          <button onClick={() => handleDelete('jerseys', jersey.id)} className="p-1.5 bg-red-100 text-red-600 rounded-lg"><Trash2 size={12} /></button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {jerseys.length === 0 && (
+                    <div className="col-span-2 py-10 text-center border-2 border-dashed border-slate-100 dark:border-border-dark rounded-3xl text-slate-400 text-xs font-bold">
+                       لا توجد قمصان مسجلة حالياً
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -3432,6 +3613,19 @@ export default function Admin() {
             </div>
 
             <div className="space-y-4 max-h-[60vh] overflow-y-auto px-1 no-scrollbar text-right">
+                {activeTab === 'ai-studio' && (
+                  <>
+                    <div>
+                      <label className="text-[10px] font-black text-slate-500 mb-1 block text-right">اسم القميص</label>
+                      <input type="text" placeholder="مثلاً: الطقم الأساسي 2024" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold text-right" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+                    </div>
+                    <UploadOrUrlField label="صورة القميص" fieldName="url" currentUrl={formData.url} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                    <p className="text-[10px] text-slate-400 font-bold bg-slate-50 dark:bg-surface-dark p-3 rounded-xl border border-dashed border-slate-200 text-right">
+                      ملاحظة: يفضل أن تكون صورة القميص واضحة وبخلفية شفافة أو بيضاء للحصول على أفضل نتائج في الدمج بالذكاء الاصطناعي.
+                    </p>
+                  </>
+                )}
+
                 {activeTab === 'products' && (
                  <>
                     <div>

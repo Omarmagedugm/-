@@ -23,7 +23,8 @@ import {
   BookOpen,
   CloudSun,
   Bell,
-  Database
+  Database,
+  Sparkles
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -86,6 +87,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
       { id: 'fan-comments', icon: <MessageCircle size={18} />, label: 'التعليقات والمناقشات', show: isAdmin || hasRole(['user_manager']) },
       { id: 'polls', icon: <BarChart3 size={18} />, label: 'الاستطلاعات', show: isAdmin || hasRole(['layout_editor', 'user_manager']) },
       { id: 'predictions', icon: <Trophy size={18} />, label: 'توقعات المباريات', show: isAdmin || hasRole(['matches_editor', 'user_manager']) },
+      { id: 'ai-studio', icon: <Sparkles size={18} />, label: 'استوديو الصور (AI)', show: isAdmin || hasRole('layout_editor') },
       { id: 'comments', icon: <MessageSquare size={18} />, label: 'تعليقات البث المباشر', show: isAdmin || hasRole(['matches_editor', 'user_manager']) },
     ]},
     { title: 'المتجر والتجارة', items: [

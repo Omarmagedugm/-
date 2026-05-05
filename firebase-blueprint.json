@@ -181,6 +181,31 @@
         "status": { "type": "string", "enum": ["active", "inactive"] }
       }
     },
+    "Jerseys": {
+      "title": "Club Jerseys",
+      "description": "Jerseys available for AI transformation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "url": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "url"]
+    },
+    "AIConfig": {
+      "title": "AI Feature Configuration",
+      "description": "Settings for the AI jersey try-on feature",
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "clubLogo": { "type": "string" },
+        "bannerTitle": { "type": "string" },
+        "bannerDescription": { "type": "string" },
+        "bannerImage": { "type": "string" },
+        "promptInstructions": { "type": "string" }
+      }
+    },
     "MatchDayMoment": {
       "title": "Match Day Moment",
       "description": "User shared photo and comment specifically for match day",
@@ -260,6 +285,7 @@
     "match_day_moments": { "schema": "MatchDayMoment", "description": "Fan photos for match day" },
     "match_day_attendance": { "schema": "MatchDayAttendance", "description": "Match day attendance polls" },
     "ads": { "schema": "AdBanner", "description": "Advertising banners" },
-    "custom_pages": { "schema": "CustomPage", "description": "Custom HTML pages" }
+    "custom_pages": { "schema": "CustomPage", "description": "Custom HTML pages" },
+    "jerseys": { "schema": "Jerseys", "description": "Club jerseys for AI try-on" }
   }
 }

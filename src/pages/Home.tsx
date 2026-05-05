@@ -37,7 +37,9 @@ import {
   Minus,
   Play,
   CheckCircle2,
+  Sparkles,
 } from "lucide-react";
+import { onSnapshot, doc } from "firebase/firestore";
 import Sidebar from "../components/Sidebar";
 import AdvertiseWidget from "../components/AdvertiseWidget";
 import HtmlWidget from "../components/HtmlWidget";
@@ -61,6 +63,20 @@ export default function Home() {
   } = useAppStore();
   const [tick, setTick] = useState(0);
   const [clarityOpen, setClarityOpen] = useState(false);
+  const [aiConfig, setAiConfig] = useState<any>({ 
+    enabled: true, 
+    bannerTitle: 'استوديو المشجع الاتحادي', 
+    bannerDescription: 'حول صورتك بالذكاء الاصطناعي وارتدي تيشيرت نادي الاتحاد في معقل زعيم الثغر',
+    bannerImage: ''
+  });
+
+  useEffect(() => {
+    const unsubAiConfig = onSnapshot(doc(db, 'settings', 'ai_config'), (snap) => {
+      if (snap.exists()) setAiConfig(snap.data());
+    });
+    return () => unsubAiConfig();
+  }, []);
+
   const isOmar = auth.currentUser?.email?.toLowerCase() === "omarmagedugm@ittihad.club";
   const isDev = auth.currentUser?.email?.toLowerCase() === "copyrightofficialco@gmail.com";
   const isAdmin = (auth.currentUser && profile?.role === "admin") || isOmar || isDev;
@@ -1164,6 +1180,46 @@ export default function Home() {
           </motion.section>
         );
 
+      case "ai_banner":
+        if (!aiConfig.enabled) return null;
+        return (
+          <motion.section
+            key={section.id}
+            variants={itemVariants}
+          >
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#064e3b] to-primary p-4 shadow-xl shadow-primary/10 group cursor-pointer"
+              onClick={() => navigate('/jersey-tryon')}
+              style={aiConfig.bannerImage ? { backgroundImage: `url(${aiConfig.bannerImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+            >
+              <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors duration-500"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl -translate-y-1/2 translate-x-1/2 rounded-full"></div>
+              
+              <div className="relative z-10 flex items-center justify-between py-1">
+                <div className="h-12 w-12 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-xl group-hover:scale-110 transition-transform duration-500 shrink-0">
+                  <Sparkles size={24} className="animate-pulse" />
+                </div>
+                <div className="text-right">
+                  <h3 className="text-base sm:text-lg font-black text-white italic mb-1">
+                    {aiConfig.bannerTitle || "صورتك بتيشيرت الاتحاد"}
+                  </h3>
+                  {aiConfig.bannerDescription && (
+                    <p className="text-[10px] text-white/70 font-bold mb-2">
+                      {aiConfig.bannerDescription}
+                    </p>
+                  )}
+                  <div className="inline-flex bg-white text-primary px-4 py-1.5 rounded-lg font-black text-[10px] shadow-lg">
+                    جرب الآن
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.section>
+        );
+
       case "city": {
         const isCityActive = cityInfo ? cityInfo.active : true;
         if (!isCityActive) return null;
@@ -1638,7 +1694,7 @@ export default function Home() {
       >
         {/* Goal Celebration Trigger is in App.tsx */}
       
-      {sortedSections.map((section) => {
+      {sortedSections.map((section, index) => {
           const content = renderSection(section);
           if (!content) return null;
           return (

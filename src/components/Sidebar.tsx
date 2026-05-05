@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { auth, db } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import { X, LayoutDashboard, Flag, MessageSquare, Info, Mail, Home, LogOut, ShieldCheck, FileText } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAppStore, UserProfile } from '../store';
 import { getOptimizedImage } from '../lib/cloudinary';
 
@@ -117,6 +118,14 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
               <Link to="/fan-zone" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
                 <span className="material-symbols-outlined !text-[20px] text-accent">stadium</span>
                 <span className="text-sm font-black">منطقة الجماهير</span>
+              </Link>
+
+              <Link to="/jersey-tryon" onClick={onClose} className="flex items-center justify-between p-3.5 rounded-2xl bg-primary/5 hover:bg-primary/10 transition-colors text-slate-700 dark:text-slate-300 pressable group border border-primary/10">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined !text-[20px] text-primary group-hover:rotate-12 transition-transform">bolt</span>
+                  <span className="text-sm font-black">استوديو المشجع (AI)</span>
+                </div>
+                <span className="px-2 py-0.5 bg-red-500 text-white text-[8px] font-black rounded-full animate-pulse uppercase">جديد</span>
               </Link>
 
               <Link to="/library" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
