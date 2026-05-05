@@ -1198,22 +1198,18 @@ export default function Home() {
               <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors duration-500"></div>
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl -translate-y-1/2 translate-x-1/2 rounded-full"></div>
               
-              <div className="relative z-10 flex items-center justify-between py-1">
-                <div className="h-12 w-12 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-xl group-hover:scale-110 transition-transform duration-500 shrink-0">
-                  <Sparkles size={24} className="animate-pulse" />
-                </div>
-                <div className="text-right">
-                  <h3 className="text-base sm:text-lg font-black text-white italic mb-1">
+              <div className="relative z-10 flex items-center justify-between gap-4">
+                <div className="text-right flex-1">
+                  <h3 className="text-sm sm:text-base font-black text-white italic">
                     {aiConfig.bannerTitle || "صورتك بتيشيرت الاتحاد"}
                   </h3>
-                  {aiConfig.bannerDescription && (
-                    <p className="text-[10px] text-white/70 font-bold mb-2">
-                      {aiConfig.bannerDescription}
-                    </p>
-                  )}
-                  <div className="inline-flex bg-white text-primary px-4 py-1.5 rounded-lg font-black text-[10px] shadow-lg">
-                    جرب الآن
+                  <div className="mt-1 inline-flex items-center gap-1.5 text-[9px] font-bold text-white/80">
+                    <span className="h-1 w-1 rounded-full bg-accent animate-pulse"></span>
+                    جرب الآن مجاناً
                   </div>
+                </div>
+                <div className="h-10 w-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-xl group-hover:rotate-12 transition-transform duration-500 shrink-0">
+                  <Sparkles size={20} className="animate-pulse" />
                 </div>
               </div>
             </motion.div>

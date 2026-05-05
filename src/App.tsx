@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import ScrollToTop from './components/ScrollToTop';
@@ -32,15 +32,15 @@ import WinCelebration from './components/WinCelebration';
 
 export default function App() {
   useFirestoreSync();
-  const { matches } = useAppStore();
+  const matches = useAppStore(state => state.matches);
   const [showGoal, setShowGoal] = useState(false);
   const [showWin, setShowWin] = useState(false);
   const [scoredTeam, setScoredTeam] = useState('');
   const [activeMatch, setActiveMatch] = useState<any>(null);
-  const [lastGoalCheck, setLastGoalCheck] = useState<Record<string, number>>({});
-  const [lastMatchStatus, setLastMatchStatus] = useState<Record<string, string>>({});
-
-  const [isInitialized, setIsInitialized] = useState(false);
+  
+  const lastGoalCheck = useRef<Record<string, number>>({});
+  const lastMatchStatus = useRef<Record<string, string>>({});
+  const isInitialized = useRef(false);
 
   useEffect(() => {
     // Check for Al-Ittihad goals in live matches
@@ -48,21 +48,19 @@ export default function App() {
       m.status === 'live' && (m.homeTeam.includes('اتحاد') || m.awayTeam.includes('اتحاد'))
     );
 
-    if (!isInitialized && ittihadMatches.length > 0) {
-      const initialScores: Record<string, number> = {};
+    if (!isInitialized.current && ittihadMatches.length > 0) {
       ittihadMatches.forEach(m => {
         const isHome = m.homeTeam.includes('اتحاد');
-        initialScores[m.id] = isHome ? parseInt(m.homeScore || "0") : parseInt(m.awayScore || "0");
+        lastGoalCheck.current[m.id] = isHome ? parseInt(m.homeScore || "0") : parseInt(m.awayScore || "0");
       });
-      setLastGoalCheck(initialScores);
-      setIsInitialized(true);
+      isInitialized.current = true;
       return;
     }
 
     ittihadMatches.forEach(match => {
       const isHome = match.homeTeam.includes('اتحاد');
       const currentScore = isHome ? parseInt(match.homeScore || "0") : parseInt(match.awayScore || "0");
-      const prevScore = lastGoalCheck[match.id];
+      const prevScore = lastGoalCheck.current[match.id];
 
       // Only trigger if we already had a record for this match (app was open)
       if (prevScore !== undefined && currentScore > prevScore && match.sport !== 'basketball') {
@@ -73,13 +71,13 @@ export default function App() {
       
       // Update check state
       if (currentScore !== prevScore) {
-        setLastGoalCheck(prev => ({ ...prev, [match.id]: currentScore }));
+        lastGoalCheck.current[match.id] = currentScore;
       }
     });
 
     // Victory Detection
     matches.forEach(match => {
-      const prevStatus = lastMatchStatus[match.id];
+      const prevStatus = lastMatchStatus.current[match.id];
       if (prevStatus === 'live' && match.status === 'finished') {
         const homeScore = parseInt(match.homeScore || "0");
         const awayScore = parseInt(match.awayScore || "0");
@@ -93,10 +91,10 @@ export default function App() {
         }
       }
       if (prevStatus !== match.status) {
-        setLastMatchStatus(prev => ({ ...prev, [match.id]: match.status }));
+        lastMatchStatus.current[match.id] = match.status;
       }
     });
-  }, [matches, lastGoalCheck, isInitialized, lastMatchStatus]);
+  }, [matches]);
 
   const handleGoalComplete = () => {
     setShowGoal(false);

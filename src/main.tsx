@@ -31,8 +31,17 @@ const handleChunkError = (event: any) => {
     (message.includes('failed to fetch') && message.includes('module')) ||
     (message.includes('loading chunk') && message.includes('failed'));
 
+  // Check if we already reloaded recently to avoid infinite loops
+  const lastReload = sessionStorage.getItem('last_chunk_error_reload');
+  const now = Date.now();
+  if (lastReload && now - parseInt(lastReload) < 10000) {
+    console.error('Detected multiple chunk errors in short time, stopping auto-reload.');
+    return;
+  }
+
   if (isChunkError) {
     console.warn('Detected chunk loading error, forcing reload to get latest version...', message);
+    sessionStorage.setItem('last_chunk_error_reload', now.toString());
     setTimeout(() => {
       window.location.reload();
     }, 1000);

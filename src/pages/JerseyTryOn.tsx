@@ -16,6 +16,7 @@ import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, onSnapshot, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { GoogleGenAI } from "@google/genai";
 
 import Sidebar from '../components/Sidebar';
 
@@ -24,10 +25,15 @@ const JerseyTryOn: React.FC = () => {
   const [jerseys, setJerseys] = useState<any[]>([]);
   const [userImage, setUserImage] = useState<string | null>(null);
   const [selectedJersey, setSelectedJersey] = useState<any>(null);
+  const [selectedBackground, setSelectedBackground] = useState<string>('room');
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [aiConfig, setAiConfig] = useState<any>({ enabled: true, clubLogo: '' });
   const [loading, setLoading] = useState(true);
+
+  // Initialize AI client
+  // In AI Studio Build, GEMINI_API_KEY is automatically available
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
 
   useEffect(() => {
     // Fetch AI config
@@ -65,8 +71,65 @@ const JerseyTryOn: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       setUserImage(event.target?.result as string);
+      
+      // Automatic progression: Scroll to jersey selection
+      setTimeout(() => {
+        const target = document.getElementById('step-jersey');
+        if (target) {
+          const offset = 100;
+          const bodyRect = document.body.getBoundingClientRect().top;
+          const elementRect = target.getBoundingClientRect().top;
+          const elementPosition = elementRect - bodyRect;
+          const offsetPosition = elementPosition - offset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
+      }, 300);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleJerseySelect = (jersey: any) => {
+    setSelectedJersey(jersey);
+    // Automatic progression: Scroll to background selection
+    setTimeout(() => {
+      const target = document.getElementById('step-background');
+      if (target) {
+        const offset = 100;
+        const bodyRect = document.body.getBoundingClientRect().top;
+        const elementRect = target.getBoundingClientRect().top;
+        const elementPosition = elementRect - bodyRect;
+        const offsetPosition = elementPosition - offset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 300);
+  };
+
+  const handleBackgroundSelect = (bg: string) => {
+    setSelectedBackground(bg);
+    // Automatic progression: Scroll to process button
+    setTimeout(() => {
+      const target = document.getElementById('process-btn');
+      if (target) {
+        const offset = 100;
+        const bodyRect = document.body.getBoundingClientRect().top;
+        const elementRect = target.getBoundingClientRect().top;
+        const elementPosition = elementRect - bodyRect;
+        const offsetPosition = elementPosition - offset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 300);
   };
 
   const compressImage = async (dataUrl: string): Promise<string> => {
@@ -76,7 +139,8 @@ const JerseyTryOn: React.FC = () => {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        const MAX_DIM = 1024;
+        // Optimized for AI quota saving: 512px is perfect for face analysis but uses much less data
+        const MAX_DIM = 512;
         if (width > height && width > MAX_DIM) {
           height = (height * MAX_DIM) / width;
           width = MAX_DIM;
@@ -88,7 +152,8 @@ const JerseyTryOn: React.FC = () => {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
+        // Lower quality (0.6) significantly reduces bandwidth and token usage
+        resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
       };
       img.src = dataUrl;
     });
@@ -108,7 +173,17 @@ const JerseyTryOn: React.FC = () => {
     setIsProcessing(true);
     setResultImage(null);
 
+    // Scroll to preview area
+    setTimeout(() => {
+      document.getElementById('preview-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+
     try {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error('مفتاح API الخاص بـ Gemini غير متوفر. يرجى مراجعة إعدادات المشروع.');
+      }
+
       // Compress and convert user image
       console.log('Compressing user image...');
       const userImageBase64 = await compressImage(userImage);
@@ -129,29 +204,131 @@ const JerseyTryOn: React.FC = () => {
       });
       const jerseyImageBase64 = await compressImage(jerseyDataUrl);
 
-      console.log('Sending request to server AI endpoint...');
-      const response = await fetch('/api/ai/jersey-tryon', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userImageBase64,
-          jerseyImageBase64,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'فشل الاتصال بخادم الذكاء الاصطناعي');
+      // Fetch club logo for reference if exists
+      let logoImageBase64 = '';
+      if (aiConfig.clubLogo) {
+        try {
+          const responseLogo = await fetch(aiConfig.clubLogo);
+          if (responseLogo.ok) {
+            const logoBlob = await responseLogo.blob();
+            logoImageBase64 = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+              reader.readAsDataURL(logoBlob);
+            });
+          }
+        } catch (e) {
+          console.warn("Could not fetch club logo for AI reference", e);
+        }
       }
 
-      const data = await response.json();
-      if (data.image) {
-        setResultImage(data.image);
+      console.log('Sending request to Gemini AI with background:', selectedBackground);
+      
+      let backgroundDetail = '';
+      if (selectedBackground === 'room') {
+        backgroundDetail = `
+SCENE: STANDING IN A WARM, AUTHENTIC "ISKANDARI FAN ROOM" (ZAEEM EL-THAGHR):
+- The background is a homey room belonging to a passionate Al Ittihad fan in Alexandria.
+- Walls decorated with many green and white flags and official club scarves (Unionawy / Green Eagles).
+- Include framed photos of club legends and newspaper clippings of famous victories.
+- Modern high-contrast lighting with a soft green ambient glow.`;
+      } else if (selectedBackground === 'studio') {
+        backgroundDetail = `
+SCENE: STANDING IN A SLEEK MODERN BRANDED STUDIO:
+- Minimalist, high-end professional photo studio.
+- Artistic display of Al Ittihad scarves and flags as cinematic backdrops.
+- Prominent "Official Club Logo" integrated into the backlit decor.
+- Clean studio shadows and professional sports photography lighting.`;
+      } else if (selectedBackground === 'stadium') {
+        backgroundDetail = `
+SCENE: STANDING ON THE PITCH OF THE ALEXANDRIA STADIUM:
+- The background is the iconic Alexandria Stadium (historic towers visible).
+- Thousands of green and white cheering fans blurred in the background.
+- Floodlights creating a dramatic evening match atmosphere.
+- The person looks like a star player posing on the grass.`;
+      } else if (selectedBackground === 'birthday') {
+        backgroundDetail = `
+SCENE: CELEBRATING A "SIDI EL-BALAD" THEMED BIRTHDAY:
+- Festive atmosphere with a massive green and white Al Ittihad birthday cake.
+- Green and white balloons everywhere.
+- A "Happy Birthday" banner with the club logo.
+- The person is holding a club scarf, looking happy in a celebration setting.`;
+      }
+
+      const prompt = `Perform a high-end, photorealistic CLOTHING REPLACEMENT and SCENE TRANSFORMATION.
+
+IDENTITY PRESERVATION (CRITICAL): You MUST perfectly preserve the person's face, features, hair, and unique identity from "Customer Image". The person's face should be 100% IDENTICAL to the source. NO changes to ethnicity, age, or bone structure.
+
+JERSEY SWAP:
+1. Replace the person's current outfit with the EXACT Al Ittihad Alexandria green and white jersey kit provided in "Target Jersey to Wear".
+2. Use the "Official Club Logo" as the mandatory reference for the crest/badge on the jersey.
+3. The jersey fabric, fit, and shadows MUST blend naturally with the person's body and posture for absolute realism.
+
+${backgroundDetail}
+
+STYLE: 8k resolution, ultra-photorealistic. It must look like a real photograph taken with a professional DSLR camera. No digital artifacts or AI distortions.
+
+OUTPUT: Return ONLY the transformed image.`;
+
+      const aiParts: any[] = [
+        { text: "Customer Image (Identity to preserve):" },
+        {
+          inlineData: {
+            data: userImageBase64,
+            mimeType: 'image/jpeg',
+          },
+        },
+        { text: "Target Jersey to Wear:" },
+        {
+          inlineData: {
+            data: jerseyImageBase64,
+            mimeType: 'image/jpeg',
+          },
+        },
+      ];
+
+      // Add logo reference if available
+      if (logoImageBase64) {
+        aiParts.push({ text: "Official Club Logo (Brand Reference):" });
+        aiParts.push({
+          inlineData: {
+            data: logoImageBase64,
+            mimeType: 'image/jpeg',
+          },
+        });
+      }
+
+      aiParts.push({ text: prompt });
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+          parts: aiParts,
+        },
+        config: {
+          imageConfig: {
+            aspectRatio: "3:4"
+          }
+        }
+      });
+
+      // Find the image part in the response
+      let generatedImageBase64 = '';
+      if (response.candidates?.[0]?.content?.parts) {
+        for (const part of response.candidates[0].content.parts) {
+          if (part.inlineData?.data) {
+            generatedImageBase64 = part.inlineData.data;
+            break;
+          }
+        }
+      }
+
+      if (generatedImageBase64) {
+        setResultImage(`data:image/jpeg;base64,${generatedImageBase64}`);
         toast.success('تمت العملية بنجاح! نورت استوديو سيد البلد');
       } else {
-        throw new Error('الذكاء الاصطناعي لم يتمكن من توليد الصورة، ربما بسبب قيود المحتوى أو جودة الصورة المرفوعة.');
+        console.error('No image data in response:', response);
+        throw new Error('الذكاء الاصطناعي لم يتمكن من توليد الصورة. حاول مرة أخرى بصورة أوضح.');
       }
 
     } catch (error: any) {
@@ -234,9 +411,10 @@ const JerseyTryOn: React.FC = () => {
             <div className="space-y-8">
               {/* Step 1: Upload */}
               <motion.div 
+                id="step-upload"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="bg-white dark:bg-card-dark p-8 rounded-[32px] border border-slate-100 dark:border-border-dark shadow-2xl shadow-slate-200/50 dark:shadow-none"
+                className="bg-white dark:bg-card-dark p-8 rounded-[32px] border border-slate-100 dark:border-border-dark shadow-2xl shadow-slate-200/50 dark:shadow-none scroll-mt-6"
               >
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-black flex items-center gap-3">
@@ -283,10 +461,11 @@ const JerseyTryOn: React.FC = () => {
 
               {/* Step 2: Jersey Selection */}
               <motion.div 
+                id="step-jersey"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white dark:bg-card-dark p-8 rounded-[32px] border border-slate-100 dark:border-border-dark shadow-2xl shadow-slate-200/50 dark:shadow-none"
+                className="bg-white dark:bg-card-dark p-8 rounded-[32px] border border-slate-100 dark:border-border-dark shadow-2xl shadow-slate-200/50 dark:shadow-none scroll-mt-6"
               >
                 <h3 className="text-xl font-black mb-6 flex items-center gap-3">
                   <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-white text-sm shadow-lg shadow-primary/30">2</span>
@@ -297,7 +476,7 @@ const JerseyTryOn: React.FC = () => {
                     {jerseys.map((jersey) => (
                       <button
                         key={jersey.id}
-                        onClick={() => setSelectedJersey(jersey)}
+                        onClick={() => handleJerseySelect(jersey)}
                         className={`relative aspect-[3/4] rounded-2xl overflow-hidden border-2 transition-all p-2 group ${selectedJersey?.id === jersey.id ? 'border-primary bg-primary/5 ring-4 ring-primary/10 scale-[1.02]' : 'border-slate-50 dark:border-slate-800 bg-slate-50 dark:bg-slate-800'}`}
                       >
                         <img src={jersey.url} alt={jersey.name} className="w-full h-full object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
@@ -322,8 +501,48 @@ const JerseyTryOn: React.FC = () => {
                 </div>
               </motion.div>
 
+              {/* Step 3: Background Selection */}
+              <motion.div 
+                id="step-background"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.15 }}
+                className="bg-white dark:bg-card-dark p-8 rounded-[32px] border border-slate-100 dark:border-border-dark shadow-2xl shadow-slate-200/50 dark:shadow-none scroll-mt-6"
+              >
+                <h3 className="text-xl font-black mb-6 flex items-center gap-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-white text-sm shadow-lg shadow-primary/30">3</span>
+                  اختر مكان الصورة
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { id: 'room', name: 'غرفة مشجع', icon: '🏠' },
+                    { id: 'studio', name: 'ستوديو احترافي', icon: '📸' },
+                    { id: 'stadium', name: 'داخل الاستاد', icon: '🏟️' },
+                    { id: 'birthday', name: 'صورة عيد ميلاد', icon: '🎂' }
+                  ].map((bg) => (
+                    <button
+                      key={bg.id}
+                      onClick={() => handleBackgroundSelect(bg.id)}
+                      className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all group ${selectedBackground === bg.id ? 'border-primary bg-primary/5 ring-4 ring-primary/10' : 'border-slate-50 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 hover:border-slate-200'}`}
+                    >
+                      <span className="text-3xl group-hover:scale-110 transition-transform">{bg.icon}</span>
+                      <span className={`font-black text-sm ${selectedBackground === bg.id ? 'text-primary' : 'text-slate-600 dark:text-slate-400'}`}>
+                        {bg.name}
+                      </span>
+                      {selectedBackground === bg.id && (
+                        <div className="absolute top-2 right-2 bg-primary text-white p-1 rounded-full shadow-lg">
+                          <Check size={12} />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+
               {/* Action */}
               <motion.button
+                id="process-btn"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={processWithAI}
@@ -345,7 +564,7 @@ const JerseyTryOn: React.FC = () => {
             </div>
 
             {/* Preview Section */}
-            <div className="lg:sticky lg:top-8">
+            <div id="preview-section" className="lg:sticky lg:top-8 scroll-mt-6">
               <div className="relative group">
                 <div className="absolute -inset-2 bg-gradient-to-br from-primary to-emerald-400 rounded-[52px] blur-2xl opacity-10 dark:opacity-20 group-hover:opacity-30 transition-opacity"></div>
                 <div className="bg-slate-200 dark:bg-card-dark rounded-[48px] aspect-[4/5] relative overflow-hidden border-8 border-white dark:border-slate-800 shadow-2xl">
@@ -421,16 +640,6 @@ const JerseyTryOn: React.FC = () => {
                 </div>
               </div>
               
-              <div className="mt-8 grid grid-cols-2 gap-4">
-                <div className="bg-white dark:bg-card-dark p-6 rounded-3xl border border-slate-100 dark:border-border-dark">
-                  <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">التقنية المستخدمة</p>
-                  <p className="font-black text-sm">Image Generation API</p>
-                </div>
-                <div className="bg-white dark:bg-card-dark p-6 rounded-3xl border border-slate-100 dark:border-border-dark">
-                  <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">الدقة</p>
-                  <p className="font-black text-sm">HD Portrait Mode</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
