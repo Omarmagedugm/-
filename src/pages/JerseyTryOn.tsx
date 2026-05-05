@@ -177,7 +177,12 @@ const JerseyTryOn: React.FC = () => {
     }, 100);
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY as string;
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        console.error('GEMINI_API_KEY is not defined in the environment');
+        throw new Error('Quota exceeded or API Key missing. Please try again later.');
+      }
+      
       const ai = new GoogleGenAI({ apiKey });
 
       // Compress and convert user image
@@ -286,7 +291,8 @@ OUTPUT: Return ONLY the transformed image.`;
 
       aiParts.push({ text: prompt });
 
-      console.log('Calling Gemini AI (2.5 Image Model)...');
+      console.log('Calling Gemini AI (Image Model)...');
+      // Using gemini-2.5-flash-image as the general image editing model
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash-image',
         contents: {
@@ -317,18 +323,40 @@ OUTPUT: Return ONLY the transformed image.`;
         // If no image was found, check if there was text that explained why
         const responseText = response.text || '';
         console.warn('AI Response did not contain an image. Text response:', responseText);
-        throw new Error(responseText || 'الذكاء الاصطناعي لم يتمكن من توليد الصورة. حاول مرة أخرى بصورة أوضح.');
+        throw new Error(responseText || 'لم نتمكن من الحصول على صورة من الذكاء الاصطناعي. قد يكون ذلك بسبب سياسات السلامة.');
       }
 
     } catch (error: any) {
       console.error('AI Processing error details:', error);
-      const errorMessage = error.message || '';
-      if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
-        toast.error('عذراً، تم الوصول للحد الأقصى للصور المتاحة حالياً. يرجى المحاولة مرة أخرى بعد قليل.');
-      } else if (errorMessage.includes('safety') || errorMessage.includes('blocked')) {
-        toast.error('تم حظر الصورة لأسباب تتعلق بالسلامة. فضلاً ارفع صورة شخصية لائقة.');
+      
+      let errorMessage = '';
+      if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.error?.message) {
+        errorMessage = error.error.message;
       } else {
-        toast.error(`حدث خطأ أثناء معالجة الصورة: ${errorMessage.substring(0, 50)}${errorMessage.length > 50 ? '...' : ''}. تأكد من جودة الصورة وحاول مرة أخرى.`);
+        try {
+          errorMessage = JSON.stringify(error);
+        } catch {
+          errorMessage = 'Unknown error occurred during processing';
+        }
+      }
+
+      const isQuotaError = errorMessage.toLowerCase().includes('429') || 
+                          errorMessage.toLowerCase().includes('resource_exhausted') || 
+                          errorMessage.toLowerCase().includes('quota');
+      
+      const isSafetyError = errorMessage.toLowerCase().includes('safety') || 
+                           errorMessage.toLowerCase().includes('blocked');
+
+      if (isQuotaError) {
+        toast.error('نعتذر، تم استهلاك كامل حصة الصور المجانية حالياً. يرجى المحاولة مرة أخرى لاحقاً.');
+      } else if (isSafetyError) {
+        toast.error('تم حظر الصورة بواسطة فلاتر الأمان. يرجى استخدام صورة شخصية لائقة وواضحة.');
+      } else {
+        toast.error(`حدث خطأ: ${errorMessage.slice(0, 60)}${errorMessage.length > 60 ? '...' : ''}`);
       }
     } finally {
       setIsProcessing(false);
