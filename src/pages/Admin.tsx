@@ -16,6 +16,7 @@ import {
   query,
   orderBy,
   limit,
+  where,
   onSnapshot
 } from 'firebase/firestore';
 import { 
@@ -76,8 +77,10 @@ import {
   Sparkles,
   Image as ImageIcon,
   CheckCircle2,
-  Layers
+  Layers,
+  ShieldCheck
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import AdminSidebar from '../components/AdminSidebar';
 import ScoreSelector from '../components/ScoreSelector';
 import ImageUploader from '../components/ImageUploader';
@@ -376,6 +379,7 @@ export default function Admin() {
   const [mediaSubTab, setMediaSubTab] = useState<'items' | 'playlists'>('items');
   const [musicSubTab, setMusicSubTab] = useState<'songs' | 'albums' | 'playlists'>('songs');
   const [isExporting, setIsExporting] = useState(false);
+  const [aiUsage, setAiUsage] = useState<any[]>([]);
 
   useEffect(() => {
     const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(20));
@@ -396,7 +400,13 @@ export default function Admin() {
       if (snap.exists()) setAiConfig(snap.data());
     });
     
-    return () => { unsub(); unsubPages(); unsubJerseys(); unsubAiConfig(); };
+    const usageToday = new Date().toISOString().split('T')[0];
+    const qUsage = query(collection(db, 'ai_usage'), where('date', '==', usageToday));
+    const unsubUsage = onSnapshot(qUsage, (snapshot) => {
+      setAiUsage(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    
+    return () => { unsub(); unsubPages(); unsubJerseys(); unsubAiConfig(); unsubUsage(); };
   }, []);
 
   const handleExportDatabase = async () => {
@@ -2180,7 +2190,7 @@ export default function Admin() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">عنوان البانر (FanZone)</label>
+                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">عنوان البانر (FanZone)</label>
                       <input 
                         type="text" 
                         value={aiConfig.bannerTitle || ''}
@@ -2246,6 +2256,103 @@ export default function Admin() {
                     </button>
                   </div>
                 </div>
+              </div>
+
+              {/* Quota Monitor */}
+              <div className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-6 shadow-sm overflow-hidden">
+                 <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-500 shadow-sm border border-orange-500/20">
+                         <Activity size={24} />
+                       </div>
+                       <div>
+                         <h3 className="font-black text-base text-slate-800 dark:text-white">مراقب استهلاك الحصة (Quota)</h3>
+                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">تتجدد الحصة تلقائياً كل 24 ساعة (عند منتصف الليل)</p>
+                       </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <div className="bg-slate-100 dark:bg-surface-dark px-4 py-2 rounded-2xl border border-slate-200 dark:border-border-dark text-[11px] font-black text-slate-600 dark:text-slate-300 shadow-inner flex items-center gap-2">
+                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                         {new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                      </div>
+                    </div>
+                 </div>
+
+                 <div className="space-y-4">
+                    {aiUsage.length === 0 ? (
+                      <div className="text-center py-16 bg-slate-50 dark:bg-surface-dark rounded-[32px] border border-dashed border-slate-200 dark:border-border-dark">
+                        <div className="w-16 h-16 bg-white dark:bg-card-dark rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl text-slate-200 dark:text-slate-700">
+                          <Activity size={32} />
+                        </div>
+                        <h4 className="text-sm font-black text-slate-400">لا توجد عمليات توليد صور حتى الآن</h4>
+                        <p className="text-[10px] font-bold text-slate-300 mt-1 uppercase tracking-widest">No activities recorded today</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-3">
+                        {aiUsage.map((usage: any) => {
+                          const userProfile = users.find(u => u.uid === usage.userId);
+                          const isAdminMember = userProfile?.role === 'admin';
+                          const limit = isAdminMember ? 25 : 5;
+                          const percentage = Math.min(100, (usage.count / limit) * 100);
+                          
+                          return (
+                            <div key={usage.id} className="bg-slate-50 dark:bg-surface-dark p-1 rounded-[24px] border border-slate-100 dark:border-border-dark group hover:border-primary/30 transition-all duration-500">
+                              <div className="bg-white dark:bg-card-dark rounded-[20px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm group-hover:shadow-md transition-all">
+                                <div className="flex items-center gap-4 min-w-0">
+                                   <div className="relative shrink-0">
+                                     <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden ring-4 ring-slate-50 dark:ring-border-dark group-hover:ring-primary/10 transition-all">
+                                       <img src={userProfile?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile?.name || 'User')}&background=random`} className="w-full h-full object-cover" />
+                                     </div>
+                                     {isAdminMember && (
+                                       <div className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-white rounded-lg flex items-center justify-center shadow-lg border-2 border-white dark:border-card-dark">
+                                         <ShieldCheck size={10} />
+                                       </div>
+                                     )}
+                                   </div>
+                                   <div className="min-w-0">
+                                     <div className="flex items-center gap-2">
+                                       <p className="text-xs font-black truncate text-slate-800 dark:text-white">{userProfile?.name || 'مستخدم غير معروف'}</p>
+                                       {isAdminMember && <span className="bg-accent/10 text-accent text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Admin</span>}
+                                     </div>
+                                     <p className="text-[9px] text-slate-400 font-bold truncate mt-0.5 font-mono">{userProfile?.email || usage.userId}</p>
+                                   </div>
+                                </div>
+
+                                <div className="flex flex-col gap-2 sm:w-48">
+                                   <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+                                      <span className="text-slate-400">الاستهلاك اليومي</span>
+                                      <span className={usage.count >= limit ? 'text-red-500' : 'text-primary'}>
+                                        {usage.count} / {limit}
+                                      </span>
+                                   </div>
+                                   <div className="h-2 bg-slate-100 dark:bg-surface-dark rounded-full overflow-hidden shadow-inner border border-slate-200/30 dark:border-white/5">
+                                      <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${percentage}%` }}
+                                        transition={{ duration: 1.5, ease: "circOut" }}
+                                        className={`h-full rounded-full ${percentage > 90 ? 'bg-red-500' : 'bg-gradient-to-r from-primary to-accent'}`} 
+                                      />
+                                   </div>
+                                </div>
+
+                                <div className="flex items-center justify-between sm:justify-end gap-6 sm:w-40 border-t sm:border-t-0 border-slate-100 dark:border-white/5 pt-3 sm:pt-0">
+                                   <div className="text-right">
+                                     <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">آخر عملية</p>
+                                     <span className="text-[10px] font-black text-slate-600 dark:text-slate-300">
+                                       {usage.lastUsed ? new Date(usage.lastUsed).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                     </span>
+                                   </div>
+                                   <div className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider ${usage.count >= limit ? 'bg-red-50 text-red-500 border border-red-100' : 'bg-green-50 text-green-500 border border-green-100'}`}>
+                                      {usage.count >= limit ? 'Quota Full' : 'Available'}
+                                   </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                 </div>
               </div>
 
               {/* Jerseys Management */}

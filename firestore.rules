@@ -152,10 +152,21 @@ service cloud.firestore {
     }
 
     // Predictions
+    function isMoreThan24hBeforeMatch(matchId) {
+      // Allow if the match doesn't exist (safety) or if it's more than 24h away
+      // We use get() to fetch the match data. Note: match.date should be ISO string
+      let matchPath = /databases/$(database)/documents/matches/$(matchId);
+      return !exists(matchPath) || timestamp(get(matchPath).data.date) > request.time + duration.value(24, 'h');
+    }
+
     match /predictions/{predictionId} {
       allow read: if true;
-      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && 
+                      incoming().userId == request.auth.uid && 
+                      isMoreThan24hBeforeMatch(incoming().matchId);
+      allow update: if isSignedIn() && 
+                      resource.data.userId == request.auth.uid && 
+                      isMoreThan24hBeforeMatch(resource.data.matchId);
       allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
 
@@ -207,6 +218,14 @@ service cloud.firestore {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // AI Usage Quota Tracking
+    match /ai_usage/{usageId} {
+      allow get: if isSignedIn() && (usageId.startsWith(request.auth.uid) || isAdmin());
+      allow list: if isAdmin();
+      allow create, update: if isSignedIn() && usageId.startsWith(request.auth.uid);
+      allow delete: if isAdmin();
     }
 
     // Club History

@@ -110,6 +110,20 @@ export function useFirestoreSync() {
       setFanPosts(posts);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'fan_posts'));
 
+    // Sync Polls (Real-time)
+    const pollsQuery = query(collection(db, 'polls'), orderBy('createdAt', 'desc'), limit(20));
+    const unsubPolls = onSnapshot(pollsQuery, (snapshot) => {
+      const ps = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
+      setPolls(ps);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'polls'));
+
+    // Sync Predictions (Real-time)
+    const predictionsQuery = query(collection(db, 'predictions'), orderBy('createdAt', 'desc'), limit(100));
+    const unsubPredictions = onSnapshot(predictionsQuery, (snapshot) => {
+      const preds = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
+      setPredictions(preds);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'predictions'));
+
     // Sync Orders (Real-time)
     let unsubOrders = () => {};
     if (currentUser) {
@@ -205,8 +219,6 @@ export function useFirestoreSync() {
           // Content
           fetchCol('users', setUsers);
           fetchCol('clubs', setClubs);
-          fetchCol('polls', setPolls);
-          fetchCol('predictions', setPredictions);
           fetchCol('products', setProducts);
           fetchCol('ads', setAds, query(collection(db, 'ads'), where('active', '==', true), orderBy('order', 'asc')));
           fetchCol('custom_pages', setCustomPages);
@@ -228,6 +240,8 @@ export function useFirestoreSync() {
       unsubMedia();
       unsubMediaPlaylists();
       unsubFanPosts();
+      unsubPolls();
+      unsubPredictions();
       unsubOrders();
     };
   }, [auth.currentUser?.uid]); // Deliberately small dependency array to avoid re-renders triggering refetches

@@ -69,6 +69,12 @@ export default function FanZone() {
   const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com';
   const isAdmin = profile.role === 'admin' || isOmar || isDev;
 
+  const isPastPredictionDeadline = (matchDate: string) => {
+    const matchTime = new Date(matchDate).getTime();
+    const now = new Date().getTime();
+    return (matchTime - now) < (24 * 60 * 60 * 1000);
+  };
+
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<'all' | 'matchday' | 'polls' | 'chat' | 'predictions'>((location.state as any)?.activeTab || 'all');
 
@@ -541,15 +547,19 @@ export default function FanZone() {
   const handlePredict = async () => {
     if (!auth.currentUser || !selectedPrediction) return;
 
-    const hasPredicted = predictions.some(p => p.matchId === selectedPrediction.matchId && p.userId === auth.currentUser?.uid);
-    if (hasPredicted) {
-      toast.error('لقد قمت بالتوقع لهذه المباراة مسبقاً');
+    const match = matches.find(m => m.id === selectedPrediction.matchId);
+    if (!match) return;
+
+    if (isPastPredictionDeadline(match.date)) {
+      toast.error('عذراً، انتهت مهلة تغيير التوقع (قبل المباراة بـ 24 ساعة)');
       return;
     }
 
+    const existingPrediction = predictions.find(p => p.matchId === selectedPrediction.matchId && p.userId === auth.currentUser?.uid);
+
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, 'predictions'), {
+      const predData = {
         matchId: selectedPrediction.matchId,
         userId: auth.currentUser.uid,
         userName: profile.name || 'مشجع',
@@ -558,11 +568,19 @@ export default function FanZone() {
         homeScore: selectedPrediction.home,
         awayScore: selectedPrediction.away,
         createdAt: serverTimestamp()
-      });
-      toast.success('تم تسجيل توقعك بنجاح!');
+      };
+
+      if (existingPrediction) {
+        await setDoc(doc(db, 'predictions', existingPrediction.id), predData);
+        toast.success('تم تحديث توقعك بنجاح!');
+      } else {
+        await addDoc(collection(db, 'predictions'), predData);
+        toast.success('تم تسجيل توقعك بنجاح!');
+      }
       setSelectedPrediction(null);
     } catch (error) {
       console.error('Error predicting:', error);
+      toast.error('حدث خطأ أثناء حفظ التوقع');
     } finally {
       setIsSubmitting(false);
     }
@@ -1458,8 +1476,7 @@ export default function FanZone() {
               {/* Prediction Input Form (if applicable) */}
               {(() => {
                 const availableMatches = matches?.filter(m => 
-                  (m.status === 'upcoming' || m.isMatchDay) && 
-                  !predictions.some(p => p.matchId === m.id && p.userId === auth.currentUser?.uid)
+                  (m.status === 'upcoming' || m.isMatchDay)
                 ).sort((a, b) => {
                   // Prioritize matchday
                   if (a.isMatchDay && !b.isMatchDay) return -1;
@@ -1471,12 +1488,20 @@ export default function FanZone() {
 
                 return (
                   <div className="space-y-4">
-                    {availableMatches.map(match => (
-                      <div key={match.id} className="glass-card rounded-[40px] p-8 border border-primary/20 shadow-premium relative overflow-hidden group">
+                    {availableMatches.map(match => {
+                      const userPred = predictions.find(p => p.matchId === match.id && p.userId === auth.currentUser?.uid);
+                      const isPastDeadline = isPastPredictionDeadline(match.date);
+                      
+                      return (
+                      <div key={match.id} className={`glass-card rounded-[40px] p-8 border border-primary/20 shadow-premium relative overflow-hidden group ${isPastDeadline ? 'opacity-75 grayscale-[0.3]' : ''}`}>
                         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full"></div>
                         <div className="flex flex-col items-center gap-6 relative z-10">
                           <div className="flex items-center justify-between w-full mb-2">
-                             <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full">مباراة متاحة للتوقع</span>
+                             <div className="flex items-center gap-2">
+                               <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full">
+                                 {isPastDeadline ? 'انتهت المهلة' : userPred ? 'تعديل التوقع' : 'مباراة متاحة للتوقع'}
+                               </span>
+                             </div>
                              <span className="text-[10px] font-bold text-slate-400">{format(new Date(match.date), 'EEEE d MMMM', { locale: ar })}</span>
                           </div>
                           
@@ -1485,7 +1510,7 @@ export default function FanZone() {
                                <div className="flex items-center gap-4 w-full">
                                  <button 
                                    onClick={() => setSelectedPrediction({ matchId: match.id, home: 1, away: 0 })}
-                                   className={`flex-1 flex flex-col items-center gap-3 p-6 rounded-[32px] border-2 transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home > selectedPrediction.away ? 'bg-orange-500 border-orange-400 text-white shadow-lg scale-105' : 'bg-white dark:bg-surface-dark border-border-light dark:border-border-dark text-slate-500 hover:border-orange-500/50'}`}
+                                   className={`flex-1 flex flex-col items-center gap-3 p-6 rounded-[32px] border-2 transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home > selectedPrediction.away ? 'bg-orange-500 border-orange-400 text-white shadow-lg scale-105' : (userPred && userPred.homeScore > userPred.awayScore && selectedPrediction?.matchId !== match.id) ? 'bg-orange-500/50 border-orange-400/50 text-white' : 'bg-white dark:bg-surface-dark border-border-light dark:border-border-dark text-slate-500 hover:border-orange-500/50'}`}
                                  >
                                    <div className="relative w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center p-2 mb-1">
                                       <img src={getOptimizedImage(match.homeLogo, 200)} className="w-full h-full object-contain" alt="home" referrerPolicy="no-referrer" />
@@ -1507,7 +1532,7 @@ export default function FanZone() {
 
                                  <button 
                                    onClick={() => setSelectedPrediction({ matchId: match.id, home: 0, away: 1 })}
-                                   className={`flex-1 flex flex-col items-center gap-3 p-6 rounded-[32px] border-2 transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.away > selectedPrediction.home ? 'bg-orange-500 border-orange-400 text-white shadow-lg scale-105' : 'bg-white dark:bg-surface-dark border-border-light dark:border-border-dark text-slate-500 hover:border-orange-500/50'}`}
+                                   className={`flex-1 flex flex-col items-center gap-3 p-6 rounded-[32px] border-2 transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.away > selectedPrediction.home ? 'bg-orange-500 border-orange-400 text-white shadow-lg scale-105' : (userPred && userPred.awayScore > userPred.homeScore && selectedPrediction?.matchId !== match.id) ? 'bg-orange-500/50 border-orange-400/50 text-white' : 'bg-white dark:bg-surface-dark border-border-light dark:border-border-dark text-slate-500 hover:border-orange-500/50'}`}
                                  >
                                    <div className="relative w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center p-2 mb-1">
                                       <img src={getOptimizedImage(match.awayLogo, 200)} className="w-full h-full object-contain" alt="away" referrerPolicy="no-referrer" />
@@ -1535,18 +1560,18 @@ export default function FanZone() {
                                    <span className="text-[10px] font-black uppercase text-center line-clamp-1">{match.homeTeam}</span>
                                    <button 
                                      onClick={() => setSelectedPrediction({ matchId: match.id, home: 1, away: 0 })}
-                                     className={`px-3 py-1 rounded-full text-[8px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home > selectedPrediction.away ? 'bg-primary text-white scale-110 shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-primary/20'}`}
+                                     className={`px-3 py-1 rounded-full text-[8px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home > selectedPrediction.away ? 'bg-primary text-white scale-110 shadow-lg' : (userPred && userPred.homeScore > userPred.awayScore && selectedPrediction?.matchId !== match.id) ? 'bg-primary/50 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-primary/20'}`}
                                    >
                                      توقع الفوز
                                    </button>
                                  </div>
                                  <div className="flex items-center gap-3">
                                    <ScoreSelector 
-                                     value={selectedPrediction?.matchId === match.id ? selectedPrediction.home : 0}
+                                     value={selectedPrediction?.matchId === match.id ? selectedPrediction.home : (userPred ? userPred.homeScore : 0)}
                                      onChange={(val) => setSelectedPrediction({ 
                                        matchId: match.id, 
                                        home: val, 
-                                       away: selectedPrediction?.matchId === match.id ? selectedPrediction.away : 0 
+                                       away: selectedPrediction?.matchId === match.id ? selectedPrediction.away : (userPred ? userPred.awayScore : 0) 
                                      })}
                                      min={0}
                                      max={10}
@@ -1562,16 +1587,16 @@ export default function FanZone() {
                                      </div>
                                      <button 
                                        onClick={() => setSelectedPrediction({ matchId: match.id, home: 1, away: 1 })}
-                                       className={`px-2 py-0.5 rounded-full text-[7px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home === selectedPrediction.away && selectedPrediction.home > 0 ? 'bg-slate-400 text-white scale-110' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}
+                                       className={`px-2 py-0.5 rounded-full text-[7px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home === selectedPrediction.away && selectedPrediction.home > 0 ? 'bg-slate-400 text-white scale-110' : (userPred && userPred.homeScore === userPred.awayScore && selectedPrediction?.matchId !== match.id) ? 'bg-slate-400/50 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}
                                      >
                                        تعادل
                                      </button>
                                    </div>
                                    <ScoreSelector 
-                                     value={selectedPrediction?.matchId === match.id ? selectedPrediction.away : 0}
+                                     value={selectedPrediction?.matchId === match.id ? selectedPrediction.away : (userPred ? userPred.awayScore : 0)}
                                      onChange={(val) => setSelectedPrediction({ 
                                        matchId: match.id, 
-                                       home: selectedPrediction?.matchId === match.id ? selectedPrediction.home : 0, 
+                                       home: selectedPrediction?.matchId === match.id ? selectedPrediction.home : (userPred ? userPred.homeScore : 0), 
                                        away: val 
                                      })}
                                      min={0}
@@ -1590,7 +1615,7 @@ export default function FanZone() {
                                    <span className="text-[10px] font-black uppercase text-center line-clamp-1">{match.awayTeam}</span>
                                    <button 
                                      onClick={() => setSelectedPrediction({ matchId: match.id, home: 0, away: 1 })}
-                                     className={`px-3 py-1 rounded-full text-[8px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.away > selectedPrediction.home ? 'bg-accent text-white scale-110 shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-accent/20'}`}
+                                     className={`px-3 py-1 rounded-full text-[8px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.away > selectedPrediction.home ? 'bg-accent text-white scale-110 shadow-lg' : (userPred && userPred.awayScore > userPred.homeScore && selectedPrediction?.matchId !== match.id) ? 'bg-accent/50 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-accent/20'}`}
                                    >
                                      توقع الفوز
                                    </button>
@@ -1600,10 +1625,10 @@ export default function FanZone() {
                           </div>
                           <button 
                             onClick={handlePredict}
-                            disabled={isSubmitting || selectedPrediction?.matchId !== match.id}
+                            disabled={isSubmitting || selectedPrediction?.matchId !== match.id || isPastDeadline}
                             className="w-full bg-primary text-white py-4 rounded-2xl font-black text-sm shadow-premium flex items-center justify-center gap-2 disabled:opacity-50"
                           >
-                            {isSubmitting && selectedPrediction?.matchId === match.id ? 'جاري الحفظ...' : 'تثبيت التوقع'}
+                            {isSubmitting && selectedPrediction?.matchId === match.id ? 'جاري الحفظ...' : isPastDeadline ? 'انتهت مهلة التوقع' : userPred ? 'تحديث التوقع' : 'تثبيت التوقع'}
                             <Target size={16} />
                           </button>
 
@@ -1671,7 +1696,8 @@ export default function FanZone() {
                           })()}
                         </div>
                       </div>
-                    ))}
+                    );
+                  })}
                   </div>
                 );
               })()}
@@ -1844,11 +1870,16 @@ export default function FanZone() {
                     layout
                     className="glass-card rounded-[32px] p-6 border border-primary/10 shadow-premium"
                   >
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-10 h-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
-                        <Users size={18} />
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                          <Users size={18} />
+                        </div>
+                        <h3 className="font-black text-sm text-slate-800 dark:text-white leading-tight">{poll.question}</h3>
                       </div>
-                      <h3 className="font-black text-sm text-slate-800 dark:text-white leading-tight">{poll.question}</h3>
+                      <div className="bg-slate-50 dark:bg-slate-800/50 px-3 py-1 rounded-full border border-border-light dark:border-border-dark">
+                         <span className="text-[9px] font-black text-primary uppercase">يمكنك تغيير اختيارك دائماً</span>
+                      </div>
                     </div>
 
                     <div className="space-y-3">

@@ -25,6 +25,12 @@ export default function Matches() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [userPredictions, setUserPredictions] = useState<Record<string, any>>({});
 
+  const isPastPredictionDeadline = (matchDate: string) => {
+    const matchTime = new Date(matchDate).getTime();
+    const now = new Date().getTime();
+    return (matchTime - now) < (24 * 60 * 60 * 1000);
+  };
+
   // Fetch all predictions for a specific match
   useEffect(() => {
     if (!showPredictionsList) {
@@ -76,6 +82,13 @@ export default function Matches() {
     setSubmitError(null);
     
     try {
+      const match = matches.find(m => m.id === predictionMatchId);
+      if (match && isPastPredictionDeadline(match.date)) {
+        setSubmitError('عذراً، لا يمكن تغيير التوقع قبل المباراة بأقل من 24 ساعة');
+        setIsSubmitting(false);
+        return;
+      }
+
       const predData = {
         matchId: predictionMatchId,
         userId: auth.currentUser.uid,
@@ -421,6 +434,7 @@ export default function Matches() {
                               <div className="flex items-center gap-2">
                                 {match.status === 'upcoming' && (
                                   <button 
+                                    disabled={isPastPredictionDeadline(match.date)}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setPredictionMatchId(match.id);
@@ -428,10 +442,10 @@ export default function Matches() {
                                       setHomePrediction(existing ? String(existing.homeScore) : '0');
                                       setAwayPrediction(existing ? String(existing.awayScore) : '0');
                                     }}
-                                    className={`h-6 px-3 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 transition-all ${userPredictions[match.id] ? 'bg-accent/20 text-accent border border-accent/30' : 'bg-primary/20 text-primary border border-primary/30 hover:bg-primary hover:text-white'}`}
+                                    className={`h-6 px-3 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 transition-all ${isPastPredictionDeadline(match.date) ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400' : userPredictions[match.id] ? 'bg-accent/20 text-accent border border-accent/30' : 'bg-primary/20 text-primary border border-primary/30 hover:bg-primary hover:text-white'}`}
                                   >
                                     <Target size={10} />
-                                    {userPredictions[match.id] ? 'تعديل التوقع' : 'توقع النتيجة'}
+                                    {isPastPredictionDeadline(match.date) ? 'انتهت مهلة التوقع' : userPredictions[match.id] ? 'تعديل التوقع' : 'توقع النتيجة'}
                                   </button>
                                 )}
                                 <button 

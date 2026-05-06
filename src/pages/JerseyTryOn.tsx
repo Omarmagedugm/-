@@ -14,15 +14,15 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
-import { collection, onSnapshot, query, orderBy, doc, getDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-
-import { GoogleGenAI } from "@google/genai";
+import { useAppStore } from '../store';
 
 import Sidebar from '../components/Sidebar';
 
 const JerseyTryOn: React.FC = () => {
   const navigate = useNavigate();
+  const { profile } = useAppStore();
   const [jerseys, setJerseys] = useState<any[]>([]);
   const [userImage, setUserImage] = useState<string | null>(null);
   const [selectedJersey, setSelectedJersey] = useState<any>(null);
@@ -158,6 +158,11 @@ const JerseyTryOn: React.FC = () => {
   };
 
   const processWithAI = async () => {
+    if (!profile || !profile.uid) {
+      toast.error('يرجى تسجيل الدخول أولاً');
+      return;
+    }
+
     if (!userImage) {
       toast.error('يرجى رفع صورتك أولاً');
       return;
@@ -171,19 +176,27 @@ const JerseyTryOn: React.FC = () => {
     setIsProcessing(true);
     setResultImage(null);
 
-    // Scroll to preview area
-    setTimeout(() => {
-      document.getElementById('preview-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-
+    // 1. Quota Check
+    const isAdmin = profile.role === 'admin' || (profile.roles && profile.roles.includes('admin'));
+    const today = new Date().toISOString().split('T')[0];
+    const usageId = `${profile.uid}_${today}`;
+    
     try {
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        console.error('GEMINI_API_KEY is not defined in the environment');
-        throw new Error('Quota exceeded or API Key missing. Please try again later.');
-      }
+      const usageDoc = await getDoc(doc(db, 'ai_usage', usageId));
+      const currentUsage = usageDoc.exists() ? (usageDoc.data().count || 0) : 0;
       
-      const ai = new GoogleGenAI({ apiKey });
+      const USER_LIMIT = 5; // You can adjust this
+      const ADMIN_LIMIT = 25; // Higher quota for admin
+      const limitCount = isAdmin ? ADMIN_LIMIT : USER_LIMIT;
+      
+      if (currentUsage >= limitCount) {
+        throw new Error(`لقد انتهت حصتك المجانية لهذا اليوم (${limitCount} صور). يمكنك المحاولة مرة أخرى غداً.`);
+      }
+
+      // Scroll to preview area
+      setTimeout(() => {
+        document.getElementById('preview-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
 
       // Compress and convert user image
       console.log('Compressing user image...');
@@ -291,39 +304,41 @@ OUTPUT: Return ONLY the transformed image.`;
 
       aiParts.push({ text: prompt });
 
-      console.log('Calling Gemini AI (Image Model)...');
-      // Using gemini-2.5-flash-image as the general image editing model
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-          parts: aiParts
+      console.log('Generating image via backend...');
+      const apiResponse = await fetch('/api/ai/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         },
-        config: {
-          imageConfig: {
-            aspectRatio: "3:4"
-          }
-        }
+        body: JSON.stringify({
+          userImageBase64,
+          jerseyImageBase64,
+          logoImageBase64,
+          backgroundDetail,
+          prompt
+        })
       });
 
-      // Find the image part in the response
-      let generatedImageBase64 = '';
-      if (response.candidates?.[0]?.content?.parts) {
-        for (const part of response.candidates[0].content.parts) {
-          if (part.inlineData?.data) {
-            generatedImageBase64 = part.inlineData.data;
-            break;
-          }
-        }
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json();
+        throw new Error(errorData.error || 'فشل توليد الصورة عبر الخادم');
       }
 
+      const { imageBase64: generatedImageBase64 } = await apiResponse.json();
+
       if (generatedImageBase64) {
+        // Update usage count after success
+        await setDoc(doc(db, 'ai_usage', usageId), {
+          count: currentUsage + 1,
+          lastUsed: new Date().toISOString(),
+          userId: profile.uid,
+          date: today
+        }, { merge: true });
+
         setResultImage(`data:image/jpeg;base64,${generatedImageBase64}`);
         toast.success('تمت العملية بنجاح! نورت استوديو سيد البلد');
       } else {
-        // If no image was found, check if there was text that explained why
-        const responseText = response.text || '';
-        console.warn('AI Response did not contain an image. Text response:', responseText);
-        throw new Error(responseText || 'لم نتمكن من الحصول على صورة من الذكاء الاصطناعي. قد يكون ذلك بسبب سياسات السلامة.');
+        throw new Error('لم يتم استلام الصورة من الخادم');
       }
 
     } catch (error: any) {
@@ -352,7 +367,7 @@ OUTPUT: Return ONLY the transformed image.`;
                            errorMessage.toLowerCase().includes('blocked');
 
       if (isQuotaError) {
-        toast.error('نعتذر، تم استهلاك كامل حصة الصور المجانية حالياً. يرجى المحاولة مرة أخرى لاحقاً.');
+        toast.error(errorMessage.includes('حصتك المجانية') ? errorMessage : 'نعتذر، تم استهلاك كامل حصة الصور المجانية حالياً. يرجى المحاولة مرة أخرى لاحقاً.');
       } else if (isSafetyError) {
         toast.error('تم حظر الصورة بواسطة فلاتر الأمان. يرجى استخدام صورة شخصية لائقة وواضحة.');
       } else {

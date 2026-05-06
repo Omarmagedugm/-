@@ -1472,9 +1472,65 @@ export default function Home() {
                           delay: i
                         }}
                         className="absolute w-1 h-1 bg-yellow-200 rounded-full blur-[1px]"
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Stars Effect for Night */}
+                {effectType === "stars" && (
+                  <div className="absolute inset-0 z-[5] overflow-hidden rounded-[40px]">
+                    {/* The Moon Body - Centered backdrop, extremely faint and subtle */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-blue-100 shadow-[0_0_120px_rgba(255,255,255,0.01)] flex items-center justify-center overflow-hidden opacity-[0.03] pointer-events-none z-0">
+                      <div className="absolute inset-0 bg-gradient-to-br from-white via-slate-100 to-slate-200"></div>
+                      <div className="absolute top-12 left-24 w-10 h-10 rounded-full bg-slate-400 opacity-5 blur-[4px]"></div>
+                    </div>
+
+                    {/* Consolidated Twinkling Stars - Static & Polished */}
+                    {[...Array(40)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="absolute bg-white rounded-full z-0"
                         style={{
-                          top: `${20 + i * 15}%`,
-                          right: `${10 + i * 20}%`
+                          left: `${(i * 137.5) % 100}%`,
+                          top: `${(i * 243.7) % 100}%`,
+                          width: `${(i % 5 === 0) ? 1.2 : 0.6}px`,
+                          height: `${(i % 5 === 0) ? 1.2 : 0.6}px`,
+                        }}
+                        animate={{
+                          opacity: [0.05, 0.4, 0.05],
+                        }}
+                        transition={{
+                          duration: 3 + (i % 4),
+                          repeat: Infinity,
+                          delay: i * 0.1,
+                          ease: "easeInOut"
+                        }}
+                      />
+                    ))}
+
+                    {/* Shooting Stars (شهب) - Faster and more rare */}
+                    {[...Array(2)].map((_, i) => (
+                      <motion.div
+                        key={`shooting-${i}`}
+                        className="absolute h-[0.5px] bg-gradient-to-r from-transparent via-blue-50 to-transparent z-[1]"
+                        style={{
+                          width: '150px',
+                          left: '-20%',
+                          top: `${10 + i * 40}%`,
+                          rotate: '20deg',
+                          filter: 'blur(0.5px)',
+                        }}
+                        animate={{
+                          left: ['-20%', '130%'],
+                          opacity: [0, 0.6, 0],
+                        }}
+                        transition={{
+                          duration: 0.8,
+                          repeat: Infinity,
+                          repeatDelay: 15 + i * 20,
+                          delay: i * 12,
+                          ease: "easeIn"
                         }}
                       />
                     ))}
@@ -1602,31 +1658,6 @@ export default function Home() {
                   />
                 )}
 
-                {/* Stars Effect */}
-                {effectType === "stars" && (
-                  <div className="absolute inset-0 z-[12] overflow-hidden pointer-events-none rounded-[40px]">
-                    {[...Array(40)].map((_, i) => (
-                      <motion.div
-                        key={i}
-                        className="absolute h-[1px] w-[1px] bg-white rounded-full"
-                        style={{
-                          left: `${Math.random() * 100}%`,
-                          top: `${Math.random() * 100}%`,
-                          opacity: 0.15 + Math.random() * 0.3, // Faint stars as requested
-                        }}
-                        animate={{
-                          opacity: [0.1, 0.4, 0.1],
-                          scale: [1, 1.2, 1],
-                        }}
-                        transition={{
-                          duration: 2 + Math.random() * 4,
-                          repeat: Infinity,
-                          delay: Math.random() * 5,
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
                 {/* Snow Effect */}
                 {effectType === "snow" && (
                   <div className="absolute inset-0 rounded-[40px] overflow-hidden z-[12]">
