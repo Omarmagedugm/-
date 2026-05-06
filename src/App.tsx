@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import ScrollToTop from './components/ScrollToTop';
 import { useAppStore } from './store';
 import { useFirestoreSync } from './hooks/useFirestore';
@@ -220,6 +221,7 @@ export default function App() {
           teamName={scoredTeam} 
           match={activeMatch}
         />
+        <SpeedInsights />
       </div>
     </BrowserRouter>
   );
