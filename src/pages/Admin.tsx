@@ -791,6 +791,7 @@ export default function Admin() {
             title: formData.title || 'قائمة جديدة',
             description: formData.description || '',
             coverUrl: formData.coverUrl || 'https://images.unsplash.com/photo-1510563399035-7140409890a5',
+            type: formData.type || 'video',
             createdAt: isEditing ? (formData.createdAt || new Date().toISOString()) : new Date().toISOString()
           };
 
@@ -2836,8 +2837,13 @@ export default function Admin() {
                        </div>
                        <div className="flex-1">
                           <h3 className="font-black text-sm text-slate-800 dark:text-white mb-1">{playlist.title}</h3>
-                          <p className="text-[10px] text-slate-400 font-bold line-clamp-1">{playlist.description || 'لا يوجد وصف'}</p>
-                          <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-center gap-2 mb-1">
+                             <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${playlist.type === 'video' ? 'bg-blue-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                                {playlist.type === 'video' ? 'فيديو' : 'صور'}
+                             </span>
+                             <p className="text-[10px] text-slate-400 font-bold line-clamp-1">{playlist.description || 'لا يوجد وصف'}</p>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
                              <span className="text-[10px] font-black text-primary px-2 py-0.5 bg-primary/10 rounded-full">
                                 {media.filter(m => m.playlistId === playlist.id).length} عنصر
                              </span>
@@ -3074,10 +3080,12 @@ export default function Admin() {
 
               <div className="grid grid-cols-1 gap-4">
                 {users
-                  .filter(u => 
-                    u.name?.toLowerCase().includes(userSearch.toLowerCase()) || 
-                    u.email?.toLowerCase().includes(userSearch.toLowerCase())
-                  )
+                  .filter(u => {
+                    const searchLower = userSearch.toLowerCase();
+                    const nameMatch = (u.name || '').toLowerCase().includes(searchLower);
+                    const emailMatch = (u.email || '').toLowerCase().includes(searchLower);
+                    return nameMatch || emailMatch;
+                  })
                   .map(member => (
                   <div key={member.uid} className="bg-white dark:bg-card-dark p-4 rounded-[28px] border border-border-light dark:border-border-dark flex items-center justify-between group hover:shadow-xl transition-all duration-300">
                     <div className="flex items-center gap-4">
@@ -4384,6 +4392,13 @@ export default function Admin() {
                         <div>
                           <label className="text-[10px] font-black text-slate-500 mb-1 block">اسم القائمة</label>
                           <input type="text" placeholder="مثلاً: ذكريات الزمن الجميل" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">نوع القائمة</label>
+                          <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.type || 'video'} onChange={(e) => setFormData({...formData, type: e.target.value})}>
+                             <option value="video">قائمة فيديو</option>
+                             <option value="photo">قائمة صور</option>
+                          </select>
                         </div>
                         <div>
                           <label className="text-[10px] font-black text-slate-500 mb-1 block">وصف القائمة</label>

@@ -155,6 +155,7 @@
         "title": { "type": "string" },
         "description": { "type": "string" },
         "coverUrl": { "type": "string" },
+        "type": { "type": "string", "enum": ["photo", "video"] },
         "createdAt": { "type": "string" }
       }
     },

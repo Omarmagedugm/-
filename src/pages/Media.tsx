@@ -57,10 +57,17 @@ export default function Media() {
     return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('facebook.com');
   };
   
+  const displayPlaylists = mediaPlaylists.filter(p => {
+    if (activeTab === 'all') return true;
+    return p.type === activeTab;
+  });
+
+  const selectedPlaylist = mediaPlaylists.find(p => p.id === selectedPlaylistId);
+  
   const displayMedia = (activeTab === 'all' ? media : activeTab === 'photo' ? photos : videos)
     .filter(m => !selectedPlaylistId || m.playlistId === selectedPlaylistId);
 
-  const featuredMedia = displayMedia.length > 0 ? displayMedia[0] : null;
+  const featuredMedia = !selectedPlaylistId && displayMedia.length > 0 ? displayMedia[0] : null;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -165,39 +172,63 @@ export default function Media() {
           </motion.section>
         )}
 
-        {/* Playlists Horizontal Section */}
-        {mediaPlaylists.length > 0 && (
+        {/* Playlists Horizontal Section - Only show if not focusing on a specific playlist */}
+        {!selectedPlaylistId && displayPlaylists.length > 0 && (
           <motion.section variants={itemVariants} className="space-y-4">
             <div className="flex items-center justify-between px-1">
               <div className="flex flex-col">
-                <h2 className="text-lg font-black text-slate-800 dark:text-white leading-none uppercase">قوائم التشغيل</h2>
+                <h2 className="text-lg font-black text-slate-800 dark:text-white leading-none uppercase">
+                  {activeTab === 'video' ? 'ألبومات الفيديو' : activeTab === 'photo' ? 'ألبومات الصور' : 'قوائم التشغيل'}
+                </h2>
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Curated Collections</span>
               </div>
-              {selectedPlaylistId && (
-                <button 
-                  onClick={() => setSelectedPlaylistId(null)}
-                  className="text-[10px] font-black text-primary px-3 py-1 bg-primary/10 rounded-full pressable"
-                >
-                  عرض الكل
-                </button>
-              )}
             </div>
             <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide px-1 -mx-1">
-              {mediaPlaylists.map((playlist) => (
+              {displayPlaylists.map((playlist) => (
                 <button 
                   key={playlist.id} 
                   onClick={() => setSelectedPlaylistId(playlist.id)}
-                  className={`flex-shrink-0 w-32 flex flex-col gap-2 pressable text-right group ${selectedPlaylistId === playlist.id ? 'opacity-100' : 'opacity-60 grayscale hover:grayscale-0 hover:opacity-100'}`}
+                  className={`flex-shrink-0 w-32 flex flex-col gap-2 pressable text-right group`}
                 >
-                  <div className={`aspect-square rounded-[24px] overflow-hidden border-2 transition-all ${selectedPlaylistId === playlist.id ? 'border-primary ring-4 ring-primary/10' : 'border-transparent shadow-lg'}`}>
+                  <div className={`aspect-square rounded-[24px] overflow-hidden border-2 transition-all border-transparent shadow-lg`}>
                     <img src={getOptimizedImage(playlist.coverUrl || '', 300) || undefined} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
                   </div>
                   <div className="px-1">
-                    <p className={`text-[10px] font-black line-clamp-1 ${selectedPlaylistId === playlist.id ? 'text-primary' : 'text-slate-700 dark:text-slate-300'}`}>{playlist.title}</p>
+                    <p className={`text-[10px] font-black line-clamp-1 text-slate-700 dark:text-slate-300`}>{playlist.title}</p>
                     <p className="text-[8px] font-bold text-slate-400">{media.filter(m => m.playlistId === playlist.id).length} عنصر</p>
                   </div>
                 </button>
               ))}
+            </div>
+          </motion.section>
+        )}
+
+        {/* Selected Playlist Header */}
+        {selectedPlaylistId && selectedPlaylist && (
+          <motion.section variants={itemVariants} className="bg-white dark:bg-card-dark rounded-[40px] p-6 border border-border-light dark:border-border-dark shadow-premium">
+            <div className="flex items-start justify-between gap-6">
+              <div className="flex flex-col items-start gap-4 flex-1">
+                <button 
+                  onClick={() => setSelectedPlaylistId(null)}
+                  className="px-4 py-2 bg-slate-100 dark:bg-surface-dark text-slate-500 dark:text-slate-400 rounded-2xl flex items-center gap-2 text-[10px] font-black hover:bg-primary/10 hover:text-primary transition-all group"
+                >
+                  <ChevronRight size={14} className="group-hover:-translate-x-1 transition-transform" />
+                  العودة للمالتيميديا
+                </button>
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`px-3 py-1 rounded-full text-[9px] font-black text-white uppercase tracking-wider ${selectedPlaylist.type === 'video' ? 'bg-blue-500' : 'bg-emerald-500'}`}>
+                      {selectedPlaylist.type === 'video' ? 'فيديو' : 'صور'}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400">قائمة تشغيل مختارة</span>
+                  </div>
+                  <h1 className="text-2xl font-black text-slate-800 dark:text-white leading-tight">{selectedPlaylist.title}</h1>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mt-2 leading-relaxed">{selectedPlaylist.description}</p>
+                </div>
+              </div>
+              <div className="w-32 aspect-square rounded-[32px] overflow-hidden shadow-2xl border-4 border-white dark:border-surface-dark shrink-0 hidden sm:block">
+                <img src={getOptimizedImage(selectedPlaylist.coverUrl || '', 300) || undefined} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              </div>
             </div>
           </motion.section>
         )}

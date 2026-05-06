@@ -56,6 +56,7 @@ export interface MediaPlaylist {
   title: string;
   description?: string;
   coverUrl?: string;
+  type?: 'video' | 'photo';
   createdAt: string;
 }
 

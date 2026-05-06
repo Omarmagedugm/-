@@ -170,7 +170,7 @@ export function useFirestoreSync() {
             try {
               const data = await fetchWithCache(colName, async () => {
                 const snap = await getDocs(q || collection(db, colName));
-                return snap.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
+                return snap.docs.map(doc => ({ id: doc.id, uid: doc.id, ...(doc.data() as any) }));
               });
               setter(data as any);
             } catch (err) {
@@ -203,6 +203,7 @@ export function useFirestoreSync() {
           fetchDoc('city_info/alexandria', setCityInfo);
           
           // Content
+          fetchCol('users', setUsers);
           fetchCol('clubs', setClubs);
           fetchCol('polls', setPolls);
           fetchCol('predictions', setPredictions);
