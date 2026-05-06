@@ -173,6 +173,10 @@ const UploadField = ({
                 <ImageUploader 
                   folderName={`admin_${fieldName}`}
                   onUploadSuccess={(url) => setFormData((prev: any) => ({ ...prev, [fieldName]: url }))}
+                  onError={(err) => {
+                    console.error("Image Upload Error:", err);
+                    toast.error("حدث خطأ أثناء معالجة الصورة: " + err);
+                  }}
                   buttonText={uploading ? "جاري الرفع..." : "اختر صورة للرفع"}
                   showPreview={false}
                   skipResize={skipResize}
@@ -762,9 +766,17 @@ export default function Admin() {
         };
         
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'news', editingId), cleanPayload(payload));
+          try {
+            await updateDoc(doc(db, 'news', editingId), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.UPDATE, `news/${editingId}`);
+          }
         } else {
-          await addDoc(collection(db, 'news'), cleanPayload(payload));
+          try {
+            await addDoc(collection(db, 'news'), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.CREATE, 'news');
+          }
         }
       } else if (activeTab === 'media') {
         const payload = {
@@ -781,9 +793,17 @@ export default function Admin() {
         };
 
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'media', editingId), cleanPayload(payload));
+          try {
+            await updateDoc(doc(db, 'media', editingId), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.UPDATE, `media/${editingId}`);
+          }
         } else {
-          await addDoc(collection(db, 'media'), cleanPayload(payload));
+          try {
+            await addDoc(collection(db, 'media'), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.CREATE, 'media');
+          }
         }
       } else if (activeTab === 'users') {
         const payload = {
@@ -794,7 +814,11 @@ export default function Admin() {
         };
 
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'users', editingId), cleanPayload(payload));
+          try {
+            await updateDoc(doc(db, 'users', editingId), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.UPDATE, `users/${editingId}`);
+          }
         }
       } else if (activeTab === 'matches') {
         const payload = {
@@ -821,9 +845,17 @@ export default function Admin() {
         };
 
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'matches', editingId), cleanPayload(payload));
+          try {
+            await updateDoc(doc(db, 'matches', editingId), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.UPDATE, `matches/${editingId}`);
+          }
         } else {
-          await addDoc(collection(db, 'matches'), cleanPayload(payload));
+          try {
+            await addDoc(collection(db, 'matches'), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.CREATE, 'matches');
+          }
         }
 
         // Add new clubs if they don't exist in the database
@@ -852,7 +884,11 @@ export default function Admin() {
           weatherBg: formData.weatherBg || ''
         };
         
-        await setDoc(doc(db, 'city_info', 'alexandria'), payload);
+        try {
+          await setDoc(doc(db, 'city_info', 'alexandria'), payload);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.WRITE, 'city_info/alexandria');
+        }
       } else if (activeTab === 'settings') {
         const payload = {
           appName: formData.appName || appSettings.appName || '',
@@ -863,25 +899,41 @@ export default function Admin() {
           logoText: formData.logoText || appSettings.logoText || '',
           defaultSport: formData.defaultSport || appSettings.defaultSport || 'auto'
         };
-        await setDoc(doc(db, 'settings', 'global'), payload);
-        const { setSettings } = useAppStore.getState();
-        setSettings(payload);
+        try {
+          await setDoc(doc(db, 'settings', 'global'), payload);
+          const { setSettings } = useAppStore.getState();
+          setSettings(payload);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.WRITE, 'settings/global');
+        }
       } else if (activeTab === 'live') {
-        await setDoc(doc(db, 'settings', 'liveStream'), {
-          isActive: formData.isActive ?? liveStream.isActive,
-          url: formData.url || liveStream.url,
-          title: formData.title || liveStream.title,
-          viewers: Number(formData.viewers || liveStream.viewers || 0)
-        });
+        try {
+          await setDoc(doc(db, 'settings', 'liveStream'), {
+            isActive: formData.isActive ?? liveStream.isActive,
+            url: formData.url || liveStream.url,
+            title: formData.title || liveStream.title,
+            viewers: Number(formData.viewers || liveStream.viewers || 0)
+          });
+        } catch (err) {
+          handleFirestoreError(err, OperationType.WRITE, 'settings/liveStream');
+        }
       } else if (activeTab === 'clubs') {
         const payload = {
           name: formData.name || '',
           logo: formData.logo || ''
         };
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'clubs', editingId), cleanPayload(payload));
+          try {
+            await updateDoc(doc(db, 'clubs', editingId), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.UPDATE, `clubs/${editingId}`);
+          }
         } else {
-          await addDoc(collection(db, 'clubs'), cleanPayload(payload));
+          try {
+            await addDoc(collection(db, 'clubs'), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.CREATE, 'clubs');
+          }
         }
       } else if (activeTab === 'polls') {
         const options = (Array.isArray(formData.options) 
@@ -898,9 +950,17 @@ export default function Admin() {
           createdAt: isEditing ? formData.createdAt : new Date().toISOString()
         };
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'polls', editingId), cleanPayload(payload));
+          try {
+            await updateDoc(doc(db, 'polls', editingId), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.UPDATE, `polls/${editingId}`);
+          }
         } else {
-          await addDoc(collection(db, 'polls'), cleanPayload(payload));
+          try {
+            await addDoc(collection(db, 'polls'), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.CREATE, 'polls');
+          }
         }
       } else if (activeTab === 'predictions') {
         const payload = {
@@ -913,18 +973,34 @@ export default function Admin() {
           createdAt: isEditing ? formData.createdAt : new Date().toISOString()
         };
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'predictions', editingId), cleanPayload(payload));
+          try {
+            await updateDoc(doc(db, 'predictions', editingId), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.UPDATE, `predictions/${editingId}`);
+          }
         } else {
-          await addDoc(collection(db, 'predictions'), cleanPayload(payload));
+          try {
+            await addDoc(collection(db, 'predictions'), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.CREATE, 'predictions');
+          }
         }
       } else if (activeTab === 'news-categories') {
         const categories = formData.categories || newsCategories;
-        await setDoc(doc(db, 'settings', 'newsCategories'), { list: categories });
-        setNewsCategories(categories);
+        try {
+          await setDoc(doc(db, 'settings', 'newsCategories'), { list: categories });
+          setNewsCategories(categories);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.WRITE, 'settings/newsCategories');
+        }
       } else if (activeTab === 'news-tags') {
         const tags = formData.tags || useAppStore.getState().newsTags;
-        await setDoc(doc(db, 'settings', 'newsTags'), { tags });
-        useAppStore.getState().setNewsTags(tags);
+        try {
+          await setDoc(doc(db, 'settings', 'newsTags'), { tags });
+          useAppStore.getState().setNewsTags(tags);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.WRITE, 'settings/newsTags');
+        }
       } else if (activeTab === 'products') {
         const payload = {
           name: formData.name || '',
@@ -935,9 +1011,17 @@ export default function Admin() {
           stock: Number(formData.stock || 0)
         };
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'products', editingId), cleanPayload(payload));
+          try {
+            await updateDoc(doc(db, 'products', editingId), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.UPDATE, `products/${editingId}`);
+          }
         } else {
-          await addDoc(collection(db, 'products'), cleanPayload(payload));
+          try {
+            await addDoc(collection(db, 'products'), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.CREATE, 'products');
+          }
         }
       } else if (activeTab === 'history') {
         if (historySubTab === 'stats') {
@@ -950,10 +1034,18 @@ export default function Admin() {
           if (isEditing && editingId) {
             const oldData = clubStats.find(s => s.id === editingId);
             if (oldData) pushToUndoStack({ collection: 'club_stats', action: 'update', data: { ...oldData } });
-            await updateDoc(doc(db, 'club_stats', editingId), cleanPayload(payload));
+            try {
+              await updateDoc(doc(db, 'club_stats', editingId), cleanPayload(payload));
+            } catch (err) {
+              handleFirestoreError(err, OperationType.UPDATE, `club_stats/${editingId}`);
+            }
           } else {
-            const res = await addDoc(collection(db, 'club_stats'), cleanPayload(payload));
-            pushToUndoStack({ collection: 'club_stats', action: 'add', data: { id: res.id } });
+            try {
+              const res = await addDoc(collection(db, 'club_stats'), cleanPayload(payload));
+              pushToUndoStack({ collection: 'club_stats', action: 'add', data: { id: res.id } });
+            } catch (err) {
+              handleFirestoreError(err, OperationType.CREATE, 'club_stats');
+            }
           }
         } else if (historySubTab === 'titles') {
           const payload = {
@@ -966,10 +1058,18 @@ export default function Admin() {
           if (isEditing && editingId) {
             const oldData = clubTitles.find(t => t.id === editingId);
             if (oldData) pushToUndoStack({ collection: 'club_titles', action: 'update', data: { ...oldData } });
-            await updateDoc(doc(db, 'club_titles', editingId), cleanPayload(payload));
+            try {
+              await updateDoc(doc(db, 'club_titles', editingId), cleanPayload(payload));
+            } catch (err) {
+              handleFirestoreError(err, OperationType.UPDATE, `club_titles/${editingId}`);
+            }
           } else {
-            const res = await addDoc(collection(db, 'club_titles'), cleanPayload(payload));
-            pushToUndoStack({ collection: 'club_titles', action: 'add', data: { id: res.id } });
+            try {
+              const res = await addDoc(collection(db, 'club_titles'), cleanPayload(payload));
+              pushToUndoStack({ collection: 'club_titles', action: 'add', data: { id: res.id } });
+            } catch (err) {
+              handleFirestoreError(err, OperationType.CREATE, 'club_titles');
+            }
           }
         } else if (historySubTab === 'timeline') {
           const payload = {
@@ -981,10 +1081,18 @@ export default function Admin() {
           if (isEditing && editingId) {
             const oldData = historyEvents.find(e => e.id === editingId);
             if (oldData) pushToUndoStack({ collection: 'club_timeline', action: 'update', data: { ...oldData } });
-            await updateDoc(doc(db, 'club_timeline', editingId), cleanPayload(payload));
+            try {
+              await updateDoc(doc(db, 'club_timeline', editingId), cleanPayload(payload));
+            } catch (err) {
+              handleFirestoreError(err, OperationType.UPDATE, `club_timeline/${editingId}`);
+            }
           } else {
-            const res = await addDoc(collection(db, 'club_timeline'), cleanPayload(payload));
-            pushToUndoStack({ collection: 'club_timeline', action: 'add', data: { id: res.id } });
+            try {
+              const res = await addDoc(collection(db, 'club_timeline'), cleanPayload(payload));
+              pushToUndoStack({ collection: 'club_timeline', action: 'add', data: { id: res.id } });
+            } catch (err) {
+              handleFirestoreError(err, OperationType.CREATE, 'club_timeline');
+            }
           }
         } else if (historySubTab === 'stadiums') {
           const payload = {
@@ -997,10 +1105,18 @@ export default function Admin() {
           if (isEditing && editingId) {
             const oldData = stadiums.find(s => s.id === editingId);
             if (oldData) pushToUndoStack({ collection: 'club_stadiums', action: 'update', data: { ...oldData } });
-            await updateDoc(doc(db, 'club_stadiums', editingId), cleanPayload(payload));
+            try {
+              await updateDoc(doc(db, 'club_stadiums', editingId), cleanPayload(payload));
+            } catch (err) {
+              handleFirestoreError(err, OperationType.UPDATE, `club_stadiums/${editingId}`);
+            }
           } else {
-            const res = await addDoc(collection(db, 'club_stadiums'), cleanPayload(payload));
-            pushToUndoStack({ collection: 'club_stadiums', action: 'add', data: { id: res.id } });
+            try {
+              const res = await addDoc(collection(db, 'club_stadiums'), cleanPayload(payload));
+              pushToUndoStack({ collection: 'club_stadiums', action: 'add', data: { id: res.id } });
+            } catch (err) {
+              handleFirestoreError(err, OperationType.CREATE, 'club_stadiums');
+            }
           }
         }
       } else if (activeTab === 'music') {
@@ -1016,9 +1132,17 @@ export default function Admin() {
             createdAt: new Date().toISOString()
           };
           if (isEditing && editingId) {
-            await updateDoc(doc(db, 'songs', editingId), cleanPayload(payload));
+            try {
+              await updateDoc(doc(db, 'songs', editingId), cleanPayload(payload));
+            } catch (err) {
+              handleFirestoreError(err, OperationType.UPDATE, `songs/${editingId}`);
+            }
           } else {
-            await addDoc(collection(db, 'songs'), cleanPayload(payload));
+            try {
+              await addDoc(collection(db, 'songs'), cleanPayload(payload));
+            } catch (err) {
+              handleFirestoreError(err, OperationType.CREATE, 'songs');
+            }
           }
         } else if (musicSubTab === 'albums') {
           const payload = {
@@ -1029,9 +1153,17 @@ export default function Admin() {
             hidden: formData.hidden || false
           };
           if (isEditing && editingId) {
-            await updateDoc(doc(db, 'albums', editingId), cleanPayload(payload));
+            try {
+              await updateDoc(doc(db, 'albums', editingId), cleanPayload(payload));
+            } catch (err) {
+              handleFirestoreError(err, OperationType.UPDATE, `albums/${editingId}`);
+            }
           } else {
-            await addDoc(collection(db, 'albums'), cleanPayload(payload));
+            try {
+              await addDoc(collection(db, 'albums'), cleanPayload(payload));
+            } catch (err) {
+              handleFirestoreError(err, OperationType.CREATE, 'albums');
+            }
           }
         } else if (musicSubTab === 'playlists') {
           const payload = {
@@ -1041,9 +1173,17 @@ export default function Admin() {
             hidden: formData.hidden || false
           };
           if (isEditing && editingId) {
-            await updateDoc(doc(db, 'playlists', editingId), cleanPayload(payload));
+            try {
+              await updateDoc(doc(db, 'playlists', editingId), cleanPayload(payload));
+            } catch (err) {
+              handleFirestoreError(err, OperationType.UPDATE, `playlists/${editingId}`);
+            }
           } else {
-            await addDoc(collection(db, 'playlists'), cleanPayload(payload));
+            try {
+              await addDoc(collection(db, 'playlists'), cleanPayload(payload));
+            } catch (err) {
+              handleFirestoreError(err, OperationType.CREATE, 'playlists');
+            }
           }
         }
       } else if (activeTab === 'books') {
@@ -1057,9 +1197,17 @@ export default function Admin() {
           hidden: formData.hidden || false
         };
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'books', editingId), cleanPayload(payload));
+          try {
+            await updateDoc(doc(db, 'books', editingId), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.UPDATE, `books/${editingId}`);
+          }
         } else {
-          await addDoc(collection(db, 'books'), cleanPayload(payload));
+          try {
+            await addDoc(collection(db, 'books'), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.CREATE, 'books');
+          }
         }
       } else if (activeTab === 'layout' && formData.__isCustomPage) {
         const payload = {
@@ -1071,9 +1219,17 @@ export default function Admin() {
         };
         
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'custom_pages', editingId), cleanPayload(payload));
+          try {
+            await updateDoc(doc(db, 'custom_pages', editingId), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.UPDATE, `custom_pages/${editingId}`);
+          }
         } else {
-          await addDoc(collection(db, 'custom_pages'), cleanPayload(payload));
+          try {
+            await addDoc(collection(db, 'custom_pages'), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.CREATE, 'custom_pages');
+          }
         }
       } else if (activeTab === 'ai-studio') {
         const payload = {
@@ -1082,9 +1238,17 @@ export default function Admin() {
           createdAt: isEditing ? (formData.createdAt || new Date().toISOString()) : new Date().toISOString()
         };
         if (isEditing && editingId) {
-          await updateDoc(doc(db, 'jerseys', editingId), cleanPayload(payload));
+          try {
+            await updateDoc(doc(db, 'jerseys', editingId), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.UPDATE, `jerseys/${editingId}`);
+          }
         } else {
-          await addDoc(collection(db, 'jerseys'), cleanPayload(payload));
+          try {
+            await addDoc(collection(db, 'jerseys'), cleanPayload(payload));
+          } catch (err) {
+            handleFirestoreError(err, OperationType.CREATE, 'jerseys');
+          }
         }
       }
 
@@ -1135,8 +1299,7 @@ export default function Admin() {
         await deleteDoc(docRef);
         toast.success('تم الحذف بنجاح');
       } catch (err) {
-        console.error(err);
-        toast.error('فشل الحذف');
+        handleFirestoreError(err, OperationType.DELETE, `${coll}/${id}`);
       }
     }
   };
@@ -1146,9 +1309,9 @@ export default function Admin() {
       const newHidden = !item.hidden;
       pushToUndoStack({ collection: coll, action: 'update', data: { ...item } });
       await updateDoc(doc(db, coll, item.id), { hidden: newHidden });
+      toast.success(newHidden ? 'تم الإخفاء' : 'تم الإظهار');
     } catch (err) {
-      console.error(err);
-      toast.error('فشل تغيير الحالة');
+      handleFirestoreError(err, OperationType.UPDATE, `${coll}/${item.id}`);
     }
   };
 

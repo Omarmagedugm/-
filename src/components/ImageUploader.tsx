@@ -129,13 +129,20 @@ export default function ImageUploader({
             if (blob) {
               resolve(new File([blob], file.name, { type: outputType }));
             } else {
+              console.error('Canvas focus/blob generation failed');
               resolve(file);
             }
           }, outputType, 0.9); // 90% quality
         };
-        img.onerror = () => resolve(file);
+        img.onerror = () => {
+          console.error('Image load failed during resize');
+          resolve(file);
+        };
       };
-      reader.onerror = () => resolve(file);
+      reader.onerror = () => {
+        console.error('File read failed during resize');
+        resolve(file);
+      };
     });
   };
 

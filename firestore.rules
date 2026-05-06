@@ -9,22 +9,49 @@ service cloud.firestore {
     // Global Helpers
     function isSignedIn() { return request.auth != null; }
     function isEmailVerified() { return request.auth.token.email_verified == true; }
+    
     function isAdmin() { 
-      // copyrightofficialco@gmail.com and omarmagedugm@ittihad.club are the bootstrap admins
+      let email = request.auth.token.get('email', '').lower();
       return isSignedIn() && (
-        request.auth.token.get('email', '').lower() == 'copyrightofficialco@gmail.com' || 
-        request.auth.token.get('email', '').lower() == 'omarmagedugm@ittihad.club' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+        email == 'copyrightofficialco@gmail.com' || 
+        email == 'omarmagedugm@ittihad.club' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin' ||
+          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('roles', []) is list && 
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['admin']))
+        ))
       );
     }
-    function isWriter() {
+
+    function hasAnyRole(rolesList) {
+      let email = request.auth.token.get('email', '').lower();
+      let isBootstrap = email == 'copyrightofficialco@gmail.com' || email == 'omarmagedugm@ittihad.club';
+      
       return isSignedIn() && (
-        isAdmin() ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['writer', 'moderator'])
+        isBootstrap ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+          let userRole = userData.get('role', 'user');
+          let userRoles = userData.get('roles', []);
+          
+          return userRole == 'admin' ||
+                 userRole in rolesList || 
+                 (userRoles is list && userRoles.hasAny(rolesList)) ||
+                 (userRoles is list && userRoles.hasAny(['admin'])) ||
+                 (userRole == 'writer' && 'news_editor' in rolesList) ||
+                 (userRole == 'moderator' && 'user_manager' in rolesList)
+        ))
       );
     }
+
+    function isNewsEditor() { return hasAnyRole(['news_editor', 'writer']); }
+    function isMediaEditor() { return hasAnyRole(['media_editor']); }
+    function isMatchesEditor() { return hasAnyRole(['matches_editor']); }
+    function isUserManager() { return hasAnyRole(['user_manager', 'moderator']); }
+    function isLayoutEditor() { return hasAnyRole(['layout_editor']); }
+    function isStoreEditor() { return hasAnyRole(['store_editor']); }
+    function isWriter() { return isNewsEditor(); }
+
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
     function isBootstrapAdmin(userId) {
       return isOwner(userId) && (
@@ -81,9 +108,14 @@ service cloud.firestore {
     }
 
     // Media
+    function isValidMedia(data) {
+      return data.title is string && data.title.size() <= 500 &&
+             data.type in ['video', 'photo'] &&
+             data.url is string && data.url.size() <= 5000;
+    }
     match /media/{mediaId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isMediaEditor() || isAdmin();
     }
 
     // News
@@ -101,19 +133,19 @@ service cloud.firestore {
     // Matches
     match /matches/{matchId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() || isMatchesEditor();
     }
 
     // Clubs
     match /clubs/{clubId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() || isMatchesEditor() || isLayoutEditor();
     }
 
     // Polls
     match /polls/{pollId} {
       allow read: if true;
-      allow create, delete: if isAdmin();
+      allow create, delete: if isAdmin() || isLayoutEditor() || isUserManager();
       allow update: if isSignedIn() && (
         incoming().diff(existing()).affectedKeys().hasOnly(['votes', 'voters', 'voterChoices'])
       );
@@ -148,7 +180,7 @@ service cloud.firestore {
     // City Info
     match /city_info/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() || isLayoutEditor();
     }
 
     match /admins/{adminId} {
@@ -159,15 +191,15 @@ service cloud.firestore {
     // Products (Store)
     match /products/{productId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() || isStoreEditor();
     }
 
     // Orders
     match /orders/{orderId} {
       allow create: if isSignedIn();
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin() || isStoreEditor());
+      allow update: if isAdmin() || isStoreEditor();
+      allow delete: if isAdmin() || isStoreEditor();
     }
 
     // Bookmarks (Saved Posts)
@@ -178,21 +210,21 @@ service cloud.firestore {
     }
 
     // Club History
-    match /club_stats/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /club_titles/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /club_timeline/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /club_stadiums/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /club_stats/{id} { allow read: if true; allow write: if isAdmin() || isLayoutEditor(); }
+    match /club_titles/{id} { allow read: if true; allow write: if isAdmin() || isLayoutEditor(); }
+    match /club_timeline/{id} { allow read: if true; allow write: if isAdmin() || isLayoutEditor(); }
+    match /club_stadiums/{id} { allow read: if true; allow write: if isAdmin() || isLayoutEditor(); }
 
     // Music and Books
-    match /songs/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /albums/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /playlists/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /books/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /songs/{id} { allow read: if true; allow write: if isAdmin() || isMediaEditor(); }
+    match /albums/{id} { allow read: if true; allow write: if isAdmin() || isMediaEditor(); }
+    match /playlists/{id} { allow read: if true; allow write: if isAdmin() || isMediaEditor(); }
+    match /books/{id} { allow read: if true; allow write: if isAdmin() || isMediaEditor(); }
 
     // Notifications
     match /notifications/{id} {
-      allow read: if isSignedIn() && (resource.data.target == 'all' || resource.data.target == request.auth.uid);
-      allow write: if isAdmin();
+      allow read: if isSignedIn() && (resource.data.get('target', 'all') == 'all' || resource.data.target == request.auth.uid || isAdmin() || isUserManager());
+      allow write: if isAdmin() || isUserManager();
       allow update: if isSignedIn() && (incoming().diff(existing()).affectedKeys().hasOnly(['readBy']));
     }
 
@@ -244,9 +276,9 @@ service cloud.firestore {
     }
 
     // News Categories & Layouts
-    match /news_categories/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /ads/{adId} { allow read: if true; allow write: if isAdmin(); }
-    match /home_sections/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /news_categories/{id} { allow read: if true; allow write: if isAdmin() || isNewsEditor(); }
+    match /ads/{adId} { allow read: if true; allow write: if isAdmin() || isLayoutEditor(); }
+    match /home_sections/{id} { allow read: if true; allow write: if isAdmin() || isLayoutEditor(); }
 
     // Custom Pages
     match /custom_pages/{pageId} {
