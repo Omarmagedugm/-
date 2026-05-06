@@ -75,7 +75,8 @@ import {
   Zap,
   Sparkles,
   Image as ImageIcon,
-  CheckCircle2
+  CheckCircle2,
+  Layers
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import ScoreSelector from '../components/ScoreSelector';
@@ -350,10 +351,10 @@ export default function Admin() {
     news, media, matches, liveStream, users, appSettings, profile, clubs, polls, fanPosts, predictions,
     clubTitles, clubStats, historyEvents, stadiums, newsCategories,
     products, orders, ads, homeSections, undoStack,
-    songs, albums, playlists, books, cityInfo,
+    songs, albums, playlists, mediaPlaylists, books, cityInfo,
     setClubTitles, setClubStats, setHistoryEvents, setStadiums, setNewsCategories,
     setProducts, setOrders, setAds, setHomeSections, pushToUndoStack, popFromUndoStack,
-    setSongs, setAlbums, setPlaylists, setBooks, setCityInfo
+    setSongs, setAlbums, setPlaylists, setMediaPlaylists, setBooks, setCityInfo
   } = useAppStore();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -372,6 +373,7 @@ export default function Admin() {
   const [aiConfig, setAiConfig] = useState<any>({ enabled: true, clubLogo: '' });
   const [showSidebar, setShowSidebar] = useState(false);
   const [historySubTab, setHistorySubTab] = useState<'stats' | 'titles' | 'timeline' | 'stadiums'>('stats');
+  const [mediaSubTab, setMediaSubTab] = useState<'items' | 'playlists'>('items');
   const [musicSubTab, setMusicSubTab] = useState<'songs' | 'albums' | 'playlists'>('songs');
   const [isExporting, setIsExporting] = useState(false);
 
@@ -779,30 +781,38 @@ export default function Admin() {
           }
         }
       } else if (activeTab === 'media') {
-        const payload = {
-          title: formData.title || 'فيديو جديد',
-          type: formData.type || 'video',
-          source: formData.source || (formData.url?.includes('youtube.com') || formData.url?.includes('youtu.be') ? 'youtube' : formData.url?.includes('facebook.com') ? 'facebook' : 'upload'),
-          url: formData.url || '',
-          videoUrl: formData.type === 'video' ? (formData.url || '') : '',
-          thumbnailUrl: formData.thumbnailUrl || (formData.type === 'video' ? 'https://images.unsplash.com/photo-1510563399035-7140409890a5' : (formData.url || 'https://images.unsplash.com/photo-1510563399035-7140409890a5')),
-          date: isEditing ? (formData.date || new Date().toISOString()) : new Date().toISOString(),
-          duration: formData.duration || '',
-          views: formData.views || '0',
-          likes: isEditing ? (formData.likes || []) : []
-        };
+        if (mediaSubTab === 'playlists') {
+          const payload = {
+            title: formData.title || 'قائمة جديدة',
+            description: formData.description || '',
+            coverUrl: formData.coverUrl || 'https://images.unsplash.com/photo-1510563399035-7140409890a5',
+            createdAt: isEditing ? (formData.createdAt || new Date().toISOString()) : new Date().toISOString()
+          };
 
-        if (isEditing && editingId) {
-          try {
-            await updateDoc(doc(db, 'media', editingId), cleanPayload(payload));
-          } catch (err) {
-            handleFirestoreError(err, OperationType.UPDATE, `media/${editingId}`);
+          if (isEditing && editingId) {
+            await updateDoc(doc(db, 'media_playlists', editingId), cleanPayload(payload));
+          } else {
+            await addDoc(collection(db, 'media_playlists'), cleanPayload(payload));
           }
         } else {
-          try {
+          const payload = {
+            title: formData.title || 'فيديو جديد',
+            type: formData.type || 'video',
+            source: formData.source || (formData.url?.includes('youtube.com') || formData.url?.includes('youtu.be') ? 'youtube' : formData.url?.includes('facebook.com') ? 'facebook' : 'upload'),
+            url: formData.url || '',
+            videoUrl: formData.type === 'video' ? (formData.url || '') : '',
+            thumbnailUrl: formData.thumbnailUrl || (formData.type === 'video' ? 'https://images.unsplash.com/photo-1510563399035-7140409890a5' : (formData.url || 'https://images.unsplash.com/photo-1510563399035-7140409890a5')),
+            date: isEditing ? (formData.date || new Date().toISOString()) : new Date().toISOString(),
+            duration: formData.duration || '',
+            views: formData.views || '0',
+            likes: isEditing ? (formData.likes || []) : [],
+            playlistId: formData.playlistId || ''
+          };
+
+          if (isEditing && editingId) {
+            await updateDoc(doc(db, 'media', editingId), cleanPayload(payload));
+          } else {
             await addDoc(collection(db, 'media'), cleanPayload(payload));
-          } catch (err) {
-            handleFirestoreError(err, OperationType.CREATE, 'media');
           }
         }
       } else if (activeTab === 'users') {
@@ -1815,7 +1825,9 @@ export default function Admin() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                              <span className="text-[10px] font-black uppercase text-slate-400">
-                               {section.type === 'ai_banner' ? 'بانر الذكاء الاصطناعي' : section.type}
+                               {section.type === 'ai_banner' ? 'بانر الذكاء الاصطناعي' : 
+                                section.type === 'tickets' ? 'تذاكر المباريات' :
+                                section.type}
                              </span>
                              {section.pinned && <Pin size={10} className="text-accent fill-accent" />}
                              <h4 className="text-xs font-black">{section.title || 'بدون عنوان'}</h4>
@@ -1861,7 +1873,7 @@ export default function Admin() {
                           >
                             <Copy size={12} />
                           </button>
-                          {(section.type === 'widget' || section.type === 'image') && (
+                          {(section.type === 'widget' || section.type === 'image' || section.type === 'tickets') && (
                             <button 
                               onClick={() => {
                                 const newTitle = window.prompt('تعديل العنوان', section.title || '');
@@ -1874,10 +1886,10 @@ export default function Admin() {
                                       htmlCode: newHtml !== null ? newHtml : s.htmlCode 
                                     } : s));
                                   }
-                                } else if (section.type === 'image') {
-                                  const newUrl = window.prompt('تعديل رابط الصورة', section.imageUrl || '');
+                                } else if (section.type === 'image' || section.type === 'tickets') {
+                                  const newUrl = section.type === 'image' ? window.prompt('تعديل رابط الصورة', section.imageUrl || '') : null;
                                   const newLink = window.prompt('تعديل الرابط (Link)', section.link || '');
-                                  if (newTitle !== null || newUrl !== null || newLink !== null) {
+                                  if (newTitle !== null || (section.type === 'image' && newUrl !== null) || newLink !== null) {
                                     setHomeSections(homeSections.map(s => s.id === section.id ? { 
                                       ...s, 
                                       title: newTitle !== null ? newTitle : s.title,
@@ -1949,10 +1961,15 @@ export default function Admin() {
                               widgetCode.style.display = 'block';
                               const imageInputs = document.getElementById('new-section-image-inputs');
                               if (imageInputs) imageInputs.style.display = 'none';
-                            } else if (e.target.value === 'image') {
+                            } else if (e.target.value === 'image' || e.target.value === 'tickets') {
                               widgetCode.style.display = 'none';
                               const imageInputs = document.getElementById('new-section-image-inputs');
-                              if (imageInputs) imageInputs.style.display = 'block';
+                              if (imageInputs) {
+                                imageInputs.style.display = 'block';
+                                // Hide image URL for tickets as it's not needed
+                                const urlInput = document.getElementById('new-section-image-url-container');
+                                if (urlInput) urlInput.style.display = e.target.value === 'tickets' ? 'none' : 'block';
+                              }
                             } else {
                               widgetCode.style.display = 'none';
                               const imageInputs = document.getElementById('new-section-image-inputs');
@@ -1967,6 +1984,7 @@ export default function Admin() {
                         <option value="polls">استطلاعات</option>
                         <option value="history">تاريخ النادي</option>
                         <option value="hero">المباراة القادمة / الحية</option>
+                        <option value="tickets">تذاكر المباريات (Live)</option>
                         <option value="live">بث مباشر متاح</option>
                         <option value="custom">مخصص (Fan Zone)</option>
                         <option value="widget">برمجية HTML مخصصة</option>
@@ -1994,7 +2012,7 @@ export default function Admin() {
                       />
                     </div>
                     <div id="new-section-image-inputs" className="col-span-2 space-y-4" style={{ display: 'none' }}>
-                       <div className="space-y-2">
+                       <div className="space-y-2" id="new-section-image-url-container">
                           <label className="text-[10px] font-black text-slate-500">رابط الصورة (URL)</label>
                           <input 
                             id="new-section-image-url"
@@ -2031,7 +2049,7 @@ export default function Admin() {
                           spacing: 16,
                           htmlCode: type === 'widget' ? htmlCode : undefined,
                           imageUrl: type === 'image' ? imageUrl : undefined,
-                          link: type === 'image' ? link : undefined
+                          link: (type === 'image' || type === 'tickets') ? link : undefined
                         };
                         setHomeSections([...homeSections, newSection]);
                         (document.getElementById('new-section-title') as HTMLInputElement).value = '';
@@ -2706,51 +2724,123 @@ export default function Admin() {
           )}
 
           {activeTab === 'media' && (
-            <div className="grid grid-cols-1 gap-6">
-              {media.filter(item => 
-                item.title.toLowerCase().includes(contentSearch.toLowerCase())
-              ).map((item) => (
-                <div key={item.id} className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-6 flex flex-col gap-4 shadow-sm hover:shadow-xl transition-all duration-300 group">
-                  <div className="flex items-center gap-4">
-                    <div className="relative w-24 h-16 rounded-2xl overflow-hidden flex-shrink-0">
-                      {item.thumbnailUrl && item.thumbnailUrl.trim() !== '' ? (
-                        <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
-                      ) : (
-                        <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-                          <PlayCircle size={32} className="text-slate-300" />
+            <div className="flex flex-col gap-6">
+              {/* Sub Tabs */}
+              <div className="flex items-center gap-2 p-1.5 bg-slate-100/50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-2xl w-fit">
+                <button 
+                  onClick={() => setMediaSubTab('items')} 
+                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${mediaSubTab === 'items' ? 'bg-white dark:bg-card-dark text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  الميديا
+                </button>
+                <button 
+                  onClick={() => setMediaSubTab('playlists')} 
+                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${mediaSubTab === 'playlists' ? 'bg-white dark:bg-card-dark text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  قوائم التشغيل
+                </button>
+              </div>
+
+              {mediaSubTab === 'items' && (
+                <div className="grid grid-cols-1 gap-4">
+                  {media.filter(item => 
+                    item.title.toLowerCase().includes(contentSearch.toLowerCase())
+                  ).map((item) => (
+                    <div key={item.id} className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-6 flex flex-col gap-4 shadow-sm hover:shadow-xl transition-all duration-300 group">
+                      <div className="flex items-center gap-4">
+                        <div className="relative w-24 h-16 rounded-2xl overflow-hidden flex-shrink-0">
+                          {item.thumbnailUrl && item.thumbnailUrl.trim() !== '' ? (
+                            <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                          ) : (
+                            <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                              <PlayCircle size={32} className="text-slate-300" />
+                            </div>
+                          )}
+                          {item.type === 'video' && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                              <PlayCircle size={20} className="text-white drop-shadow-lg" />
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {item.type === 'video' && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-                           <PlayCircle size={20} className="text-white drop-shadow-lg" />
+                        <div className="flex-1">
+                          <h3 className="font-black text-sm line-clamp-1 leading-tight text-slate-800 dark:text-white mb-1">{item.title}</h3>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-black uppercase px-2 py-1 bg-slate-100 dark:bg-surface-dark text-slate-500 rounded-lg">
+                              {item.type === 'video' ? 'فيديو' : 'صورة'}
+                            </span>
+                            {item.playlistId && (
+                               <div className="flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded-lg">
+                                  <Layers size={10} className="shrink-0" />
+                                  <span className="text-[10px] font-black truncate max-w-[120px]">
+                                     {mediaPlaylists.find(p => p.id === item.playlistId)?.title || 'قائمة غير موجودة'}
+                                  </span>
+                               </div>
+                            )}
+                            <span className="text-[10px] font-bold text-slate-400">
+                              {new Date(item.date).toLocaleDateString('ar-EG')}
+                            </span>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-black text-base line-clamp-1 leading-tight text-slate-800 dark:text-white mb-1">{item.title}</h3>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-black uppercase px-2 py-1 bg-slate-100 dark:bg-surface-dark text-slate-500 rounded-lg">
-                          {item.type === 'video' ? 'فيديو' : 'صورة'}
-                        </span>
-                        <span className="text-xs font-bold text-slate-400">
-                          {new Date(item.date).toLocaleDateString('ar-EG')}
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button 
+                            onClick={() => handleEditItem(item)} 
+                            className="p-2.5 text-blue-500 bg-blue-500/5 hover:bg-blue-500/10 rounded-2xl transition-all"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete('media', item.id)} 
+                            className="p-2.5 text-red-500 bg-red-500/5 hover:bg-red-500/10 rounded-2xl transition-all"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => handleEditItem(item)} 
-                        className="p-3 text-blue-500 bg-blue-500/5 hover:bg-blue-500/10 rounded-2xl transition-all"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button onClick={() => handleDelete('media', item.id)} className="p-3 text-red-500 bg-red-500/5 hover:bg-red-500/10 rounded-2xl transition-all">
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
+
+              {mediaSubTab === 'playlists' && (
+                <div className="grid grid-cols-1 gap-4">
+                  {mediaPlaylists.filter(p => 
+                    p.title.toLowerCase().includes(contentSearch.toLowerCase())
+                  ).map((playlist) => (
+                    <div key={playlist.id} className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-6 flex items-center gap-4 shadow-sm hover:shadow-xl transition-all">
+                       <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
+                          <img src={playlist.coverUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                       </div>
+                       <div className="flex-1">
+                          <h3 className="font-black text-sm text-slate-800 dark:text-white mb-1">{playlist.title}</h3>
+                          <p className="text-[10px] text-slate-400 font-bold line-clamp-1">{playlist.description || 'لا يوجد وصف'}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                             <span className="text-[10px] font-black text-primary px-2 py-0.5 bg-primary/10 rounded-full">
+                                {media.filter(m => m.playlistId === playlist.id).length} عنصر
+                             </span>
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => handleEditItem(playlist)} 
+                            className="p-2.5 text-blue-500 bg-blue-500/5 hover:bg-blue-500/10 rounded-2xl transition-all"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button 
+                            onClick={() => {
+                               if (window.confirm('هل أنت متأكد من حذف القائمة؟ لن يتم حذف الميديا المرتبطة بها.')) {
+                                  handleDelete('media_playlists', playlist.id);
+                               }
+                            }} 
+                            className="p-2.5 text-red-500 bg-red-500/5 hover:bg-red-500/10 rounded-2xl transition-all"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -4167,82 +4257,116 @@ export default function Admin() {
 
                {activeTab === 'media' && (
                  <>
-                   <div>
-                     <label className="text-[10px] font-black text-slate-500 mb-1 block">العنوان</label>
-                     <input type="text" placeholder="مثلاً: أهداف مباراة الأمس" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
-                   </div>
-                   <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[10px] font-black text-slate-500 mb-1 block">النوع</label>
-                      <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.type || 'video'} onChange={(e) => setFormData({...formData, type: e.target.value})}>
-                         <option value="video">فيديو</option>
-                         <option value="photo">صورة</option>
-                      </select>
-                    </div>
-                    {formData.type === 'video' && (
-                      <div>
-                        <label className="text-[10px] font-black text-slate-500 mb-1 block">المصدر</label>
-                        <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.source || 'upload'} onChange={(e) => setFormData({...formData, source: e.target.value})}>
-                          <option value="upload">رفع فيديو</option>
-                          <option value="youtube">رابط يوتيوب</option>
-                          <option value="embed">تضمين (Embed URL)</option>
-                        </select>
-                      </div>
-                    )}
-                   </div>
-
-                   {formData.type === 'video' && formData.source === 'youtube' && (
-                    <div>
-                      <label className="text-[10px] font-black text-slate-500 mb-1 block">رابط يوتيوب</label>
-                      <input 
-                        type="text" 
-                        placeholder="https://www.youtube.com/watch?v=..." 
-                        className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-mono text-left dir-ltr" 
-                        value={formData.url || ''} 
-                        onChange={(e) => {
-                          const url = e.target.value;
-                          let thumb = formData.thumbnailUrl;
-                          if (url.includes('youtube.com/watch?v=')) {
-                            const id = url.split('v=')[1]?.split('&')[0];
-                            thumb = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
-                          } else if (url.includes('youtu.be/')) {
-                            const id = url.split('youtu.be/')[1]?.split('?')[0];
-                            thumb = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
-                          }
-                          setFormData({...formData, url, thumbnailUrl: thumb});
-                        }} 
-                      />
-                    </div>
-                   )}
-
-                   {formData.type === 'video' && formData.source === 'embed' && (
-                    <div>
-                      <label className="text-[10px] font-black text-slate-500 mb-1 block">رابط التضمين (Embed URL)</label>
-                      <input 
-                        type="text" 
-                        placeholder="https://..." 
-                        className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-mono text-left dir-ltr" 
-                        value={formData.url || ''} 
-                        onChange={(e) => setFormData({...formData, url: e.target.value})} 
-                      />
-                      <p className="text-[8px] text-slate-400 mt-1 uppercase tracking-tighter">Enter direct embed URL (src of iframe)</p>
-                    </div>
-                   )}
-
-                   {formData.type === 'video' && formData.source === 'upload' && (
-                    <UploadOrUrlField label="ميديا الفيديو" fieldName="url" currentUrl={formData.url} type="video" formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
-                   )}
-
-                   {formData.type === 'photo' && (
-                    <UploadOrUrlField label="ميديا الصورة" fieldName="url" currentUrl={formData.url} type="image" formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
-                   )}
-
-                   {formData.type === 'video' && (
+                   {mediaSubTab === 'items' ? (
                      <>
-                        <UploadOrUrlField label="صورة الغلاف (Thumbnail)" fieldName="thumbnailUrl" currentUrl={formData.thumbnailUrl} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                         <div>
-                          <label className="text-[10px] font-black text-slate-500 mb-1 block">المدة (مثلاً 05:20)</label>
-                          <input type="text" placeholder="00:00" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.duration || ''} onChange={(e) => setFormData({...formData, duration: e.target.value})} />
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">العنوان</label>
+                          <input type="text" placeholder="مثلاً: أهداف مباراة الأمس" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                         <div>
+                           <label className="text-[10px] font-black text-slate-500 mb-1 block">النوع</label>
+                           <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.type || 'video'} onChange={(e) => setFormData({...formData, type: e.target.value})}>
+                              <option value="video">فيديو</option>
+                              <option value="photo">صورة</option>
+                           </select>
+                         </div>
+                         <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">قائمة التشغيل (اختياري)</label>
+                            <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.playlistId || ''} onChange={(e) => setFormData({...formData, playlistId: e.target.value})}>
+                               <option value="">بدون قائمة</option>
+                               {mediaPlaylists.map(p => (
+                                 <option key={p.id} value={p.id}>{p.title}</option>
+                               ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        {formData.type === 'video' && (
+                          <div className="grid grid-cols-1 gap-2">
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">المصدر</label>
+                            <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.source || 'upload'} onChange={(e) => setFormData({...formData, source: e.target.value})}>
+                              <option value="upload">رفع فيديو</option>
+                              <option value="youtube">رابط يوتيوب</option>
+                              <option value="embed">تضمين (Embed URL)</option>
+                            </select>
+                          </div>
+                        )}
+
+                        {formData.type === 'video' && formData.source === 'youtube' && (
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">رابط يوتيوب</label>
+                            <input 
+                              type="text" 
+                              placeholder="https://www.youtube.com/watch?v=..." 
+                              className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-mono text-left dir-ltr" 
+                              value={formData.url || ''} 
+                              onChange={(e) => {
+                                const url = e.target.value;
+                                let thumb = formData.thumbnailUrl;
+                                if (url.includes('youtube.com/watch?v=')) {
+                                  const id = url.split('v=')[1]?.split('&')[0];
+                                  thumb = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+                                } else if (url.includes('youtu.be/')) {
+                                  const id = url.split('youtu.be/')[1]?.split('?')[0];
+                                  thumb = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+                                }
+                                setFormData({...formData, url, thumbnailUrl: thumb, source: 'youtube'});
+                              }} 
+                            />
+                          </div>
+                        )}
+
+                        {formData.type === 'video' && formData.source === 'upload' && (
+                          <UploadOrUrlField label="ملف الفيديو" fieldName="url" currentUrl={formData.url} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} type="video" />
+                        )}
+
+                        {formData.type === 'video' && formData.source === 'embed' && (
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">رابط التضمين (Embed URL)</label>
+                            <input 
+                              type="text" 
+                              placeholder="https://..." 
+                              className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-mono text-left dir-ltr" 
+                              value={formData.url || ''} 
+                              onChange={(e) => setFormData({...formData, url: e.target.value})} 
+                            />
+                          </div>
+                        )}
+
+                        {formData.type === 'photo' && (
+                          <UploadOrUrlField label="الصورة" fieldName="url" currentUrl={formData.url} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                        )}
+
+                        <div>
+                          <UploadOrUrlField label="الصورة المصغرة" fieldName="thumbnailUrl" currentUrl={formData.thumbnailUrl} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                        </div>
+
+                        {formData.type === 'video' && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[10px] font-black text-slate-500 mb-1 block">المدة (مثلاً 04:30)</label>
+                              <input type="text" placeholder="00:00" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-black text-center" value={formData.duration || ''} onChange={(e) => setFormData({...formData, duration: e.target.value})} />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-black text-slate-500 mb-1 block">عدد المشاهدات</label>
+                              <input type="number" placeholder="0" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-black text-center" value={formData.views || '0'} onChange={(e) => setFormData({...formData, views: e.target.value})} />
+                            </div>
+                          </div>
+                        )}
+                     </>
+                   ) : (
+                     <>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">اسم القائمة</label>
+                          <input type="text" placeholder="مثلاً: ذكريات الزمن الجميل" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">وصف القائمة</label>
+                          <textarea placeholder="وصف يعبر عن محتوى القائمة..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold min-h-[100px]" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                        </div>
+                        <div>
+                          <UploadOrUrlField label="غلاف القائمة" fieldName="coverUrl" currentUrl={formData.coverUrl} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                         </div>
                      </>
                    )}

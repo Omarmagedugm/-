@@ -139,7 +139,23 @@
         "url": { "type": "string" },
         "thumbnail": { "type": "string" },
         "type": { "type": "string", "enum": ["photo", "video"] },
+        "source": { "type": "string", "enum": ["upload", "youtube", "embed"] },
+        "playlistId": { "type": "string" },
+        "duration": { "type": "string" },
+        "views": { "type": "number" },
         "date": { "type": "string" }
+      }
+    },
+    "MediaPlaylist": {
+      "title": "Media Playlist",
+      "description": "Group of media items",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "coverUrl": { "type": "string" },
+        "createdAt": { "type": "string" }
       }
     },
     "LiveComment": {
@@ -278,6 +294,7 @@
     "predictions": { "schema": "Prediction", "description": "Collection of match predictions" },
     "fan_posts": { "schema": "FanPost", "description": "Community posts" },
     "media": { "schema": "Media", "description": "Collection of media items" },
+    "media_playlists": { "schema": "MediaPlaylist", "description": "Collection of media playlists" },
     "live_comments": { "schema": "LiveComment", "description": "Live match comments" },
     "city_info": { "schema": "CityInfo", "description": "Alexandria city and weather info" },
     "settings": { "schema": "AppSetting", "description": "Global settings" },

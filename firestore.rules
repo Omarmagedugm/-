@@ -11,10 +11,9 @@ service cloud.firestore {
     function isEmailVerified() { return request.auth.token.email_verified == true; }
     
     function isAdmin() { 
-      let email = request.auth.token.get('email', '').lower();
       return isSignedIn() && (
-        email == 'copyrightofficialco@gmail.com' || 
-        email == 'omarmagedugm@ittihad.club' ||
+        request.auth.token.get('email', '').lower() == 'copyrightofficialco@gmail.com' || 
+        request.auth.token.get('email', '').lower() == 'omarmagedugm@ittihad.club' ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin' ||
           (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('roles', []) is list && 
@@ -24,22 +23,15 @@ service cloud.firestore {
     }
 
     function hasAnyRole(rolesList) {
-      let email = request.auth.token.get('email', '').lower();
-      let isBootstrap = email == 'copyrightofficialco@gmail.com' || email == 'omarmagedugm@ittihad.club';
-      
       return isSignedIn() && (
-        isBootstrap ||
+        (request.auth.token.get('email', '').lower() == 'copyrightofficialco@gmail.com' || request.auth.token.get('email', '').lower() == 'omarmagedugm@ittihad.club') ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
-          let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-          let userRole = userData.get('role', 'user');
-          let userRoles = userData.get('roles', []);
-          
-          return userRole == 'admin' ||
-                 userRole in rolesList || 
-                 (userRoles is list && userRoles.hasAny(rolesList)) ||
-                 (userRoles is list && userRoles.hasAny(['admin'])) ||
-                 (userRole == 'writer' && 'news_editor' in rolesList) ||
-                 (userRole == 'moderator' && 'user_manager' in rolesList)
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin' ||
+          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('roles', []) is list && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['admin'])) ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') in rolesList || 
+          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('roles', []) is list && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(rolesList)) ||
+          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'writer' && 'news_editor' in rolesList) ||
+          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'moderator' && ('user_manager' in rolesList || 'media_editor' in rolesList || 'news_editor' in rolesList))
         ))
       );
     }
@@ -111,9 +103,17 @@ service cloud.firestore {
     function isValidMedia(data) {
       return data.title is string && data.title.size() <= 500 &&
              data.type in ['video', 'photo'] &&
-             data.url is string && data.url.size() <= 5000;
+             (!('url' in data) || (data.url is string && data.url.size() <= 5000)) &&
+             (!('playlistId' in data) || (data.playlistId is string)) &&
+             (!('source' in data) || (data.source is string));
     }
     match /media/{mediaId} {
+      allow read: if true;
+      allow create, update: if (isMediaEditor() || isAdmin()) && isValidMedia(incoming());
+      allow delete: if isMediaEditor() || isAdmin();
+    }
+
+    match /media_playlists/{playlistId} {
       allow read: if true;
       allow write: if isMediaEditor() || isAdmin();
     }

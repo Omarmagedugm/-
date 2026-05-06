@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export interface HomeSection {
   id: string;
-  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget' | 'city' | 'ads' | 'advertise' | 'image' | 'ai_banner';
+  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget' | 'city' | 'ads' | 'advertise' | 'image' | 'ai_banner' | 'tickets';
   title?: string;
   active: boolean;
   order: number;
@@ -48,6 +48,15 @@ export interface MediaItem {
   duration?: string;
   views?: string;
   likes?: string[];
+  playlistId?: string;
+}
+
+export interface MediaPlaylist {
+  id: string;
+  title: string;
+  description?: string;
+  coverUrl?: string;
+  createdAt: string;
 }
 
 export interface MatchItem {
@@ -312,6 +321,7 @@ interface AppState {
   songs: Song[];
   albums: Album[];
   playlists: Playlist[];
+  mediaPlaylists: MediaPlaylist[];
   books: Book[];
   cityInfo: CityInfo | null;
   currentSong: Song | null;
@@ -358,6 +368,7 @@ interface AppState {
   setSongs: (songs: Song[]) => void;
   setAlbums: (albums: Album[]) => void;
   setPlaylists: (playlists: Playlist[]) => void;
+  setMediaPlaylists: (playlists: MediaPlaylist[]) => void;
   setBooks: (books: Book[]) => void;
   setCityInfo: (info: CityInfo | null) => void;
   setCurrentSong: (song: Song | null) => void;
@@ -549,6 +560,7 @@ export const useAppStore = create<AppState>()(
       songs: [],
       albums: [],
       playlists: [],
+      mediaPlaylists: [],
       books: [],
       cityInfo: null,
       currentSong: null,
@@ -604,6 +616,7 @@ export const useAppStore = create<AppState>()(
       setSongs: (songs) => set({ songs }),
       setAlbums: (albums) => set({ albums }),
       setPlaylists: (playlists) => set({ playlists }),
+      setMediaPlaylists: (mediaPlaylists) => set({ mediaPlaylists }),
       setBooks: (books) => set({ books }),
       setCityInfo: (cityInfo) => set({ cityInfo }),
       setCurrentSong: (currentSong) => set({ currentSong }),

@@ -42,6 +42,7 @@ import {
 import { onSnapshot, doc } from "firebase/firestore";
 import Sidebar from "../components/Sidebar";
 import AdvertiseWidget from "../components/AdvertiseWidget";
+import TicketsWidget from "../components/TicketsWidget";
 import HtmlWidget from "../components/HtmlWidget";
 import { SafeImage } from "../components/SafeImage";
 import { getOptimizedImage } from "../lib/cloudinary";
@@ -1180,6 +1181,13 @@ export default function Home() {
           </motion.section>
         );
 
+      case "tickets":
+        return (
+          <motion.section key={section.id} variants={itemVariants}>
+            <TicketsWidget title={section.title} link={section.link} />
+          </motion.section>
+        );
+
       case "ai_banner":
         if (!aiConfig.enabled) return null;
         return (
@@ -1348,24 +1356,24 @@ export default function Home() {
           IconElement = timePhase === "night" ? CloudMoon : CloudSun;
           effectType = "clouds";
           if (timePhase === "night") {
-            cardBg = "from-slate-900 via-slate-950 to-black border-slate-800/40";
+            cardBg = "from-slate-900 via-blue-950 to-black border-blue-900/20";
             iconBg = "bg-indigo-500/10 backdrop-blur-xl ring-1 ring-white/10";
             iconColor = "text-indigo-300";
           } else {
-            cardBg = "from-sky-400 via-blue-500 to-indigo-600 border-sky-300/40";
+            cardBg = "from-sky-300 via-sky-400 to-blue-500 border-sky-200/40";
             iconBg = "bg-white/20 backdrop-blur-xl ring-1 ring-white/30";
             iconColor = "text-white";
           }
         } else {
           // Clear / Sunny
           if (timePhase === "night") {
-            cardBg = "from-slate-950 via-indigo-950 to-black border-indigo-500/20";
-            iconBg = "bg-indigo-900/40 backdrop-blur-2xl ring-1 ring-white/20 shadow-lg shadow-indigo-500/20";
-            iconColor = "text-indigo-100";
+            cardBg = "from-[#0f172a] via-[#1e3a8a] to-[#020617] border-blue-500/20";
+            iconBg = "bg-blue-900/40 backdrop-blur-2xl ring-1 ring-white/20 shadow-lg shadow-blue-500/20";
+            iconColor = "text-blue-100";
             IconElement = Moon;
             effectType = "stars";
           } else {
-            cardBg = "from-sky-400 via-blue-600 to-indigo-700 border-sky-300/40";
+            cardBg = "from-sky-400 via-sky-500 to-blue-600 border-sky-300/40";
             iconBg = "bg-yellow-400/20 backdrop-blur-2xl ring-1 ring-white/30 shadow-lg shadow-yellow-400/20";
             iconColor = "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]";
             IconElement = Sun;
@@ -1413,14 +1421,64 @@ export default function Home() {
 
                 {/* Sun Glow Effect */}
                 {effectType === "sun" && (
-                  <motion.div 
-                    animate={{ 
-                      scale: [1, 1.2, 1],
-                      opacity: [0.5, 0.8, 0.5]
-                    }}
-                    transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -top-32 -right-32 w-80 h-80 bg-yellow-400/50 blur-[80px] rounded-full"
-                  />
+                  <div className="absolute inset-0 z-[5] overflow-hidden rounded-[40px]">
+                    {/* The Glow */}
+                    <motion.div 
+                      animate={{ 
+                        scale: [1, 1.15, 1],
+                        opacity: [0.3, 0.5, 0.3]
+                      }}
+                      transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute -top-24 -right-24 w-80 h-80 bg-yellow-300 blur-[100px] rounded-full"
+                    />
+                    {/* The Sun Body */}
+                    <motion.div 
+                      animate={{ 
+                        scale: [1, 1.05, 1],
+                        opacity: [0.4, 0.6, 0.4]
+                      }}
+                      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute top-10 right-10 w-24 h-24 bg-gradient-to-br from-yellow-200 to-yellow-400 blur-[20px] rounded-full"
+                    />
+                    {/* Subtle Rays */}
+                    {[...Array(8)].map((_, i) => (
+                      <motion.div 
+                        key={i}
+                        animate={{ 
+                          rotate: [i * 45, i * 45 + 360],
+                          opacity: [0.1, 0.3, 0.1]
+                        }}
+                        transition={{ 
+                          rotate: { duration: 60, repeat: Infinity, ease: "linear" },
+                          opacity: { duration: 4, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 }
+                        }}
+                        className="absolute top-22 right-22 w-[1px] h-[400px] bg-gradient-to-b from-white/30 to-transparent blur-[1px]"
+                        style={{ transformOrigin: 'top center' }}
+                      />
+                    ))}
+                    {/* Floating Sun Particles */}
+                    {[...Array(5)].map((_, i) => (
+                      <motion.div
+                        key={`particle-${i}`}
+                        animate={{
+                          y: [-20, 20, -20],
+                          x: [-10, 10, -10],
+                          opacity: [0.2, 0.5, 0.2]
+                        }}
+                        transition={{
+                          duration: 3 + i,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: i
+                        }}
+                        className="absolute w-1 h-1 bg-yellow-200 rounded-full blur-[1px]"
+                        style={{
+                          top: `${20 + i * 15}%`,
+                          right: `${10 + i * 20}%`
+                        }}
+                      />
+                    ))}
+                  </div>
                 )}
 
                 {/* Rain Particles */}
@@ -1544,6 +1602,31 @@ export default function Home() {
                   />
                 )}
 
+                {/* Stars Effect */}
+                {effectType === "stars" && (
+                  <div className="absolute inset-0 z-[12] overflow-hidden pointer-events-none rounded-[40px]">
+                    {[...Array(40)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="absolute h-[1px] w-[1px] bg-white rounded-full"
+                        style={{
+                          left: `${Math.random() * 100}%`,
+                          top: `${Math.random() * 100}%`,
+                          opacity: 0.15 + Math.random() * 0.3, // Faint stars as requested
+                        }}
+                        animate={{
+                          opacity: [0.1, 0.4, 0.1],
+                          scale: [1, 1.2, 1],
+                        }}
+                        transition={{
+                          duration: 2 + Math.random() * 4,
+                          repeat: Infinity,
+                          delay: Math.random() * 5,
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
                 {/* Snow Effect */}
                 {effectType === "snow" && (
                   <div className="absolute inset-0 rounded-[40px] overflow-hidden z-[12]">
@@ -1686,7 +1769,7 @@ export default function Home() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex-1 overflow-x-hidden px-4 flex flex-col gap-0 py-6"
+        className="flex-1 overflow-x-hidden px-4 flex flex-col gap-0 pt-8 pb-6"
       >
         {/* Goal Celebration Trigger is in App.tsx */}
       

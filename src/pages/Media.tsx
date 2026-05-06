@@ -8,8 +8,9 @@ import { Play, Image as ImageIcon, Video, Radio, Clock, Eye, X, ChevronRight, Ca
 import { getOptimizedImage } from '../lib/cloudinary';
 
 export default function Media() {
-  const { media } = useAppStore();
+  const { media, mediaPlaylists } = useAppStore();
   const [activeTab, setActiveTab] = useState<'all' | 'photo' | 'video'>('all');
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
 
@@ -56,7 +57,9 @@ export default function Media() {
     return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('facebook.com');
   };
   
-  const displayMedia = activeTab === 'all' ? media : activeTab === 'photo' ? photos : videos;
+  const displayMedia = (activeTab === 'all' ? media : activeTab === 'photo' ? photos : videos)
+    .filter(m => !selectedPlaylistId || m.playlistId === selectedPlaylistId);
+
   const featuredMedia = displayMedia.length > 0 ? displayMedia[0] : null;
 
   const containerVariants = {
@@ -124,7 +127,7 @@ export default function Media() {
               
               <div className="absolute top-4 left-4 flex gap-2">
                 <div className="px-3 py-1 bg-primary/90 backdrop-blur-md rounded-xl text-[9px] font-black text-white ring-1 ring-white/20 uppercase tracking-widest">
-                  {featuredMedia.type === 'video' ? 'فيديو مميز' : 'ألبوم مميز'}
+                  {featuredMedia.type === 'video' ? 'فيديو مميز' : 'صورة مميزة'}
                 </div>
                 {featuredMedia.type === 'video' && featuredMedia.duration && (
                   <div className="px-3 py-1 bg-black/50 backdrop-blur-md rounded-xl text-[9px] font-black text-white flex items-center gap-1">
@@ -146,18 +149,55 @@ export default function Media() {
                   {featuredMedia.title}
                 </h3>
                 <div className="flex items-center gap-4 text-white/60 text-[9px] font-black uppercase tracking-widest">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 text-right">
                         <Calendar size={10} />
                         {format(new Date(featuredMedia.date), 'dd MMMM yyyy', { locale: ar })}
                     </div>
                     {featuredMedia.views && (
                         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/10 rounded-full">
                             <Eye size={10} />
-                            {featuredMedia.views} VIEWS
+                            {featuredMedia.views} مشاهدة
                         </div>
                     )}
                 </div>
               </div>
+            </div>
+          </motion.section>
+        )}
+
+        {/* Playlists Horizontal Section */}
+        {mediaPlaylists.length > 0 && (
+          <motion.section variants={itemVariants} className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex flex-col">
+                <h2 className="text-lg font-black text-slate-800 dark:text-white leading-none uppercase">قوائم التشغيل</h2>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Curated Collections</span>
+              </div>
+              {selectedPlaylistId && (
+                <button 
+                  onClick={() => setSelectedPlaylistId(null)}
+                  className="text-[10px] font-black text-primary px-3 py-1 bg-primary/10 rounded-full pressable"
+                >
+                  عرض الكل
+                </button>
+              )}
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide px-1 -mx-1">
+              {mediaPlaylists.map((playlist) => (
+                <button 
+                  key={playlist.id} 
+                  onClick={() => setSelectedPlaylistId(playlist.id)}
+                  className={`flex-shrink-0 w-32 flex flex-col gap-2 pressable text-right group ${selectedPlaylistId === playlist.id ? 'opacity-100' : 'opacity-60 grayscale hover:grayscale-0 hover:opacity-100'}`}
+                >
+                  <div className={`aspect-square rounded-[24px] overflow-hidden border-2 transition-all ${selectedPlaylistId === playlist.id ? 'border-primary ring-4 ring-primary/10' : 'border-transparent shadow-lg'}`}>
+                    <img src={getOptimizedImage(playlist.coverUrl || '', 300) || undefined} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                  </div>
+                  <div className="px-1">
+                    <p className={`text-[10px] font-black line-clamp-1 ${selectedPlaylistId === playlist.id ? 'text-primary' : 'text-slate-700 dark:text-slate-300'}`}>{playlist.title}</p>
+                    <p className="text-[8px] font-bold text-slate-400">{media.filter(m => m.playlistId === playlist.id).length} عنصر</p>
+                  </div>
+                </button>
+              ))}
             </div>
           </motion.section>
         )}

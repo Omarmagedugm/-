@@ -7,7 +7,7 @@ export function useFirestoreSync() {
   const { 
     setNews, setMedia, setMatches, setClubs, setPolls, setPredictions, setFanPosts,
     setUsers, setSettings, updateLiveStream, updateProfile, setCityInfo, setAds, setCustomPages,
-    setNewsCategories, setNewsTags, setHomeSections, setProducts, setSongs, setAlbums, setPlaylists, setBooks,
+    setNewsCategories, setNewsTags, setHomeSections, setProducts, setSongs, setAlbums, setPlaylists, setMediaPlaylists, setBooks,
     setClubStats, setClubTitles, setHistoryEvents, setStadiums
   } = useAppStore();
 
@@ -58,8 +58,30 @@ export function useFirestoreSync() {
       setMatches(matches);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'matches'));
 
-    // Static/Infrequent data moved to fetchStaticData (non-realtime) to save costs:
-    // settings/global, settings/homeLayout, settings/newsCategories, custom_pages
+    // Sync Home Layout (Real-time for admins to see changes immediately)
+    const unsubLayout = onSnapshot(doc(db, 'settings', 'homeLayout'), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data && data.sections) {
+          const uniqueSectionsMap = new Map();
+          data.sections.forEach((s: any) => { if (s && s.id) uniqueSectionsMap.set(s.id, s); });
+          const mergedSections = Array.from(uniqueSectionsMap.values());
+          const initialSections = [
+            { id: 'hero', type: 'hero', active: true, order: 0 },
+            { id: 'ads', type: 'ads', active: true, order: 0.5 },
+            { id: 'matches', type: 'matches', active: true, order: 1 },
+            { id: 'ai_banner', type: 'ai_banner', active: true, order: 1.2 },
+            { id: 'city', type: 'city', active: true, order: 1.5, title: 'عروس البحر المتوسط' },
+            { id: 'news', type: 'news', active: true, order: 2 },
+            { id: 'media', type: 'media', active: true, order: 3 },
+          ];
+          initialSections.forEach(ds => { if (!uniqueSectionsMap.has(ds.id)) mergedSections.push(ds); });
+          setHomeSections(mergedSections);
+        }
+      }
+    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/homeLayout'));
+
+    // Static/Infrequent data moved to fetchStaticData (non-realtime) to save costs
 
     // Sync News (Real-time with limit)
     const newsQuery = query(collection(db, 'news'), orderBy('date', 'desc'), limit(50));
@@ -74,6 +96,12 @@ export function useFirestoreSync() {
       const mediaItems = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
       setMedia(mediaItems);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'media'));
+
+    // Sync Media Playlists (Real-time)
+    const unsubMediaPlaylists = onSnapshot(collection(db, 'media_playlists'), (snapshot) => {
+      const playlists = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
+      setMediaPlaylists(playlists);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'media_playlists'));
 
     // Sync Fan Posts (Real-time)
     const fanPostsQuery = query(collection(db, 'fan_posts'), orderBy('createdAt', 'desc'), limit(50));
@@ -170,24 +198,6 @@ export function useFirestoreSync() {
 
           // Settings (No longer real-time to save quota)
           fetchDoc('settings/global', setSettings);
-          fetchDoc('settings/homeLayout', (data: any) => {
-            if (data && data.sections) {
-              const uniqueSectionsMap = new Map();
-              data.sections.forEach((s: any) => { if (s && s.id) uniqueSectionsMap.set(s.id, s); });
-              const mergedSections = Array.from(uniqueSectionsMap.values());
-              const initialSections = [
-                { id: 'hero', type: 'hero', active: true, order: 0 },
-                { id: 'ads', type: 'ads', active: true, order: 0.5 },
-                { id: 'matches', type: 'matches', active: true, order: 1 },
-                { id: 'ai_banner', type: 'ai_banner', active: true, order: 1.2 },
-                { id: 'city', type: 'city', active: true, order: 1.5, title: 'عروس البحر المتوسط' },
-                { id: 'news', type: 'news', active: true, order: 2 },
-                { id: 'media', type: 'media', active: true, order: 3 },
-              ];
-              initialSections.forEach(ds => { if (!uniqueSectionsMap.has(ds.id)) mergedSections.push(ds); });
-              setHomeSections(mergedSections);
-            }
-          });
           fetchDoc('settings/newsCategories', d => setNewsCategories(d.list || []));
           fetchDoc('settings/newsTags', d => setNewsTags(d.tags || []));
           fetchDoc('city_info/alexandria', setCityInfo);
@@ -212,8 +222,10 @@ export function useFirestoreSync() {
       unsubProfile();
       unsubLive();
       unsubMatches();
+      unsubLayout();
       unsubNews();
       unsubMedia();
+      unsubMediaPlaylists();
       unsubFanPosts();
       unsubOrders();
     };
