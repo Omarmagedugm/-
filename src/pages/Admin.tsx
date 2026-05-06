@@ -526,8 +526,13 @@ export default function Admin() {
   }, [showModal]);
 
   const handleEditItem = (item: any) => {
-    setFormData({ ...item });
-    setBaseData({ ...item });
+    let extraData = {};
+    if (activeTab === 'media' && mediaSubTab === 'playlists') {
+      const selectedMediaIds = media.filter(m => m.playlistId === item.id).map(m => m.id);
+      extraData = { selectedMediaIds };
+    }
+    setFormData({ ...item, ...extraData });
+    setBaseData({ ...item, ...extraData });
     setIsEditing(true);
     setEditingId(item.id);
     setShowModal(true);
@@ -789,10 +794,29 @@ export default function Admin() {
             createdAt: isEditing ? (formData.createdAt || new Date().toISOString()) : new Date().toISOString()
           };
 
+          let playlistId = editingId;
+
           if (isEditing && editingId) {
             await updateDoc(doc(db, 'media_playlists', editingId), cleanPayload(payload));
           } else {
-            await addDoc(collection(db, 'media_playlists'), cleanPayload(payload));
+            const docRef = await addDoc(collection(db, 'media_playlists'), cleanPayload(payload));
+            playlistId = docRef.id;
+          }
+
+          // Sync media items
+          const currentIds = formData.selectedMediaIds || [];
+          const initialIds = baseData?.selectedMediaIds || [];
+          
+          const added = currentIds.filter((id: string) => !initialIds.includes(id));
+          const removed = initialIds.filter((id: string) => !currentIds.includes(id));
+
+          if (playlistId) {
+            for (const id of added) {
+              await updateDoc(doc(db, 'media', id), { playlistId });
+            }
+            for (const id of removed) {
+              await updateDoc(doc(db, 'media', id), { playlistId: '' });
+            }
           }
         } else {
           const payload = {
@@ -4367,6 +4391,66 @@ export default function Admin() {
                         </div>
                         <div>
                           <UploadOrUrlField label="غلاف القائمة" fieldName="coverUrl" currentUrl={formData.coverUrl} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                        </div>
+                        
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-500 block text-right">محتوى القائمة (اختر الفيديوهات/الصور)</label>
+                           <div className="max-h-[250px] overflow-y-auto border border-border-light dark:border-border-dark rounded-2xl p-2.5 space-y-2 bg-slate-50/50 dark:bg-surface-dark">
+                              {media.map(item => (
+                                <label key={item.id} className={`flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer ${formData.selectedMediaIds?.includes(item.id) ? 'bg-primary/5 border-primary/20 shadow-sm' : 'bg-white dark:bg-card-dark border-slate-100 dark:border-slate-800 hover:border-slate-200'}`}>
+                                   <div className="relative">
+                                     <input 
+                                      type="checkbox" 
+                                      className="w-4 h-4 accent-primary rounded cursor-pointer"
+                                      checked={formData.selectedMediaIds?.includes(item.id)} 
+                                      onChange={(e) => {
+                                        const ids = formData.selectedMediaIds || [];
+                                        if (e.target.checked) setFormData({...formData, selectedMediaIds: [...ids, item.id]});
+                                        else setFormData({...formData, selectedMediaIds: ids.filter((id: string) => id !== item.id)});
+                                      }}
+                                     />
+                                   </div>
+                                   <div className="relative w-12 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-100 dark:border-slate-800 shadow-sm">
+                                      {item.thumbnailUrl ? (
+                                        <img src={item.thumbnailUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                      ) : (
+                                        <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                          <PlayCircle size={16} className="text-slate-300" />
+                                        </div>
+                                      )}
+                                      <div className="absolute top-1 right-1">
+                                        <span className={`text-[6px] px-1 py-0.5 rounded shadow-sm text-white font-black uppercase ${item.type === 'video' ? 'bg-blue-500' : 'bg-emerald-500'}`}>
+                                          {item.type === 'video' ? 'فيديو' : 'صورة'}
+                                        </span>
+                                      </div>
+                                   </div>
+                                   <div className="flex-1 min-w-0">
+                                      <p className={`text-[10px] font-black truncate ${formData.selectedMediaIds?.includes(item.id) ? 'text-primary' : 'text-slate-700 dark:text-slate-200'}`}>{item.title}</p>
+                                      <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="text-[8px] text-slate-400 font-bold">{new Date(item.date).toLocaleDateString('ar-EG')}</span>
+                                        {item.playlistId && item.playlistId !== editingId && (
+                                          <span className="text-[8px] text-orange-500 font-bold flex items-center gap-0.5 leading-none">
+                                            <Layers size={8} />
+                                            موجود في قائمة أخرى
+                                          </span>
+                                        )}
+                                      </div>
+                                   </div>
+                                   {formData.selectedMediaIds?.includes(item.id) && (
+                                     <div className="bg-primary text-white p-1 rounded-full">
+                                       <Check size={10} strokeWidth={4} />
+                                     </div>
+                                   )}
+                                </label>
+                              ))}
+                              {media.length === 0 && (
+                                <div className="text-center py-10 opacity-50">
+                                   <PlayCircle size={32} className="mx-auto text-slate-300 mb-2" />
+                                   <p className="text-[10px] text-slate-400 font-bold">لا توجد ميديا متاحة للإضافة</p>
+                                </div>
+                              )}
+                           </div>
+                           <p className="text-[9px] text-slate-400 font-bold px-1">سيتم ربط الميديا المختارة بهذه القائمة تلقائياً عند الحفظ.</p>
                         </div>
                      </>
                    )}
