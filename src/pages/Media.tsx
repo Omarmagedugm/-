@@ -15,6 +15,12 @@ export default function Media() {
   const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
 
   useEffect(() => {
+    if (selectedPlaylistId) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [selectedPlaylistId]);
+
+  useEffect(() => {
     if (selectedVideo || selectedPhoto) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -34,8 +40,8 @@ export default function Media() {
     document.body.removeChild(link);
   };
 
-  const photos = media.filter(m => m.type === 'photo');
-  const videos = media.filter(m => m.type === 'video');
+  const photos = media.filter(m => m.type === 'photo' && (!selectedPlaylistId || m.playlistId === selectedPlaylistId));
+  const videos = media.filter(m => m.type === 'video' && (!selectedPlaylistId || m.playlistId === selectedPlaylistId));
 
   const getEmbedUrl = (url: string, source?: string) => {
     if (source === 'embed') return url;
@@ -187,7 +193,12 @@ export default function Media() {
               {displayPlaylists.map((playlist) => (
                 <button 
                   key={playlist.id} 
-                  onClick={() => setSelectedPlaylistId(playlist.id)}
+                  onClick={() => {
+                    setSelectedPlaylistId(playlist.id);
+                    if (playlist.type === 'video' || playlist.type === 'photo') {
+                      setActiveTab(playlist.type);
+                    }
+                  }}
                   className={`flex-shrink-0 w-32 flex flex-col gap-2 pressable text-right group`}
                 >
                   <div className={`aspect-square rounded-[24px] overflow-hidden border-2 transition-all border-transparent shadow-lg`}>
@@ -239,7 +250,9 @@ export default function Media() {
           {(activeTab === 'all' || activeTab === 'photo') && photos.length > 0 && (
             <motion.section variants={itemVariants} className="space-y-6">
               <div className="flex flex-col px-1">
-                <h2 className="text-lg font-black text-slate-800 dark:text-white leading-none uppercase">أحدث الصور</h2>
+                <h2 className="text-lg font-black text-slate-800 dark:text-white leading-none uppercase">
+                  {selectedPlaylistId && selectedPlaylist ? `الصور في ${selectedPlaylist.title}` : 'أحدث الصور'}
+                </h2>
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Stunning captures</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -315,7 +328,9 @@ export default function Media() {
           {(activeTab === 'all' || activeTab === 'video') && videos.length > 0 && (
             <motion.section variants={itemVariants} className="space-y-6">
               <div className="flex flex-col px-1">
-                <h2 className="text-lg font-black text-slate-800 dark:text-white leading-none uppercase">مكتبة الفيديو</h2>
+                <h2 className="text-lg font-black text-slate-800 dark:text-white leading-none uppercase">
+                  {selectedPlaylistId && selectedPlaylist ? `الفيديوهات في ${selectedPlaylist.title}` : 'مكتبة الفيديو'}
+                </h2>
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Exclusive Highlights</span>
               </div>
               <div className="flex flex-col gap-6">

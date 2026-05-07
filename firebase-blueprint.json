@@ -304,6 +304,8 @@
     "match_day_attendance": { "schema": "MatchDayAttendance", "description": "Match day attendance polls" },
     "ads": { "schema": "AdBanner", "description": "Advertising banners" },
     "custom_pages": { "schema": "CustomPage", "description": "Custom HTML pages" },
-    "jerseys": { "schema": "Jerseys", "description": "Club jerseys for AI try-on" }
+    "jerseys": { "schema": "Jerseys", "description": "Club jerseys for AI try-on" },
+    "ai_usage": { "schema": "object", "description": "AI usage quota tracking" },
+    "ai_generation_logs": { "schema": "object", "description": "AI generation history" }
   }
 }

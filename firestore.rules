@@ -220,11 +220,16 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
+    // AI Usage Logs
+    match /ai_generation_logs/{logId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
     // AI Usage Quota Tracking
     match /ai_usage/{usageId} {
-      allow get: if isSignedIn() && (usageId.startsWith(request.auth.uid) || isAdmin());
-      allow list: if isAdmin();
-      allow create, update: if isSignedIn() && usageId.startsWith(request.auth.uid);
+      allow read, write: if isSignedIn() && (usageId.startsWith(request.auth.uid) || isAdmin());
       allow delete: if isAdmin();
     }
 

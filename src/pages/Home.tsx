@@ -80,7 +80,7 @@ export default function Home() {
 
   const isOmar = auth.currentUser?.email?.toLowerCase() === "omarmagedugm@ittihad.club";
   const isDev = auth.currentUser?.email?.toLowerCase() === "copyrightofficialco@gmail.com";
-  const isAdmin = (auth.currentUser && profile?.role === "admin") || isOmar || isDev;
+  const isAdmin = (auth.currentUser && (profile?.role === "admin" || profile?.role === "moderator" || (profile?.roles && profile?.roles.length > 0))) || isOmar || isDev;
   const [selectedSport, setSelectedSport] = useState<"football" | "basketball" | "auto">(() => {
     const saved = localStorage.getItem("selected_sport");
     return (saved as "football" | "basketball" | "auto") || "auto";

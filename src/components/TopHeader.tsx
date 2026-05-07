@@ -118,6 +118,10 @@ export default function TopHeader() {
     setShowNotifications(true);
   };
 
+  const isOmar = auth.currentUser?.email?.toLowerCase() === 'omarmagedugm@ittihad.club';
+  const isDev = auth.currentUser?.email?.toLowerCase() === 'copyrightofficialco@gmail.com';
+  const isAdmin = (profile?.role === 'admin' || profile?.role === 'moderator' || (profile?.roles && profile?.roles.length > 0)) || isOmar || isDev;
+
   return (
     <>
       {/* Added a spacer to prevent content from going under the fixed header */}
@@ -161,7 +165,7 @@ export default function TopHeader() {
           </div>
 
           <div className="flex items-center gap-2">
-            {profile?.role === 'admin' && location.pathname.includes('/admin') && (
+            {isAdmin && location.pathname.includes('/admin') && (
               <motion.button 
                 whileTap={{ scale: 0.9 }}
                 onClick={() => navigate(-1)}
@@ -171,7 +175,7 @@ export default function TopHeader() {
                 <ChevronRight size={22} strokeWidth={2.5} />
               </motion.button>
             )}
-            {profile?.role === 'admin' && !location.pathname.includes('/admin') && (
+            {isAdmin && !location.pathname.includes('/admin') && (
               <Link 
                 to={`/admin?tab=${localStorage.getItem('lastAdminTab') || 'overview'}`}
                 className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-500 dark:text-slate-400 hover:text-primary transition-all duration-300 shadow-sm"

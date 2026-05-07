@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Upload, Sparkles, RefreshCw, Check, Download, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAppStore } from '../store';
 
 const JERSEYS = [
   { id: 'home', name: 'القميص الأساسي 2024', url: 'https://res.cloudinary.com/dv3f1rzbm/image/upload/v1741203000/jerseys/home_jersey.jpg' },
@@ -10,6 +11,7 @@ const JERSEYS = [
 ];
 
 const AIJerseyTryOn: React.FC = () => {
+  const { profile } = useAppStore();
   const [userImage, setUserImage] = useState<string | null>(null);
   const [selectedJersey, setSelectedJersey] = useState(JERSEYS[0]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -88,6 +90,8 @@ const AIJerseyTryOn: React.FC = () => {
         body: JSON.stringify({
           userImageBase64,
           jerseyImageBase64,
+          userId: profile.uid,
+          userEmail: profile.email
         }),
       });
 

@@ -616,7 +616,7 @@ export default function Admin() {
 
   // If Omar or Dev, they are always admin in UI regardless of DB role
   const effectiveRole = isDev ? 'admin' : profile.role;
-  const isAdminOrWriter = isDev || profile.role === 'admin' || (profile.roles && profile.roles.length > 0) || profile.role === 'writer' || profile.role === 'moderator';
+  const isAdminOrWriter = isDev || profile.role === 'admin' || profile.role === 'moderator' || (profile.roles && profile.roles.length > 0);
 
   if (!isAdminOrWriter) {
     return (

@@ -14,11 +14,48 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
-import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '../lib/firebase';
 import { useAppStore } from '../store';
+import { GoogleGenAI } from "@google/genai";
 
 import Sidebar from '../components/Sidebar';
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+  }
+}
+
+const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error Path:', path);
+  console.error('Firestore Error Info:', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+};
 
 const JerseyTryOn: React.FC = () => {
   const navigate = useNavigate();
@@ -182,11 +219,17 @@ const JerseyTryOn: React.FC = () => {
     const usageId = `${profile.uid}_${today}`;
     
     try {
-      const usageDoc = await getDoc(doc(db, 'ai_usage', usageId));
-      const currentUsage = usageDoc.exists() ? (usageDoc.data().count || 0) : 0;
+      console.log('Checking AI usage quota...');
+      let currentUsage = 0;
+      try {
+        const usageDoc = await getDoc(doc(db, 'ai_usage', usageId));
+        currentUsage = usageDoc.exists() ? (usageDoc.data().count || 0) : 0;
+      } catch (err) {
+        handleFirestoreError(err, OperationType.GET, `ai_usage/${usageId}`);
+      }
       
-      const USER_LIMIT = 5; // You can adjust this
-      const ADMIN_LIMIT = 25; // Higher quota for admin
+      const USER_LIMIT = 3; 
+      const ADMIN_LIMIT = 100;
       const limitCount = isAdmin ? ADMIN_LIMIT : USER_LIMIT;
       
       if (currentUsage >= limitCount) {
@@ -206,7 +249,6 @@ const JerseyTryOn: React.FC = () => {
       console.log('Fetching jersey image:', selectedJersey.url);
       const responseJersey = await fetch(selectedJersey.url);
       if (!responseJersey.ok) {
-        console.error('Failed to fetch jersey image:', responseJersey.statusText);
         throw new Error('فشل تحميل صورة القميص المختار');
       }
       const jerseyBlob = await responseJersey.blob();
@@ -218,7 +260,7 @@ const JerseyTryOn: React.FC = () => {
       });
       const jerseyImageBase64 = await compressImage(jerseyDataUrl);
 
-      // Fetch club logo for reference if exists
+      // Fetch club logo for reference
       let logoImageBase64 = '';
       if (aiConfig.clubLogo) {
         try {
@@ -237,108 +279,96 @@ const JerseyTryOn: React.FC = () => {
         }
       }
 
-      console.log('Generating prompts...');
-      let backgroundDetail = '';
-      if (selectedBackground === 'room') {
-        backgroundDetail = `
+      const backgroundDetail = selectedBackground === 'room' ? `
 SCENE: STANDING IN A WARM, AUTHENTIC "ISKANDARI FAN ROOM" (ZAEEM EL-THAGHR):
 - The background is a homey room belonging to a passionate Al Ittihad fan in Alexandria.
 - Walls decorated with many green and white flags and official Alittihad Alexandria club scarves (Etthadawy).
 - Include framed photos of club legends and newspaper clippings of famous victories.
-- Modern high-contrast lighting with a soft green ambient glow.`;
-      } else if (selectedBackground === 'studio') {
-        backgroundDetail = `
+- Modern high-contrast lighting with a soft green ambient glow.` : 
+      selectedBackground === 'studio' ? `
 SCENE: STANDING IN A SLEEK MODERN BRANDED STUDIO:
 - Minimalist, high-end professional photo studio with a clean aesthetic.
-- A curated wall featuring a stylish arrangement of vintage club articles and newspaper clippings.
+- A wall featuring a stylish arrangement of club articles and newspaper clippings.
 - Artistic display of Al Ittihad (Etthadawy) scarves and flags as cinematic backdrops.
 - Prominent Al Ittihad Alexandria club logo integrated into the backlit decor.
-- Clean studio shadows and professional sports photography lighting with green neon touches.`;
-      } else if (selectedBackground === 'stadium') {
-        backgroundDetail = `
+- Clean studio shadows and professional sports photography lighting with green neon touches.` :
+      selectedBackground === 'stadium' ? `
 SCENE: STANDING ON THE PITCH OF THE ALEXANDRIA STADIUM:
 - The background is the iconic Alexandria Stadium (historic towers visible).
 - Thousands of green and white cheering fans blurred in the background.
 - Floodlights creating a dramatic evening match atmosphere.
-- The person looks like a star player posing on the grass.`;
-      } else if (selectedBackground === 'birthday') {
-        backgroundDetail = `
+- The person looks like a star player posing on the grass.` :
+      `
 SCENE: CELEBRATING A "SIDI EL-BALAD" THEMED BIRTHDAY:
 - Festive atmosphere with a massive green and white Al Ittihad birthday cake.
 - Green and white balloons everywhere.
 - A "Happy Birthday" banner with the club logo.
 - The person is holding a club scarf, looking happy in a celebration setting.`;
-      }
 
       const prompt = `Perform a professional, high-end CLOTHING REPLACEMENT and FULL-BODY SCENE TRANSFORMATION.
 
 IDENTITY PRESERVATION (ABSOLUTE): You MUST perfectly preserve the person's face, features, hair, eyes, and unique identity from "Customer Image". The face must be 100% IDENTICAL to the original. NO adjustments to facial structure.
 
 BODY POSE & FULL-BODY COMPLETION (CRITICAL): 
-1. If the "Customer Image" is a portrait or half-body, you MUST generate the rest of the body to create a full-body standing pose.
-2. Adapt the person's posture to fit the environment naturally (e.g., a fan's proud stance, a studio model pose, or an athlete's pose on the pitch).
+1. If the "Customer Image" is a portrait or half-body, generate the rest of the body to create a full-body standing pose.
+2. Adapt the posture to fit the environment naturally (e.g., a fan's proud stance, or an athlete's pose).
 
-JERSEY & LOWER OUTFIT (MANDATORY):
+JERSEY & LOWER OUTFIT:
 1. UPPER BODY: Replace the person's current outfit with the EXACT Al Ittihad Alexandria (Etthadawy) green and white jersey kit provided in "Target Jersey to Wear".
-2. LOWER BODY: Complete the outfit by dressing the person in matching black Adidas sports pants (featuring the iconic three white stripes) and clean white Nike Air sneakers.
-3. FIT: The entire outfit (jersey + Adidas pants + Nike shoes) must be PERFECTLY fitted to the person's generated body. Ensure realistic fabric textures, natural folds, and integrated lighting/shadows.
-4. BRANDING: Use the "Official Club Logo" as the mandatory reference for the crest/badge on the jersey to ensure authenticity.
+2. LOWER BODY: Complete the outfit with matching black Adidas sports pants and white Nike sneakers.
+3. FIT: Ensure realistic fabric textures, natural folds, and integrated lighting.
+4. BRANDING: Use the "Official Club Logo" as the mandatory reference for the crest/badge.
 
 ${backgroundDetail}
 
-STYLE: 8k resolution, ultra-photorealistic sports/studio photography. It must look like a real photograph taken with a professional DSLR camera. No digital artifacts, no AI distortions, and no collage look.
+STYLE: 8k resolution, ultra-photorealistic sports/studio photography.
 
 OUTPUT: Return ONLY the transformed image.`;
 
-      const aiParts: any[] = [
-        { text: "Customer Image (Identity to preserve):" },
-        { inlineData: { data: userImageBase64, mimeType: 'image/jpeg' } },
-        { text: "Target Jersey to Wear:" },
-        { inlineData: { data: jerseyImageBase64, mimeType: 'image/jpeg' } }
-      ];
-
-      if (logoImageBase64) {
-        aiParts.push({ text: "Official Club Logo (Brand Reference):" });
-        aiParts.push({ inlineData: { data: logoImageBase64, mimeType: 'image/jpeg' } });
-      }
-
-      aiParts.push({ text: prompt });
-
-      console.log('Generating image via backend...');
-      const apiResponse = await fetch('/api/ai/process', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          userImageBase64,
-          jerseyImageBase64,
-          logoImageBase64,
-          backgroundDetail,
-          prompt
-        })
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: { parts: aiParts }
       });
 
-      if (!apiResponse.ok) {
-        const errorData = await apiResponse.json();
-        throw new Error(errorData.error || 'فشل توليد الصورة عبر الخادم');
+      let generatedImageBase64 = '';
+      const candidates = response.candidates || [];
+      if (candidates.length > 0 && candidates[0].content) {
+        const parts = candidates[0].content.parts || [];
+        for (const part of parts) {
+          if (part.inlineData && part.inlineData.data) {
+            generatedImageBase64 = part.inlineData.data;
+            break;
+          }
+        }
       }
 
-      const { imageBase64: generatedImageBase64 } = await apiResponse.json();
-
       if (generatedImageBase64) {
-        // Update usage count after success
-        await setDoc(doc(db, 'ai_usage', usageId), {
-          count: currentUsage + 1,
-          lastUsed: new Date().toISOString(),
-          userId: profile.uid,
-          date: today
-        }, { merge: true });
+        // Update usage count
+        try {
+          await setDoc(doc(db, 'ai_usage', usageId), {
+            count: currentUsage + 1,
+            lastUsed: new Date().toISOString(),
+            userId: profile.uid,
+            date: today
+          }, { merge: true });
+
+          // Log generation
+          await addDoc(collection(db, 'ai_generation_logs'), {
+            userId: profile.uid,
+            userEmail: profile.email,
+            timestamp: serverTimestamp(),
+            type: 'jersey_tryon',
+            jerseyId: selectedJersey.id,
+            mood: selectedBackground
+          });
+        } catch (err) {
+          console.warn('Frontend quota update failed (logging only):', err);
+        }
 
         setResultImage(`data:image/jpeg;base64,${generatedImageBase64}`);
         toast.success('تمت العملية بنجاح! نورت استوديو سيد البلد');
       } else {
-        throw new Error('لم يتم استلام الصورة من الخادم');
+        throw new Error('AI failed to generate an image.');
       }
 
     } catch (error: any) {

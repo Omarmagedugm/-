@@ -6,19 +6,40 @@ import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from "@google/genai";
+import admin from 'firebase-admin';
+import fs from 'fs';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Firebase Admin initialization
+const firebaseConfigPath = path.join(process.cwd(), 'firebase-applet-config.json');
+let db: admin.firestore.Firestore | null = null;
+
+if (fs.existsSync(firebaseConfigPath)) {
+  try {
+    const config = JSON.parse(fs.readFileSync(firebaseConfigPath, 'utf-8'));
+    admin.initializeApp({
+      projectId: config.projectId,
+    });
+    
+    // Support custom database ID if available in firebase-admin v11+
+    if (config.firestoreDatabaseId) {
+      db = admin.firestore(config.firestoreDatabaseId);
+    } else {
+      db = admin.firestore();
+    }
+    console.log('Firebase Admin initialized successfully');
+  } catch (err) {
+    console.error('Error initializing Firebase Admin:', err);
+  }
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
-
-  // Gemini AI Initialization
-  const geminiApiKey = (process.env.GEMINI_API_KEY || '').trim();
-  const ai = geminiApiKey.length > 5 ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
 
   // Multer setup for memory storage
   const storage = multer.memoryStorage();
@@ -56,80 +77,7 @@ async function startServer() {
     res.json({ status: 'ok' });
   });
 
-  // Gemini AI Processing Route (Supported via two paths for compatibility)
-  const handleAIProcess = async (req: any, res: any) => {
-    try {
-      if (!ai) {
-        console.error('AI Processing Error: AI service not initialized. API Key length:', geminiApiKey?.length);
-        return res.status(500).json({ 
-          error: 'AI service not configured on server. Please ensure GEMINI_API_KEY is correctly set in Settings.' 
-        });
-      }
-
-      const { userImageBase64, jerseyImageBase64, logoImageBase64, prompt } = req.body;
-
-      if (!userImageBase64 || !jerseyImageBase64) {
-        return res.status(400).json({ error: 'Missing required images' });
-      }
-
-      // Use gemini-3-flash-preview as per newest SDK guidance
-      const aiParts: any[] = [
-        { text: "Customer Image (Identity to preserve):" },
-        { inlineData: { data: userImageBase64, mimeType: 'image/jpeg' } },
-        { text: "Target Jersey to Wear:" },
-        { inlineData: { data: jerseyImageBase64, mimeType: 'image/jpeg' } }
-      ];
-
-      if (logoImageBase64) {
-        aiParts.push({ text: "Official Club Logo (Brand Reference):" });
-        aiParts.push({ inlineData: { data: logoImageBase64, mimeType: 'image/jpeg' } });
-      }
-
-      aiParts.push({ text: prompt || "Replace person's shirt with the target jersey. Maintain identity." });
-
-      console.log('Calling Gemini AI (gemini-3-flash-preview)...');
-      
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: { parts: aiParts }
-      });
-      let generatedImageBase64 = '';
-      
-      const candidates = response.candidates || [];
-      if (candidates.length > 0 && candidates[0].content) {
-        const parts = candidates[0].content.parts || [];
-        for (const part of parts) {
-          if (part.inlineData && part.inlineData.data) {
-            generatedImageBase64 = part.inlineData.data;
-            break;
-          }
-        }
-      }
-
-      if (!generatedImageBase64) {
-        const text = response.text || 'No text content';
-        console.error('No image returned from AI. Response text:', text);
-        return res.status(500).json({ 
-          error: 'AI failed to generate an image. This model may be restricted or busy. ' + (text ? `Reason: ${text.slice(0, 100)}` : 'Please try again.')
-        });
-      }
-
-      res.json({ 
-        imageBase64: generatedImageBase64,
-        image: `data:image/jpeg;base64,${generatedImageBase64}` // Support both formats
-      });
-    } catch (error: any) {
-      console.error('Gemini processing error:', error);
-      const status = error.status || 500;
-      const message = error.message || 'Internal server error';
-      res.status(status).json({ error: message });
-    }
-  };
-
-  app.post('/api/ai/process', handleAIProcess);
-  app.post('/api/ai/jersey-tryon', handleAIProcess);
-
-  // Cloudinary Upload Endpoint
+  // Cloudinary Upload Endpoint (Still needed for image management)
   app.post('/api/upload', upload.single('image'), async (req: any, res: any) => {
     try {
       if (!req.file) {
