@@ -213,6 +213,15 @@ const JerseyTryOn: React.FC = () => {
     setIsProcessing(true);
     setResultImage(null);
 
+    // 0. AI Initialization
+    const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+    if (!apiKey) {
+      toast.error('AI service key is missing. Please check your environment settings.');
+      setIsProcessing(false);
+      return;
+    }
+    const ai = new GoogleGenAI({ apiKey });
+
     // 1. Quota Check
     const isAdmin = profile.role === 'admin' || (profile.roles && profile.roles.includes('admin'));
     const today = new Date().toISOString().split('T')[0];
@@ -325,6 +334,20 @@ STYLE: 8k resolution, ultra-photorealistic sports/studio photography.
 
 OUTPUT: Return ONLY the transformed image.`;
 
+      const aiParts = [
+        { text: "Customer Image (Identity to preserve):" },
+        { inlineData: { data: userImageBase64, mimeType: 'image/jpeg' } },
+        { text: "Target Jersey to Wear:" },
+        { inlineData: { data: jerseyImageBase64, mimeType: 'image/jpeg' } }
+      ];
+
+      if (logoImageBase64) {
+        aiParts.push({ text: "Official Club Logo (Brand Reference):" });
+        aiParts.push({ inlineData: { data: logoImageBase64, mimeType: 'image/jpeg' } });
+      }
+
+      aiParts.push({ text: prompt });
+
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash-image',
         contents: { parts: aiParts }
@@ -393,10 +416,15 @@ OUTPUT: Return ONLY the transformed image.`;
                           errorMessage.toLowerCase().includes('resource_exhausted') || 
                           errorMessage.toLowerCase().includes('quota');
       
+      const isSpendCapError = errorMessage.toLowerCase().includes('monthly spending cap') || 
+                             errorMessage.toLowerCase().includes('spend cap');
+
       const isSafetyError = errorMessage.toLowerCase().includes('safety') || 
                            errorMessage.toLowerCase().includes('blocked');
 
-      if (isQuotaError) {
+      if (isSpendCapError) {
+        toast.error('تم تجاوز سقف الإنفاق الشهري الخاص بمفتاح الـ API. يرجى مراجعة إعدادات AI Studio (ai.studio/spend) لرفع السقف.');
+      } else if (isQuotaError) {
         toast.error(errorMessage.includes('حصتك المجانية') ? errorMessage : 'نعتذر، تم استهلاك كامل حصة الصور المجانية حالياً. يرجى المحاولة مرة أخرى لاحقاً.');
       } else if (isSafetyError) {
         toast.error('تم حظر الصورة بواسطة فلاتر الأمان. يرجى استخدام صورة شخصية لائقة وواضحة.');

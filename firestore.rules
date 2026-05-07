@@ -229,7 +229,7 @@ service cloud.firestore {
 
     // AI Usage Quota Tracking
     match /ai_usage/{usageId} {
-      allow read, write: if isSignedIn() && (usageId.startsWith(request.auth.uid) || isAdmin());
+      allow read, write: if isSignedIn() && (usageId >= request.auth.uid && usageId < request.auth.uid + '\uf8ff' || isAdmin());
       allow delete: if isAdmin();
     }
 
