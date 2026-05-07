@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from 'dotenv';
 import admin from 'firebase-admin';
 import fs from 'fs';
@@ -12,6 +13,19 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// AI Client Lazy Init
+let aiClient: GoogleGenerativeAI | null = null;
+function getAI() {
+  if (!aiClient) {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) {
+      throw new Error('GEMINI_API_KEY is missing');
+    }
+    aiClient = new GoogleGenerativeAI(key);
+  }
+  return aiClient;
+}
 
 // Firebase Admin initialization
 const firebaseConfigPath = path.join(process.cwd(), 'firebase-applet-config.json');
@@ -74,6 +88,48 @@ async function startServer() {
   // API Routes
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
+  });
+
+  app.post('/api/ai/process', async (req: any, res: any) => {
+    try {
+      const { userImage, jerseyImage, logoImage, prompt, model } = req.body;
+      
+      if (!userImage || !jerseyImage) {
+        return res.status(400).json({ error: 'Missing required images' });
+      }
+
+      const ai = getAI();
+      const aiModel = ai.getGenerativeModel({ model: model || 'gemini-3.1-flash-image-preview' });
+
+      const aiParts: any[] = [
+        { text: "Customer Image (Identity to preserve):" },
+        { inlineData: { data: userImage, mimeType: 'image/jpeg' } },
+        { text: "Target Jersey to Wear:" },
+        { inlineData: { data: jerseyImage, mimeType: 'image/jpeg' } }
+      ];
+
+      if (logoImage) {
+        aiParts.push({ text: "Official Club Logo (Brand Reference):" });
+        aiParts.push({ inlineData: { data: logoImage, mimeType: 'image/jpeg' } });
+      }
+
+      aiParts.push({ text: prompt });
+
+      const result = await aiModel.generateContent(aiParts);
+      const responseText = result.response.text();
+      
+      // Extract base64 from markdown if needed
+      const base64Match = responseText.match(/data:image\/[a-zA-Z]+;base64,[^"'\s\)]+/);
+      const cleanedImage = base64Match ? base64Match[0] : responseText.trim();
+
+      res.json({ result: cleanedImage });
+    } catch (error: any) {
+      console.error('AI Processing error:', error);
+      res.status(500).json({ 
+        error: error.message || 'Internal AI error',
+        details: error.response?.data || error
+      });
+    }
   });
 
   // Cloudinary Upload Endpoint (Still needed for image management)

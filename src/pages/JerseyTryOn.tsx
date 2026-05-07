@@ -18,7 +18,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { useAppStore } from '../store';
-import { GoogleGenAI } from "@google/genai";
 
 import Sidebar from '../components/Sidebar';
 
@@ -219,14 +218,7 @@ const JerseyTryOn: React.FC = () => {
     setIsProcessing(true);
     setResultImage(null);
 
-    // 0. AI Initialization
-    const apiKey = (process.env.GEMINI_API_KEY || '').trim();
-    if (!apiKey) {
-      toast.error('AI service key is missing. Please check your environment settings.');
-      setIsProcessing(false);
-      return;
-    }
-    const ai = new GoogleGenAI({ apiKey });
+    // 0. AI Initialization moved to Server
 
     // 1. Quota Check
     const isAdmin = profile.role === 'admin' || (profile.roles && profile.roles.includes('admin'));
@@ -354,24 +346,35 @@ OUTPUT: Return ONLY the transformed image.`;
 
       aiParts.push({ text: prompt });
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-image-preview',
-        contents: { parts: aiParts }
+      // Call backend API instead of client SDK
+      const apiResponse = await fetch('/api/ai/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userImage: userImageBase64,
+          jerseyImage: jerseyImageBase64,
+          logoImage: logoImageBase64,
+          prompt,
+          model: 'gemini-3.1-flash-image-preview'
+        }),
       });
 
-      let generatedImageBase64 = '';
-      const candidates = response.candidates || [];
-      if (candidates.length > 0 && candidates[0].content) {
-        const parts = candidates[0].content.parts || [];
-        for (const part of parts) {
-          if (part.inlineData && part.inlineData.data) {
-            generatedImageBase64 = part.inlineData.data;
-            break;
-          }
-        }
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json();
+        throw new Error(errorData.error || 'فشل الاتصال بخادم الذكاء الاصطناعي');
       }
 
+      const { result } = await apiResponse.json();
+      let generatedImageBase64 = result;
+
       if (generatedImageBase64) {
+        // Remove data URL prefix if returned
+        if (generatedImageBase64.includes(';base64,')) {
+          generatedImageBase64 = generatedImageBase64.split(';base64,')[1];
+        }
+
         // Update usage count
         try {
           await setDoc(doc(db, 'ai_usage', usageId), {
