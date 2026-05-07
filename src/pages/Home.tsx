@@ -1800,7 +1800,7 @@ export default function Home() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex-1 overflow-x-hidden px-4 flex flex-col gap-0 pt-8 pb-6"
+        className="flex-1 overflow-x-hidden px-4 flex flex-col gap-0 pt-3 pb-6"
       >
         {/* Goal Celebration Trigger is in App.tsx */}
       

@@ -111,6 +111,10 @@ export default function FanZone() {
   useEffect(() => {
     const unsubAiConfig = onSnapshot(doc(db, 'settings', 'ai_config'), (snap) => {
       if (snap.exists()) setAiConfig(snap.data());
+    }, (error) => {
+      if (error.code !== 'permission-denied') {
+        handleFirestoreError(error, OperationType.GET, 'settings/ai_config');
+      }
     });
     return () => unsubAiConfig();
   }, []);
@@ -141,7 +145,9 @@ export default function FanZone() {
       const unsub = onSnapshot(q, (snapshot) => {
         setPostComments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       }, (error) => {
-        if (error.code !== 'permission-denied') console.error('Error fetching comments:', error);
+        if (error.code !== 'permission-denied') {
+          handleFirestoreError(error, OperationType.LIST, `fan_posts/${activeCommentPost}/comments`);
+        }
       });
       return unsub;
     } else {
@@ -177,7 +183,9 @@ export default function FanZone() {
       return onSnapshot(q, (snapshot) => {
         setMatchDayMoments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       }, (error) => {
-        if (error.code !== 'permission-denied') console.error('Error fetching match day moments:', error);
+        if (error.code !== 'permission-denied') {
+          handleFirestoreError(error, OperationType.LIST, 'match_day_moments');
+        }
       });
     }
   }, [activeTab, nextMatch]);
@@ -193,7 +201,9 @@ export default function FanZone() {
           setAttendancePoll(null);
         }
       }, (error) => {
-        if (error.code !== 'permission-denied') console.error('Error fetching attendance poll:', error);
+        if (error.code !== 'permission-denied') {
+          handleFirestoreError(error, OperationType.GET, `match_day_attendance/${pollId}`);
+        }
       });
     }
   }, [activeTab, nextMatch]);

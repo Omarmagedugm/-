@@ -18,6 +18,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { useAppStore } from '../store';
+import { GoogleGenAI } from "@google/genai";
 
 import Sidebar from '../components/Sidebar';
 
@@ -68,6 +69,24 @@ const JerseyTryOn: React.FC = () => {
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [aiConfig, setAiConfig] = useState<any>({ enabled: true, clubLogo: '' });
   const [loading, setLoading] = useState(true);
+  const [hasApiKey, setHasApiKey] = useState<boolean>(false);
+
+  useEffect(() => {
+    const checkKey = async () => {
+      if ((window as any).aistudio && (window as any).aistudio.hasSelectedApiKey) {
+        const has = await (window as any).aistudio.hasSelectedApiKey();
+        setHasApiKey(has);
+      }
+    };
+    checkKey();
+  }, []);
+
+  const handleOpenKeySelector = async () => {
+    if ((window as any).aistudio && (window as any).aistudio.openSelectKey) {
+      await (window as any).aistudio.openSelectKey();
+      setHasApiKey(true);
+    }
+  };
 
   useEffect(() => {
     // Fetch AI config
@@ -218,7 +237,8 @@ const JerseyTryOn: React.FC = () => {
     setIsProcessing(true);
     setResultImage(null);
 
-    // 0. AI Initialization moved to Server
+    // 0. AI Initialization (Client-side per skill requirements)
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
     // 1. Quota Check
     const isAdmin = profile.role === 'admin' || (profile.roles && profile.roles.includes('admin'));
@@ -232,10 +252,11 @@ const JerseyTryOn: React.FC = () => {
         const usageDoc = await getDoc(doc(db, 'ai_usage', usageId));
         currentUsage = usageDoc.exists() ? (usageDoc.data().count || 0) : 0;
       } catch (err) {
-        handleFirestoreError(err, OperationType.GET, `ai_usage/${usageId}`);
+        console.warn('Could not read AI usage, continuing with default 0:', err);
+        // We don't throw hero, just continue. The write later might fail or log a warn.
       }
       
-      const USER_LIMIT = 3; 
+      const USER_LIMIT = 10; // Updated to 10 per user request
       const ADMIN_LIMIT = 100;
       const limitCount = isAdmin ? ADMIN_LIMIT : USER_LIMIT;
       
@@ -346,61 +367,66 @@ OUTPUT: Return ONLY the transformed image.`;
 
       aiParts.push({ text: prompt });
 
-      // Call backend API instead of client SDK
-      const apiResponse = await fetch('/api/ai/process', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userImage: userImageBase64,
-          jerseyImage: jerseyImageBase64,
-          logoImage: logoImageBase64,
-          prompt,
-          model: 'gemini-3.1-flash-image-preview'
-        }),
-      });
+      // Call client-side GenAI SDK
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash-image',
+          contents: { parts: aiParts as any },
+          config: {
+            imageConfig: {
+              aspectRatio: "3:4",
+              imageSize: "1K"
+            }
+          }
+        });
 
-      if (!apiResponse.ok) {
-        const errorData = await apiResponse.json();
-        throw new Error(errorData.error || 'فشل الاتصال بخادم الذكاء الاصطناعي');
-      }
-
-      const { result } = await apiResponse.json();
-      let generatedImageBase64 = result;
-
-      if (generatedImageBase64) {
-        // Remove data URL prefix if returned
-        if (generatedImageBase64.includes(';base64,')) {
-          generatedImageBase64 = generatedImageBase64.split(';base64,')[1];
+        let generatedImageBase64 = '';
+        const candidates = response.candidates || [];
+        if (candidates.length > 0 && candidates[0].content) {
+          const parts = candidates[0].content.parts || [];
+          for (const part of parts) {
+            if (part.inlineData && part.inlineData.data) {
+              generatedImageBase64 = part.inlineData.data;
+              break;
+            }
+          }
         }
 
-        // Update usage count
-        try {
-          await setDoc(doc(db, 'ai_usage', usageId), {
-            count: currentUsage + 1,
-            lastUsed: new Date().toISOString(),
-            userId: profile.uid,
-            date: today
-          }, { merge: true });
+        if (generatedImageBase64) {
+          // Update usage count
+          try {
+            await setDoc(doc(db, 'ai_usage', usageId), {
+              count: currentUsage + 1,
+              lastUsed: new Date().toISOString(),
+              userId: profile.uid,
+              date: today
+            }, { merge: true });
 
-          // Log generation
-          await addDoc(collection(db, 'ai_generation_logs'), {
-            userId: profile.uid,
-            userEmail: profile.email,
-            timestamp: serverTimestamp(),
-            type: 'jersey_tryon',
-            jerseyId: selectedJersey.id,
-            mood: selectedBackground
-          });
-        } catch (err) {
-          console.warn('Frontend quota update failed (logging only):', err);
+            // Log generation
+            await addDoc(collection(db, 'ai_generation_logs'), {
+              userId: profile.uid,
+              userEmail: profile.email,
+              timestamp: serverTimestamp(),
+              type: 'jersey_tryon',
+              jerseyId: selectedJersey.id,
+              mood: selectedBackground
+            });
+          } catch (err) {
+            console.warn('Frontend quota update failed (logging only):', err);
+          }
+
+          setResultImage(`data:image/jpeg;base64,${generatedImageBase64}`);
+          toast.success('تمت العملية بنجاح! نورت استوديو سيد البلد');
+        } else {
+          throw new Error('فشل الذكاء الاصطناعي في إنشاء الصورة. يرجى المحاولة مرة أخرى.');
         }
-
-        setResultImage(`data:image/jpeg;base64,${generatedImageBase64}`);
-        toast.success('تمت العملية بنجاح! نورت استوديو سيد البلد');
-      } else {
-        throw new Error('AI failed to generate an image.');
+      } catch (err: any) {
+        // If "Requested entity was not found", reset key
+        if (err.message?.includes("Requested entity was not found")) {
+          setHasApiKey(false);
+          throw new Error("حدث خطأ في مفتاح الـ API. يرجى إعادة اختيار المفتاح.");
+        }
+        throw err;
       }
 
     } catch (error: any) {
@@ -664,26 +690,59 @@ OUTPUT: Return ONLY the transformed image.`;
               </motion.div>
 
               {/* Action */}
-              <motion.button
-                id="process-btn"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={processWithAI}
-                disabled={!userImage || isProcessing}
-                className={`w-full py-5 rounded-[24px] font-black text-xl flex items-center justify-center gap-3 transition-all relative overflow-hidden ${!userImage || isProcessing ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-primary text-white shadow-[0_20px_40px_-10px_rgba(34,197,94,0.4)]'}`}
-              >
-                {isProcessing ? (
-                  <>
-                    <RefreshCw className="animate-spin" size={24} />
-                    <span>جاري معالجة الصورة...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={24} className="animate-pulse" />
-                    <span>إظهار في مظهر المشجع</span>
-                  </>
-                )}
-              </motion.button>
+              {!hasApiKey ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 p-6 rounded-[24px] space-y-4"
+                >
+                  <div className="flex items-start gap-3 text-amber-800 dark:text-amber-400">
+                    <AlertCircle className="shrink-0 mt-0.5" size={20} />
+                    <div className="space-y-1">
+                      <p className="font-black text-sm">خطوة مطلوبة: تفعيل الذكاء الاصطناعي</p>
+                      <p className="text-xs font-bold leading-relaxed opacity-80">
+                        لاستخدام موديلات توليد الصور عالية الجودة، يجب عليك تفعيل مفتاح الـ API الخاص بك من حساب Google Cloud.
+                      </p>
+                      <a 
+                        href="https://ai.google.dev/gemini-api/docs/billing" 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="text-[10px] underline block hover:text-amber-600 transition-colors"
+                      >
+                        تعرف على كيفية الحصول على مفتاح وتفعيل الفواتير
+                      </a>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleOpenKeySelector}
+                    className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-black text-sm shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Shield size={18} />
+                    تفعيل مفتاح AI Studio
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.button
+                  id="process-btn"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={processWithAI}
+                  disabled={!userImage || isProcessing}
+                  className={`w-full py-5 rounded-[24px] font-black text-xl flex items-center justify-center gap-3 transition-all relative overflow-hidden ${!userImage || isProcessing ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-primary text-white shadow-[0_20px_40px_-10px_rgba(34,197,94,0.4)]'}`}
+                >
+                  {isProcessing ? (
+                    <>
+                      <RefreshCw className="animate-spin" size={24} />
+                      <span>جاري معالجة الصورة...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={24} className="animate-pulse" />
+                      <span>إظهار في مظهر المشجع</span>
+                    </>
+                  )}
+                </motion.button>
+              )}
             </div>
 
             {/* Preview Section */}

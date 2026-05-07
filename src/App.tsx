@@ -234,16 +234,30 @@ function AuthRedirector() {
   useEffect(() => {
     if (!isAuthReady) return;
 
+    // Permissions logic
+    const isOmar = profile.email?.toLowerCase() === 'omarmagedugm@ittihad.club';
+    const isDev = profile.email?.toLowerCase() === 'copyrightofficialco@gmail.com';
+    const isAdmin = profile.role === 'admin' || (profile.roles && profile.roles.includes('admin'));
+    const isModerator = profile.role === 'moderator' || (profile.roles && profile.roles.includes('moderator'));
+    const hasAdminAccess = isAdmin || isModerator || isOmar || isDev;
+
     // If logged in and on auth page, go home
     if (profile.uid && location.pathname === '/auth') {
       navigate('/', { replace: true });
     }
+    
     // If not logged in and on a protected page like admin or profile, go to auth
     const protectedPaths = ['/admin', '/profile', '/bookmarks', '/store']; 
     if (!profile.uid && protectedPaths.includes(location.pathname)) {
       navigate('/auth', { replace: true });
     }
-  }, [profile.uid, location.pathname, navigate, isAuthReady]);
+
+    // Role-based protection for /admin
+    if (profile.uid && location.pathname === '/admin' && !hasAdminAccess) {
+      toast.error('عذراً، لا تمتلك الصلاحيات الكافية للوصول إلى هذه الصفحة');
+      navigate('/', { replace: true });
+    }
+  }, [profile.uid, profile.role, profile.roles, profile.email, location.pathname, navigate, isAuthReady]);
 
   return null;
 }

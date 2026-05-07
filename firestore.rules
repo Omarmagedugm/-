@@ -57,8 +57,8 @@ service cloud.firestore {
 
     // User Profile Validation
     function isValidUser(data) {
-      return data.name is string && data.name.size() <= 100 &&
-             data.email is string && data.email.size() <= 100 &&
+      return (data.get('name', '') is string) && (data.get('name', '').size() <= 100) &&
+             (data.get('email', '') is string) && (data.get('email', '').size() <= 100) &&
              (!('uid' in data) || (data.uid is string && data.uid.size() <= 128)) &&
              (!('role' in data) || (data.role in ['user', 'writer', 'moderator', 'admin'])) &&
              (!('avatar' in data) || (data.avatar is string && data.avatar.size() <= 5000)) &&
@@ -86,9 +86,13 @@ service cloud.firestore {
                       incoming().keys().hasAll(['name', 'email']) &&
                       isValidUser(incoming());
       allow update: if (
-        isOwner(userId) && 
-        isValidUser(incoming()) &&
-        (!('role' in incoming()) || !('role' in existing()) || incoming().role == existing().role || isBootstrapAdmin(userId))
+        isOwner(userId) && (
+          (incoming().diff(existing()).affectedKeys().hasOnly(['lastActive', 'fcmToken'])) ||
+          (
+            isValidUser(incoming()) &&
+            (!('role' in incoming()) || !('role' in existing()) || incoming().role == existing().role || isBootstrapAdmin(userId))
+          )
+        )
       ) || isAdmin();
       allow delete: if isAdmin();
     }
@@ -229,7 +233,9 @@ service cloud.firestore {
 
     // AI Usage Quota Tracking
     match /ai_usage/{usageId} {
-      allow read, write: if isSignedIn() && (usageId.startsWith(request.auth.uid) || isAdmin());
+      allow read: if isSignedIn() && (usageId.startsWith(request.auth.uid) || isAdmin());
+      allow create: if isSignedIn() && (usageId.startsWith(request.auth.uid) || isAdmin()) && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && (usageId.startsWith(request.auth.uid) || isAdmin());
       allow delete: if isAdmin();
     }
 
@@ -247,7 +253,7 @@ service cloud.firestore {
 
     // Notifications
     match /notifications/{id} {
-      allow read: if isSignedIn() && (resource.data.get('target', 'all') == 'all' || resource.data.target == request.auth.uid || isAdmin() || isUserManager());
+      allow read: if isSignedIn() && (resource.data.target in ['all', request.auth.uid] || isAdmin() || isUserManager());
       allow write: if isAdmin() || isUserManager();
       allow update: if isSignedIn() && (incoming().diff(existing()).affectedKeys().hasOnly(['readBy']));
     }

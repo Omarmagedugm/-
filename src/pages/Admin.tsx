@@ -381,33 +381,88 @@ export default function Admin() {
   const [isExporting, setIsExporting] = useState(false);
   const [aiUsage, setAiUsage] = useState<any[]>([]);
 
+  const isOmar = profile.email?.toLowerCase() === 'omarmagedugm@ittihad.club';
+  const isDev = profile.email?.toLowerCase() === 'copyrightofficialco@gmail.com';
+  const isAdminUser = profile.role === 'admin' || (profile.roles && profile.roles.includes('admin'));
+  const isModeratorUser = profile.role === 'moderator' || (profile.roles && profile.roles.includes('moderator'));
+  const hasAdminAccess = isAdminUser || isModeratorUser || isOmar || isDev;
+
+  if (profile.uid && !hasAdminAccess) {
+    return <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
+      <div className="text-center p-8 glass-card rounded-[32px]">
+        <ShieldAlert size={64} className="mx-auto text-red-500 mb-4" />
+        <h2 className="text-2xl font-black text-slate-800 dark:text-white mb-2">دخول غير مصرح</h2>
+        <p className="text-slate-500 dark:text-slate-400 font-bold">لا تمتلك الصلاحيات الكافية للوصول إلى لوحة التحكم.</p>
+        <Link to="/" className="mt-6 inline-block bg-primary text-white px-8 py-3 rounded-2xl font-black transition-transform active:scale-95 leading-none">العودة للرئيسية</Link>
+      </div>
+    </div>;
+  }
+
   useEffect(() => {
-    const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(20));
-    const unsub = onSnapshot(q, (snapshot) => {
-      setSentNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-    
-    const qPages = query(collection(db, 'custom_pages'), orderBy('createdAt', 'desc'));
-    const unsubPages = onSnapshot(qPages, (snapshot) => {
-      setCustomPages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    if (!profile.uid || !hasAdminAccess) return;
 
-    const unsubJerseys = onSnapshot(collection(db, 'jerseys'), (snapshot) => {
-      setJerseys(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    let unsubNotifs = () => {};
+    let unsubPages = () => {};
+    let unsubJerseys = () => {};
+    let unsubAiConfig = () => {};
+    let unsubUsage = () => {};
 
-    const unsubAiConfig = onSnapshot(doc(db, 'settings', 'ai_config'), (snap) => {
-      if (snap.exists()) setAiConfig(snap.data());
-    });
+    try {
+      const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(20));
+      unsubNotifs = onSnapshot(q, (snapshot) => {
+        setSentNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      }, (error) => {
+        if (error.code !== 'permission-denied') {
+          handleFirestoreError(error, OperationType.LIST, 'notifications');
+        }
+      });
+      
+      const qPages = query(collection(db, 'custom_pages'), orderBy('createdAt', 'desc'));
+      unsubPages = onSnapshot(qPages, (snapshot) => {
+        setCustomPages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      }, (error) => {
+        if (error.code !== 'permission-denied') {
+          handleFirestoreError(error, OperationType.LIST, 'custom_pages');
+        }
+      });
+
+      unsubJerseys = onSnapshot(collection(db, 'jerseys'), (snapshot) => {
+        setJerseys(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      }, (error) => {
+        if (error.code !== 'permission-denied') {
+          handleFirestoreError(error, OperationType.LIST, 'jerseys');
+        }
+      });
+
+      unsubAiConfig = onSnapshot(doc(db, 'settings', 'ai_config'), (snap) => {
+        if (snap.exists()) setAiConfig(snap.data());
+      }, (error) => {
+        if (error.code !== 'permission-denied') {
+          handleFirestoreError(error, OperationType.GET, 'settings/ai_config');
+        }
+      });
+      
+      const usageToday = new Date().toISOString().split('T')[0];
+      const qUsage = query(collection(db, 'ai_usage'), where('date', '==', usageToday));
+      unsubUsage = onSnapshot(qUsage, (snapshot) => {
+        setAiUsage(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      }, (error) => {
+        if (error.code !== 'permission-denied') {
+          handleFirestoreError(error, OperationType.LIST, 'ai_usage');
+        }
+      });
+    } catch (err) {
+      console.error('Listener setup error:', err);
+    }
     
-    const usageToday = new Date().toISOString().split('T')[0];
-    const qUsage = query(collection(db, 'ai_usage'), where('date', '==', usageToday));
-    const unsubUsage = onSnapshot(qUsage, (snapshot) => {
-      setAiUsage(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-    
-    return () => { unsub(); unsubPages(); unsubJerseys(); unsubAiConfig(); unsubUsage(); };
-  }, []);
+    return () => { 
+      unsubNotifs(); 
+      unsubPages(); 
+      unsubJerseys(); 
+      unsubAiConfig(); 
+      unsubUsage(); 
+    };
+  }, [profile.uid, profile.role, profile.roles]);
 
   const handleExportDatabase = async () => {
     if (!window.confirm('هل أنت متأكد من رغبتك في تحميل نسخة كاملة من قاعدة البيانات؟ قد تستغرق هذه العملية بعض الوقت.')) return;
@@ -564,12 +619,9 @@ export default function Admin() {
     }
   }, [location.state, news, media, matches]);
 
-  // Security check
-  const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com' || auth.currentUser?.email === 'omarmagedugm@ittihad.club';
-  
   const hasPermission = (roles: AppRole | AppRole[]) => {
-    if (isDev) return true;
-    if (profile.role === 'admin') return true;
+    if (isDev || isOmar) return true;
+    if (profile.role === 'admin' || isAdminUser) return true;
     const userRoles = [...(profile.roles || [])];
     
     // Legacy support for writer/moderator roles
@@ -581,7 +633,7 @@ export default function Admin() {
   };
 
   const isTabAllowed = (tab: string) => {
-    if (isDev || profile.role === 'admin') return true;
+    if (isDev || isOmar || profile.role === 'admin' || isAdminUser) return true;
     if (tab === 'overview') return true;
     
     const roleMap: Record<string, AppRole[]> = {
@@ -1356,6 +1408,17 @@ export default function Admin() {
       toast.success(newStatus ? 'تم حظر العضو من الاستوديو' : 'تم إلغاء حظر العضو');
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `users/${member.uid}`);
+    }
+  };
+
+  const handleDeleteMember = async (member: any) => {
+    if (!window.confirm(`هل أنت متأكد من حذف العضو "${member.name}" نهائياً من التطبيق؟ لا يمكن التراجع عن هذا الإجراء.`)) return;
+    
+    try {
+      await deleteDoc(doc(db, 'users', member.uid));
+      toast.success('تم حذف العضو بنجاح');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `users/${member.uid}`);
     }
   };
 
