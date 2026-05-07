@@ -6,7 +6,8 @@ import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from 'dotenv';
-import admin from 'firebase-admin';
+import { initializeApp, getApp, getApps } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import fs from 'fs';
 
 dotenv.config();
@@ -29,21 +30,17 @@ function getAI() {
 
 // Firebase Admin initialization
 const firebaseConfigPath = path.join(process.cwd(), 'firebase-applet-config.json');
-let db: admin.firestore.Firestore | null = null;
+let db: any = null;
 
 if (fs.existsSync(firebaseConfigPath)) {
   try {
     const config = JSON.parse(fs.readFileSync(firebaseConfigPath, 'utf-8'));
-    admin.initializeApp({
-      projectId: config.projectId,
-    });
+    const app = getApps().length === 0 
+      ? initializeApp({ projectId: config.projectId })
+      : getApp();
     
-    // Support custom database ID if available in firebase-admin v11+
-    if (config.firestoreDatabaseId) {
-      db = admin.firestore(config.firestoreDatabaseId);
-    } else {
-      db = admin.firestore();
-    }
+    // Support custom database ID if available
+    db = getFirestore(app, config.firestoreDatabaseId || '(default)');
     console.log('Firebase Admin initialized successfully');
   } catch (err) {
     console.error('Error initializing Firebase Admin:', err);
