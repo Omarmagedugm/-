@@ -1349,6 +1349,16 @@ export default function Admin() {
     }
   };
 
+  const handleToggleAIBan = async (member: any) => {
+    try {
+      const newStatus = !member.isBannedFromAI;
+      await updateDoc(doc(db, 'users', member.uid), { isBannedFromAI: newStatus });
+      toast.success(newStatus ? 'تم حظر العضو من الاستوديو' : 'تم إلغاء حظر العضو');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `users/${member.uid}`);
+    }
+  };
+
   const handleToggleVisibility = async (coll: string, item: any) => {
     try {
       const newHidden = !item.hidden;
@@ -2352,10 +2362,92 @@ export default function Admin() {
                         })}
                       </div>
                     )}
-                 </div>
-              </div>
+                  </div>
+                </div>
 
-              {/* Jerseys Management */}
+                {/* Detailed Member Usage Stats */}
+                <div className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
+                        <BarChart3 size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-black text-sm text-slate-800 dark:text-white">إحصائيات استخدام الأعضاء (اليوم)</h3>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Daily Member Usage & Studio Control</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-right border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-100 dark:border-border-dark">
+                          <th className="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">العضو</th>
+                          <th className="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">الاستخدام</th>
+                          <th className="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">الحد الأقصى</th>
+                          <th className="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">آخر نشاط</th>
+                          <th className="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">حالة الوصول</th>
+                          <th className="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">إجراء</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 dark:divide-white/5">
+                        {aiUsage.map((usage: any) => {
+                          const user = users.find(u => u.uid === usage.userId);
+                          if (!user) return null;
+                          const limit = user.role === 'admin' ? 25 : 5;
+                          return (
+                            <tr key={usage.id} className="group hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                              <td className="py-4 px-4">
+                                <div className="flex items-center gap-3 text-right">
+                                  <img src={user.avatar || 'https://ui-avatars.com/api/?name=U'} className="w-8 h-8 rounded-lg object-cover" />
+                                  <div>
+                                    <p className="text-xs font-black text-slate-800 dark:text-white leading-none mb-1">{user.name}</p>
+                                    <p className="text-[9px] font-bold text-slate-400 font-mono tracking-tighter truncate max-w-[120px]">{user.email}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-4 px-4 text-center">
+                                <span className="text-xs font-black tabular-nums">{usage.count}</span>
+                              </td>
+                              <td className="py-4 px-4 text-center">
+                                <span className="text-[10px] font-bold text-slate-400 tabular-nums">/ {limit}</span>
+                              </td>
+                              <td className="py-4 px-4 text-center">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tabular-nums">
+                                  {usage.lastUsed ? new Date(usage.lastUsed).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                </span>
+                              </td>
+                              <td className="py-4 px-4 text-center">
+                                {user.isBannedFromAI ? (
+                                  <span className="text-[9px] font-black text-red-500 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-md">محظور</span>
+                                ) : (
+                                  <span className="text-[9px] font-black text-green-500 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-md">مسموح</span>
+                                )}
+                              </td>
+                              <td className="py-4 px-4 text-center">
+                                <button 
+                                  onClick={() => handleToggleAIBan(user)}
+                                  className={`p-2 rounded-lg transition-all ${user.isBannedFromAI ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}
+                                  title={user.isBannedFromAI ? "إلغاء حظر الاستوديو" : "حظر من الاستوديو"}
+                                >
+                                  {user.isBannedFromAI ? <Check size={14} /> : <ShieldAlert size={14} />}
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {aiUsage.length === 0 && (
+                          <tr>
+                            <td colSpan={6} className="py-20 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">لا يوجد نشاط مسجل اليوم</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Jerseys Management */}
               <div className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
@@ -3223,6 +3315,13 @@ export default function Admin() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => handleToggleAIBan(member)}
+                        title={member.isBannedFromAI ? "إلغاء حظر الاستوديو" : "حظر من الاستوديو"}
+                        className={`p-2.5 rounded-xl transition-all ${member.isBannedFromAI ? 'bg-red-50 text-red-500' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-surface-dark'}`}
+                      >
+                        <Zap size={18} fill={member.isBannedFromAI ? 'currentColor' : 'none'} />
+                      </button>
                       <button 
                         onClick={() => handleEditItem({...member, id: member.uid, roles: member.roles || []})}
                         className="p-2.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all"

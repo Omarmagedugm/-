@@ -10,7 +10,8 @@ import {
   ChevronRight, 
   Layers, 
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  Shield
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
@@ -207,6 +208,11 @@ const JerseyTryOn: React.FC = () => {
 
     if (!selectedJersey) {
       toast.error('يرجى اختيار قميص');
+      return;
+    }
+
+    if (profile.isBannedFromAI) {
+      toast.error('عذراً، تم حظرك من استخدام الاستوديو. يرجى التواصل مع الإدارة.');
       return;
     }
 
@@ -464,6 +470,24 @@ OUTPUT: Return ONLY the transformed image.`;
         <Link to="/fanzone" className="bg-primary text-white px-8 py-3 rounded-2xl font-bold flex items-center gap-2">
           <ArrowRight size={20} />
           العودة للفان زون
+        </Link>
+      </div>
+    );
+  }
+
+  if (profile.isBannedFromAI) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center min-h-screen p-8 text-center bg-background-light dark:bg-background-dark">
+        <div className="w-24 h-24 bg-red-500/10 rounded-3xl flex items-center justify-center text-red-500 mb-6 border border-red-500/20 shadow-xl shadow-red-500/5">
+          <Shield size={48} />
+        </div>
+        <h2 className="text-3xl font-black mb-3">حسابك مقيد من استخدام الاستوديو</h2>
+        <p className="text-slate-500 max-w-md mb-8 text-lg font-bold leading-relaxed">
+          عذراً يا سيد البلد، تم تقييد وصولك لاستوديو الذكاء الاصطناعي لمخالفة قوانين النشر أو تجاوز حدود الاستخدام. يرجى التواصل مع إدارة التطبيق للمراجعة.
+        </p>
+        <Link to="/" className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black flex items-center gap-2 shadow-2xl hover:scale-105 transition-all">
+          <ArrowRight size={20} />
+          العودة للرئيسية
         </Link>
       </div>
     );

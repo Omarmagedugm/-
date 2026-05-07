@@ -280,6 +280,7 @@ export interface UserProfile {
   tier?: 'new' | 'bronze' | 'silver' | 'gold' | 'diamond' | 'premium';
   bio?: string;
   email?: string;
+  isBannedFromAI?: boolean;
   stats: {
     predictions: number;
     comments: number;
