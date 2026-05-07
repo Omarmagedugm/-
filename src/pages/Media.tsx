@@ -178,7 +178,7 @@ export default function Media() {
           </motion.section>
         )}
 
-        {/* Playlists Horizontal Section - Only show if not focusing on a specific playlist */}
+        {/* Playlists Grid Section - Only show if not focusing on a specific playlist */}
         {!selectedPlaylistId && displayPlaylists.length > 0 && (
           <motion.section variants={itemVariants} className="space-y-4">
             <div className="flex items-center justify-between px-1">
@@ -186,10 +186,10 @@ export default function Media() {
                 <h2 className="text-lg font-black text-slate-800 dark:text-white leading-none uppercase">
                   {activeTab === 'video' ? 'ألبومات الفيديو' : activeTab === 'photo' ? 'ألبومات الصور' : 'قوائم التشغيل'}
                 </h2>
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Curated Collections</span>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">اضغط لاستعراض المحتويات</span>
               </div>
             </div>
-            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide px-1 -mx-1">
+            <div className="grid grid-cols-2 gap-4 px-1">
               {displayPlaylists.map((playlist) => (
                 <button 
                   key={playlist.id} 
@@ -199,14 +199,21 @@ export default function Media() {
                       setActiveTab(playlist.type);
                     }
                   }}
-                  className={`flex-shrink-0 w-32 flex flex-col gap-2 pressable text-right group`}
+                  className="flex flex-col gap-2 pressable text-right group w-full"
                 >
-                  <div className={`aspect-square rounded-[24px] overflow-hidden border-2 transition-all border-transparent shadow-lg`}>
-                    <img src={getOptimizedImage(playlist.coverUrl || '', 300) || undefined} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                  <div className="aspect-square rounded-[32px] overflow-hidden border-2 transition-all border-transparent shadow-premium relative">
+                    <img src={getOptimizedImage(playlist.coverUrl || '', 400) || undefined} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors flex items-center justify-center">
+                       <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <Play size={20} fill="white" className="ml-1" />
+                       </div>
+                    </div>
                   </div>
                   <div className="px-1">
-                    <p className={`text-[10px] font-black line-clamp-1 text-slate-700 dark:text-slate-300`}>{playlist.title}</p>
-                    <p className="text-[8px] font-bold text-slate-400">{media.filter(m => m.playlistId === playlist.id).length} عنصر</p>
+                    <p className="text-xs font-black line-clamp-1 text-slate-800 dark:text-white group-hover:text-primary transition-colors">{playlist.title}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      {media.filter(m => m.playlistId === playlist.id).length} عنصر • استعرض الآن
+                    </p>
                   </div>
                 </button>
               ))}

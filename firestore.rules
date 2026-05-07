@@ -51,7 +51,7 @@ service cloud.firestore {
         request.auth.token.get('email', '').lower() == 'omarmagedugm@ittihad.club'
       );
     }
-    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_-]+$'); }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
 
@@ -229,7 +229,7 @@ service cloud.firestore {
 
     // AI Usage Quota Tracking
     match /ai_usage/{usageId} {
-      allow read, write: if isSignedIn() && (usageId >= request.auth.uid && usageId < request.auth.uid + '\uf8ff' || isAdmin());
+      allow read, write: if isSignedIn() && (usageId.startsWith(request.auth.uid) || isAdmin());
       allow delete: if isAdmin();
     }
 

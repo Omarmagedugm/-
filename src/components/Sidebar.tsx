@@ -24,7 +24,7 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
   // High-level admin check
   const isOmar = auth.currentUser?.email === 'omarmagedugm@ittihad.club';
   const isDev = auth.currentUser?.email === 'copyrightofficialco@gmail.com';
-  const isAdmin = (profile?.role === 'admin' || profile?.role === 'moderator' || (profile?.roles && profile?.roles.length > 0)) || isOmar || isDev;
+  const isAdmin = (profile?.role === 'admin' || profile?.role === 'moderator' || (profile?.roles && (profile.roles.includes('admin') || profile.roles.includes('moderator')))) || isOmar || isDev;
   const isAnonymous = !auth.currentUser || auth.currentUser.isAnonymous;
 
   const handleLogout = async () => {

@@ -120,7 +120,7 @@ export default function TopHeader() {
 
   const isOmar = auth.currentUser?.email?.toLowerCase() === 'omarmagedugm@ittihad.club';
   const isDev = auth.currentUser?.email?.toLowerCase() === 'copyrightofficialco@gmail.com';
-  const isAdmin = (profile?.role === 'admin' || profile?.role === 'moderator' || (profile?.roles && profile?.roles.length > 0)) || isOmar || isDev;
+  const isAdmin = (profile?.role === 'admin' || profile?.role === 'moderator' || (profile?.roles && (profile.roles.includes('admin') || profile.roles.includes('moderator')))) || isOmar || isDev;
 
   return (
     <>
