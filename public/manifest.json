@@ -3,6 +3,7 @@
   "short_name": "قناة الاتحاد",
   "start_url": "/",
   "display": "standalone",
+  "gcm_sender_id": "103953800507",
   "background_color": "#072418",
   "theme_color": "#072418",
   "icons": [

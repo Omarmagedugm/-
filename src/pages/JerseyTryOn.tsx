@@ -69,24 +69,6 @@ const JerseyTryOn: React.FC = () => {
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [aiConfig, setAiConfig] = useState<any>({ enabled: true, clubLogo: '' });
   const [loading, setLoading] = useState(true);
-  const [hasApiKey, setHasApiKey] = useState<boolean>(false);
-
-  useEffect(() => {
-    const checkKey = async () => {
-      if ((window as any).aistudio && (window as any).aistudio.hasSelectedApiKey) {
-        const has = await (window as any).aistudio.hasSelectedApiKey();
-        setHasApiKey(has);
-      }
-    };
-    checkKey();
-  }, []);
-
-  const handleOpenKeySelector = async () => {
-    if ((window as any).aistudio && (window as any).aistudio.openSelectKey) {
-      await (window as any).aistudio.openSelectKey();
-      setHasApiKey(true);
-    }
-  };
 
   useEffect(() => {
     // Fetch AI config
@@ -421,10 +403,9 @@ OUTPUT: Return ONLY the transformed image.`;
           throw new Error('فشل الذكاء الاصطناعي في إنشاء الصورة. يرجى المحاولة مرة أخرى.');
         }
       } catch (err: any) {
-        // If "Requested entity was not found", reset key
+        // If "Requested entity was not found", it might be an invalid model or API issue
         if (err.message?.includes("Requested entity was not found")) {
-          setHasApiKey(false);
-          throw new Error("حدث خطأ في مفتاح الـ API. يرجى إعادة اختيار المفتاح.");
+          throw new Error("حدث خطأ في طلب الذكاء الاصطناعي. يرجى التواصل مع الإدارة.");
         }
         throw err;
       }
@@ -690,46 +671,14 @@ OUTPUT: Return ONLY the transformed image.`;
               </motion.div>
 
               {/* Action */}
-              {!hasApiKey ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 p-6 rounded-[24px] space-y-4"
-                >
-                  <div className="flex items-start gap-3 text-amber-800 dark:text-amber-400">
-                    <AlertCircle className="shrink-0 mt-0.5" size={20} />
-                    <div className="space-y-1">
-                      <p className="font-black text-sm">خطوة مطلوبة: تفعيل الذكاء الاصطناعي</p>
-                      <p className="text-xs font-bold leading-relaxed opacity-80">
-                        لاستخدام موديلات توليد الصور عالية الجودة، يجب عليك تفعيل مفتاح الـ API الخاص بك من حساب Google Cloud.
-                      </p>
-                      <a 
-                        href="https://ai.google.dev/gemini-api/docs/billing" 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="text-[10px] underline block hover:text-amber-600 transition-colors"
-                      >
-                        تعرف على كيفية الحصول على مفتاح وتفعيل الفواتير
-                      </a>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleOpenKeySelector}
-                    className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-black text-sm shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Shield size={18} />
-                    تفعيل مفتاح AI Studio
-                  </button>
-                </motion.div>
-              ) : (
-                <motion.button
-                  id="process-btn"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={processWithAI}
-                  disabled={!userImage || isProcessing}
-                  className={`w-full py-5 rounded-[24px] font-black text-xl flex items-center justify-center gap-3 transition-all relative overflow-hidden ${!userImage || isProcessing ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-primary text-white shadow-[0_20px_40px_-10px_rgba(34,197,94,0.4)]'}`}
-                >
+              <motion.button
+                id="process-btn"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={processWithAI}
+                disabled={!userImage || isProcessing}
+                className={`w-full py-5 rounded-[24px] font-black text-xl flex items-center justify-center gap-3 transition-all relative overflow-hidden ${!userImage || isProcessing ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-primary text-white shadow-[0_20px_40px_-10px_rgba(34,197,94,0.4)]'}`}
+              >
                   {isProcessing ? (
                     <>
                       <RefreshCw className="animate-spin" size={24} />
@@ -742,8 +691,7 @@ OUTPUT: Return ONLY the transformed image.`;
                     </>
                   )}
                 </motion.button>
-              )}
-            </div>
+              </div>
 
             {/* Preview Section */}
             <div id="preview-section" className="lg:sticky lg:top-8 scroll-mt-6">

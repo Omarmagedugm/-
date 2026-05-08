@@ -148,48 +148,66 @@ testConnection();
 export const messaging = messagingInstance;
 
 export const requestNotificationPermission = async () => {
-  if (typeof window === 'undefined' || !('Notification' in window)) return;
-  
-  const activeMessaging = messagingInstance || await initializeMessaging();
-  if (!activeMessaging) return;
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    console.warn('Notifications not supported in this browser');
+    return;
+  }
   
   try {
+    // Request permission first to ensure it's linked to the user gesture
+    // (especially important for iOS/Safari)
     const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      // Get service worker registration
-      let registration;
-      if ('serviceWorker' in navigator) {
-        registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
-        if (!registration) {
-          registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-            scope: '/'
-          });
-        }
-      }
-
-      const currentToken = await getToken(activeMessaging, { 
-        vapidKey: 'BLpfNtPFcOkDCoXJ0F_vmM3RmtPtWy24cGby0tw-XL2EeZz3xxa_2DXYjS8uw_dRSsZIrcq-05Rv68nTJbJgrzg',
-        serviceWorkerRegistration: registration 
-      });
+    if (permission !== 'granted') {
+       console.log('Notification permission dynamic status:', permission);
+       return;
+    }
+    
+    // Once permission is granted, initialize messaging if not already done
+    const activeMessaging = messagingInstance || await initializeMessaging();
+    if (!activeMessaging) {
+      console.warn('Messaging initialization failed after permission grant');
+      return;
+    }
+    
+    // Get service worker registration
+    let registration;
+    if ('serviceWorker' in navigator) {
+      // Try to get existing registration first
+      registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
       
-      if (currentToken) {
-        console.log('FCM Token generated:', currentToken);
-        const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-        const user = getAuth().currentUser;
-        
-        // Save token with more metadata
-        await setDoc(doc(db, 'fcm_tokens', currentToken), {
-          token: currentToken,
-          userId: user ? user.uid : 'anonymous',
-          lastSeen: serverTimestamp(),
-          platform: navigator.platform,
-          userAgent: navigator.userAgent,
-          isPWA: window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true,
-          status: 'active'
-        }, { merge: true });
-
-        return currentToken;
+      if (!registration) {
+        console.log('Registering new firebase-messaging-sw.js...');
+        registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+          scope: '/'
+        });
       }
+      
+      // Wait for service worker to be ready
+      await navigator.serviceWorker.ready;
+    }
+
+    const currentToken = await getToken(activeMessaging, { 
+      vapidKey: 'BLpfNtPFcOkDCoXJ0F_vmM3RmtPtWy24cGby0tw-XL2EeZz3xxa_2DXYjS8uw_dRSsZIrcq-05Rv68nTJbJgrzg',
+      serviceWorkerRegistration: registration 
+    });
+    
+    if (currentToken) {
+      console.log('FCM Token generated:', currentToken);
+      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+      const user = getAuth().currentUser;
+      
+      // Save token with more metadata
+      await setDoc(doc(db, 'fcm_tokens', currentToken), {
+        token: currentToken,
+        userId: user ? user.uid : 'anonymous',
+        lastSeen: serverTimestamp(),
+        platform: navigator.platform,
+        userAgent: navigator.userAgent,
+        isPWA: window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true,
+        status: 'active'
+      }, { merge: true });
+
+      return currentToken;
     }
   } catch (err) {
     console.warn('FCM Permission/Token error:', err);

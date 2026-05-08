@@ -166,7 +166,7 @@ export default function Matches() {
       opacity: 1,
       transition: { staggerChildren: 0.1 }
     }
-  };
+  } as const;
 
   const itemVariants = {
     hidden: { opacity: 0, scale: 0.95, y: 20 },
@@ -176,7 +176,7 @@ export default function Matches() {
       y: 0, 
       transition: { type: "spring", stiffness: 260, damping: 20 }
     }
-  };
+  } as const;
 
   const seasonStats = matches.filter(m => m.status === 'finished' && (m.homeTeam === 'الاتحاد' || m.awayTeam === 'الاتحاد')).reduce((acc, match) => {
     const isHome = match.homeTeam === 'الاتحاد';

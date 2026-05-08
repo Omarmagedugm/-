@@ -31,7 +31,7 @@ export default function NewsDetail() {
       opacity: 1,
       transition: { staggerChildren: 0.1 }
     }
-  };
+  } as const;
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -40,7 +40,7 @@ export default function NewsDetail() {
       y: 0, 
       transition: { type: "spring", stiffness: 300, damping: 24 }
     }
-  };
+  } as const;
 
   return (
     <div className="relative flex-1 flex flex-col bg-background-light dark:bg-background-dark min-h-screen pb-32 overflow-x-hidden">

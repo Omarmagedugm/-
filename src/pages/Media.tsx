@@ -81,7 +81,7 @@ export default function Media() {
       opacity: 1,
       transition: { staggerChildren: 0.1 }
     }
-  };
+  } as const;
 
   const itemVariants = {
     hidden: { opacity: 0, scale: 0.95, y: 20 },
@@ -91,7 +91,7 @@ export default function Media() {
       y: 0, 
       transition: { type: "spring", stiffness: 260, damping: 20 }
     }
-  };
+  } as const;
 
   return (
     <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-32 px-0 bg-background-light dark:bg-background-dark min-h-screen">

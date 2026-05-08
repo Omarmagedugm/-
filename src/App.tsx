@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, Component, ErrorInfo, ReactNode } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import ScrollToTop from './components/ScrollToTop';
@@ -30,15 +30,22 @@ import PWAInstallPrompt from './components/PWAInstallPrompt';
 import GoalCelebration from './components/GoalCelebration';
 import WinCelebration from './components/WinCelebration';
 
-class GlobalErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: any}> {
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: any;
+}
+
+class GlobalErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { hasError: false, error: null };
+
   static getDerivedStateFromError(error: any) {
     return { hasError: true, error };
   }
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("APP CRASH:", error, errorInfo);
   }
   render() {

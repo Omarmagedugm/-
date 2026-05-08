@@ -4,7 +4,7 @@ import { Menu, Bell, Search, ChevronRight, X, Info, Sun, Moon, Settings } from '
 import { useAppStore } from '../store';
 import { useState, useEffect, useRef } from 'react';
 import Sidebar from './Sidebar';
-import { db, auth } from '../lib/firebase';
+import { db, auth, requestNotificationPermission } from '../lib/firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../lib/firebase';
 import toast from 'react-hot-toast';
@@ -192,10 +192,8 @@ export default function TopHeader() {
               <motion.button 
                 whileTap={{ scale: 0.9 }}
                 onClick={() => {
-                  import('../lib/firebase').then(({ requestNotificationPermission }) => {
-                    requestNotificationPermission().then(() => {
-                      if ('Notification' in window) setPermission(Notification.permission);
-                    });
+                  requestNotificationPermission().then(() => {
+                    if ('Notification' in window) setPermission(Notification.permission);
                   });
                 }}
                 className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all duration-300 shadow-sm relative group"
@@ -292,7 +290,7 @@ export default function TopHeader() {
                    {('Notification' in window) && Notification.permission !== 'granted' && Notification.permission !== 'denied' && (
                      <button
                        onClick={() => {
-                         import('../lib/firebase').then(({ requestNotificationPermission }) => requestNotificationPermission());
+                         requestNotificationPermission();
                        }}
                        className="bg-primary/10 text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-xl font-bold text-xs transition-all duration-300"
                      >

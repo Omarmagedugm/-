@@ -1802,7 +1802,7 @@ export default function Home() {
       opacity: 1,
       transition: { staggerChildren: 0.1, delayChildren: 0.2 },
     },
-  };
+  } as const;
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -1811,7 +1811,7 @@ export default function Home() {
       y: 0,
       transition: { type: "spring", stiffness: 260, damping: 20 },
     },
-  };
+  } as const;
 
   if (!dataLoaded && news.length === 0 && matches.length === 0) {
     return (
