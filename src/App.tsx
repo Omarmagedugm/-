@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Component, ErrorInfo, ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import ScrollToTop from './components/ScrollToTop';
@@ -30,7 +30,45 @@ import PWAInstallPrompt from './components/PWAInstallPrompt';
 import GoalCelebration from './components/GoalCelebration';
 import WinCelebration from './components/WinCelebration';
 
+class GlobalErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: any}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("APP CRASH:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-background-light dark:bg-background-dark">
+          <h1 className="text-2xl font-black text-red-500 mb-4">عذراً، حدث خطأ غير متوقع</h1>
+          <p className="text-sm text-slate-500 mb-6 font-bold">{this.state.error?.message || "فشل تحميل التطبيق"}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-primary text-white rounded-2xl font-black shadow-premium"
+          >
+            إعادة تحميل التطبيق
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
+  return (
+    <GlobalErrorBoundary>
+      <AppContent />
+    </GlobalErrorBoundary>
+  );
+}
+
+function AppContent() {
   useFirestoreSync();
   const matches = useAppStore(state => state.matches);
   const [showGoal, setShowGoal] = useState(false);

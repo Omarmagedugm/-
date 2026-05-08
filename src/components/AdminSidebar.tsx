@@ -165,8 +165,12 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
             onClick={async () => {
               try {
                 await auth.signOut();
-                localStorage.clear();
-                sessionStorage.clear();
+                try {
+                  if (typeof window !== 'undefined') {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                  }
+                } catch (e) {}
                 navigate('/auth', { replace: true });
               } catch (error) {
                 console.error('Logout error:', error);

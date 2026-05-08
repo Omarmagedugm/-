@@ -53,6 +53,7 @@ export default function Home() {
     media,
     matches,
     liveStream,
+    liveStreams,
     profile,
     homeSections,
     cityInfo,
@@ -61,6 +62,7 @@ export default function Home() {
     newsTags,
     stadiumOpacity,
     setStadiumOpacity,
+    dataLoaded,
   } = useAppStore();
   const [tick, setTick] = useState(0);
   const [clarityOpen, setClarityOpen] = useState(false);
@@ -82,8 +84,12 @@ export default function Home() {
   const isDev = auth.currentUser?.email?.toLowerCase() === "copyrightofficialco@gmail.com";
   const isAdmin = (auth.currentUser && (profile?.role === "admin" || profile?.role === "moderator" || (profile?.roles && profile?.roles.length > 0))) || isOmar || isDev;
   const [selectedSport, setSelectedSport] = useState<"football" | "basketball" | "auto">(() => {
-    const saved = localStorage.getItem("selected_sport");
-    return (saved as "football" | "basketball" | "auto") || "auto";
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem("selected_sport") : null;
+      return (saved as "football" | "basketball" | "auto") || "auto";
+    } catch (e) {
+      return "auto";
+    }
   });
   const [autoWeather, setAutoWeather] = useState<{
     temp: string;
@@ -101,7 +107,9 @@ export default function Home() {
   }, [appSettings?.defaultSport, selectedSport]);
 
   useEffect(() => {
-    localStorage.setItem("selected_sport", selectedSport);
+    try {
+      if (typeof window !== 'undefined') localStorage.setItem("selected_sport", selectedSport);
+    } catch (e) {}
   }, [selectedSport]);
 
   useEffect(() => {
@@ -617,18 +625,18 @@ export default function Home() {
                       <div className="mt-8 grid grid-cols-2 gap-4 relative z-20">
                         <Link
                           to={
-                            heroMatch.status === "live" || liveStream.isActive
+                            heroMatch.status === "live" || liveStreams.football.isActive || liveStreams.basketball.isActive
                               ? "/live"
                               : "/matches"
                           }
                           className="h-14 rounded-2xl bg-white text-primary-dark hover:bg-primary-light hover:text-white transition-all duration-300 font-black text-[12px] flex items-center justify-center gap-3 shadow-premium group/btn relative z-30 cursor-pointer"
                         >
                           <span className="material-symbols-outlined !text-[20px] group-hover/btn:translate-x-1 transition-transform">
-                            {heroMatch.status === "live" || liveStream.isActive
+                            {heroMatch.status === "live" || liveStreams.football.isActive || liveStreams.basketball.isActive
                               ? "sensors"
                               : "event"}
                           </span>
-                          {heroMatch.status === "live" || liveStream.isActive
+                          {heroMatch.status === "live" || liveStreams.football.isActive || liveStreams.basketball.isActive
                             ? "دخول البث"
                             : "التفاصيل"}
                         </Link>
@@ -665,7 +673,7 @@ export default function Home() {
         );
 
       case "live":
-        if (!liveStream.isActive) return null;
+        if (!liveStreams.football.isActive && !liveStreams.basketball.isActive) return null;
         return (
           <motion.section
             key={section.id}
@@ -686,9 +694,20 @@ export default function Home() {
                   <span className="text-sm font-black text-slate-800 dark:text-white">
                     بث مباشر متاح الآن
                   </span>
-                  <span className="text-[10px] font-bold text-accent">
-                    اضغط للمتابعة الفورية
-                  </span>
+                  <div className="flex gap-2 mt-1">
+                    {liveStreams.football.isActive && (
+                      <span className="text-[8px] font-black bg-primary text-white px-1.5 py-0.5 rounded uppercase flex items-center gap-1">
+                        <span className="material-symbols-outlined !text-[10px]">sports_soccer</span>
+                        كرة القدم
+                      </span>
+                    )}
+                    {liveStreams.basketball.isActive && (
+                      <span className="text-[8px] font-black bg-orange-600 text-white px-1.5 py-0.5 rounded uppercase flex items-center gap-1">
+                        <span className="material-symbols-outlined !text-[10px]">sports_basketball</span>
+                        كرة السلة
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="h-10 w-10 rounded-xl bg-white dark:bg-surface-dark flex items-center justify-center text-slate-400">
@@ -1794,14 +1813,72 @@ export default function Home() {
     },
   };
 
+  if (!dataLoaded && news.length === 0 && matches.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-6 px-8 text-center bg-background-light dark:bg-background-dark">
+        <div className="relative">
+          <div className="h-16 w-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="h-2 w-2 bg-primary rounded-full animate-ping"></div>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2">
+          <h2 className="text-xl font-black text-slate-800 dark:text-white">جاري الاتصال بالقاعدة...</h2>
+          <p className="text-xs text-slate-400 font-bold max-w-[200px]">يتم الآن مزامنة بيانات نادي الاتحاد السكندري</p>
+        </div>
+      </div>
+    );
+  }
+
+  const isEmpty = dataLoaded && news.length === 0 && matches.length === 0;
+
   return (
     <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-32 px-0 bg-background-light dark:bg-background-dark min-h-screen">
       <motion.main
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex-1 overflow-x-hidden px-4 flex flex-col gap-0 pt-3 pb-6"
+        className="flex-1 overflow-x-hidden px-4 flex flex-col gap-0 pt-8 pb-6"
       >
+        {isEmpty && (
+          <motion.div 
+            variants={itemVariants}
+            className="p-8 rounded-[40px] bg-white dark:bg-surface-dark border border-dashed border-primary/30 flex flex-col items-center text-center gap-6 mb-8"
+          >
+            <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <span className="material-symbols-outlined !text-[40px]">database_off</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              <h3 className="text-lg font-black text-slate-800 dark:text-white">قاعدة البيانات فارغة</h3>
+              <p className="text-xs text-slate-400 font-bold leading-relaxed px-4">
+                يبدو أن هذا هو التشغيل الأول للتطبيق. قم باتباع الخطوات التالية:
+              </p>
+            </div>
+            
+            {isAdmin ? (
+              <div className="w-full flex flex-col gap-3">
+                <Link 
+                  to="/admin" 
+                  className="w-full h-12 bg-primary text-white rounded-2xl flex items-center justify-center gap-2 font-black text-xs shadow-premium"
+                >
+                  <span className="material-symbols-outlined !text-sm">auto_fix_high</span>
+                  الذهاب للوحة التحكم وبدء التغذية
+                </Link>
+                <div className="flex items-center gap-2 p-3 bg-accent/10 rounded-xl border border-accent/20">
+                  <span className="material-symbols-outlined !text-xs text-accent">info</span>
+                  <span className="text-[9px] text-accent font-black">تحتاج إلى الضغط على "Seed Data" في لوحة التحكم</span>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-slate-100 dark:bg-slate-800/50 rounded-2xl">
+                 <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
+                   برجاء التواصل مع إدارة التطبيق لتهيئة البيانات الأولية.
+                 </p>
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {/* Goal Celebration Trigger is in App.tsx */}
       
       {sortedSections.map((section, index) => {

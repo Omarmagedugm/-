@@ -73,6 +73,10 @@ service cloud.firestore {
              (!('lastActive' in data) || (data.lastActive is string));
     }
 
+    match /test/connection {
+      allow read: if true;
+    }
+
     match /live_comments/{commentId} {
       allow read: if true;
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;

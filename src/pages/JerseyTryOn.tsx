@@ -256,7 +256,7 @@ const JerseyTryOn: React.FC = () => {
         // We don't throw hero, just continue. The write later might fail or log a warn.
       }
       
-      const USER_LIMIT = 10; // Updated to 10 per user request
+      const USER_LIMIT = 3; 
       const ADMIN_LIMIT = 100;
       const limitCount = isAdmin ? ADMIN_LIMIT : USER_LIMIT;
       
@@ -370,7 +370,7 @@ OUTPUT: Return ONLY the transformed image.`;
       // Call client-side GenAI SDK
       try {
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash-image',
+          model: 'gemini-3.1-flash-image-preview',
           contents: { parts: aiParts as any },
           config: {
             imageConfig: {

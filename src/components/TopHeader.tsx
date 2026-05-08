@@ -177,7 +177,11 @@ export default function TopHeader() {
             )}
             {isAdmin && !location.pathname.includes('/admin') && (
               <Link 
-                to={`/admin?tab=${localStorage.getItem('lastAdminTab') || 'overview'}`}
+                to={`/admin?tab=${(() => {
+                  try {
+                    return typeof window !== 'undefined' ? localStorage.getItem('lastAdminTab') || 'overview' : 'overview';
+                  } catch (e) { return 'overview'; }
+                })()}`}
                 className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-500 dark:text-slate-400 hover:text-primary transition-all duration-300 shadow-sm"
                 title="لوحة التحكم"
               >

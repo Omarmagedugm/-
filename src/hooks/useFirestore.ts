@@ -6,243 +6,197 @@ import { useAppStore } from '../store';
 export function useFirestoreSync() {
   const { 
     setNews, setMedia, setMatches, setClubs, setPolls, setPredictions, setFanPosts,
-    setUsers, setSettings, updateLiveStream, updateProfile, setCityInfo, setAds, setCustomPages,
+    setUsers, setSettings, updateLiveStream, updateLiveStreams, updateProfile, setCityInfo, setAds, setCustomPages,
     setNewsCategories, setNewsTags, setHomeSections, setProducts, setSongs, setAlbums, setPlaylists, setMediaPlaylists, setBooks,
-    setClubStats, setClubTitles, setHistoryEvents, setStadiums
+    setClubStats, setClubTitles, setHistoryEvents, setStadiums, setDataLoaded, setOrders
   } = useAppStore();
 
   const isFetchedRef = useRef(false);
 
   useEffect(() => {
-    // Sync Current User Profile first (Real-time)
-    let unsubProfile = () => {};
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      // Throttle lastActive updates (only once every 4 hours per session)
-      const lastUpdateKey = `last_active_update_${currentUser.uid}`;
-      const lastUpdate = localStorage.getItem(lastUpdateKey);
-      const now = Date.now();
-      
-      if (!lastUpdate || now - parseInt(lastUpdate) > 4 * 60 * 60 * 1000) {
-        updateDoc(doc(db, 'users', currentUser.uid), { lastActive: new Date().toISOString() })
-          .then(() => localStorage.setItem(lastUpdateKey, now.toString()))
-          .catch(err => console.error('Failed to update activity:', err));
-      }
+    let unsubs: (() => void)[] = [];
 
-      unsubProfile = onSnapshot(doc(db, 'users', currentUser.uid), (docSnap) => {
+    // Real-time Collections Sync
+    const setupRealtimeSync = () => {
+      const unsubProfile = (uid: string) => onSnapshot(doc(db, 'users', uid), (docSnap) => {
         if (docSnap.exists()) {
           const userData = docSnap.data() as any;
-          updateProfile(userData);
+          updateProfile({ ...userData, uid });
           
-          const email = currentUser.email?.toLowerCase();
-          const isBootstrap = email === 'copyrightofficialco@gmail.com' || email === 'omarmagedugm@ittihad.club';
-          if (isBootstrap && userData.role !== 'admin') {
-            updateDoc(doc(db, 'users', currentUser.uid), { role: 'admin' })
-              .catch(err => console.error('Failed to auto-upgrade admin:', err));
+          const email = auth.currentUser?.email?.toLowerCase();
+          if ((email === 'copyrightofficialco@gmail.com' || email === 'omarmagedugm@ittihad.club') && userData.role !== 'admin') {
+            updateDoc(doc(db, 'users', uid), { role: 'admin' }).catch(() => {});
           }
         }
-      }, (error) => handleFirestoreError(error, OperationType.GET, `users/${currentUser.uid}`));
-    }
+      }, (error) => {
+        if (error.code !== 'permission-denied') handleFirestoreError(error, OperationType.GET, `users/${uid}`);
+      });
 
-    // Sync Live Stream (Real-time)
-    const unsubLive = onSnapshot(doc(db, 'settings', 'liveStream'), (docSnap) => {
-      if (docSnap.exists()) {
-        updateLiveStream(docSnap.data() as any);
-      }
-    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/liveStream'));
+      const unsubLiveFootball = onSnapshot(doc(db, 'settings', 'liveStream'), (snap) => {
+        if (snap.exists()) updateLiveStreams({ football: snap.data() as any });
+      }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/liveStream'));
 
-    // Sync Matches (Real-time - essential for live tracking)
-    const matchesQuery = query(collection(db, 'matches'), orderBy('date', 'desc'));
-    const unsubMatches = onSnapshot(matchesQuery, (snapshot) => {
-      const matches = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
-      setMatches(matches);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'matches'));
+      const unsubLiveBasketball = onSnapshot(doc(db, 'settings', 'liveStream_basketball'), (snap) => {
+        if (snap.exists()) updateLiveStreams({ basketball: snap.data() as any });
+      }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/liveStream_basketball'));
 
-    // Sync Home Layout (Real-time for admins to see changes immediately)
-    const unsubLayout = onSnapshot(doc(db, 'settings', 'homeLayout'), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        if (data && data.sections) {
-          const uniqueSectionsMap = new Map();
-          data.sections.forEach((s: any) => { if (s && s.id) uniqueSectionsMap.set(s.id, s); });
-          const mergedSections = Array.from(uniqueSectionsMap.values());
-          const initialSections = [
-            { id: 'hero', type: 'hero', active: true, order: 0 },
-            { id: 'ads', type: 'ads', active: true, order: 0.5 },
-            { id: 'matches', type: 'matches', active: true, order: 1 },
-            { id: 'ai_banner', type: 'ai_banner', active: true, order: 1.2 },
-            { id: 'city', type: 'city', active: true, order: 1.5, title: 'عروس البحر المتوسط' },
-            { id: 'news', type: 'news', active: true, order: 2 },
-            { id: 'media', type: 'media', active: true, order: 3 },
-          ];
-          initialSections.forEach(ds => { if (!uniqueSectionsMap.has(ds.id)) mergedSections.push(ds); });
-          setHomeSections(mergedSections);
+      const unsubMatches = onSnapshot(query(collection(db, 'matches'), orderBy('date', 'desc')), (snap) => {
+        const data = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+        if (data.length > 0 || !isFetchedRef.current) setMatches(data as any);
+      }, (err) => handleFirestoreError(err, OperationType.LIST, 'matches'));
+
+      const unsubNews = onSnapshot(query(collection(db, 'news'), orderBy('date', 'desc'), limit(50)), (snap) => {
+        const data = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+        if (data.length > 0 || !isFetchedRef.current) setNews(data as any);
+      }, (err) => handleFirestoreError(err, OperationType.LIST, 'news'));
+
+      const unsubMedia = onSnapshot(query(collection(db, 'media'), orderBy('date', 'desc'), limit(50)), (snap) => {
+        const data = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+        if (data.length > 0 || !isFetchedRef.current) setMedia(data as any);
+      }, (err) => handleFirestoreError(err, OperationType.LIST, 'media'));
+
+      const unsubLayout = onSnapshot(doc(db, 'settings', 'homeLayout'), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data && data.sections) {
+            const uniqueSectionsMap = new Map();
+            data.sections.forEach((s: any) => { if (s && s.id) uniqueSectionsMap.set(s.id, s); });
+            const mergedSections = Array.from(uniqueSectionsMap.values());
+            const initialSections = [
+              { id: 'hero', type: 'hero', active: true, order: 0 },
+              { id: 'ads', type: 'ads', active: true, order: 0.5 },
+              { id: 'matches', type: 'matches', active: true, order: 1 },
+              { id: 'ai_banner', type: 'ai_banner', active: true, order: 1.2 },
+              { id: 'city', type: 'city', active: true, order: 1.5, title: 'عروس البحر المتوسط' },
+              { id: 'news', type: 'news', active: true, order: 2 },
+              { id: 'media', type: 'media', active: true, order: 3 },
+            ];
+            initialSections.forEach(ds => { if (!uniqueSectionsMap.has(ds.id)) mergedSections.push(ds); });
+            setHomeSections(mergedSections);
+          }
         }
-      }
-    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/homeLayout'));
+      }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/homeLayout'));
 
-    // Static/Infrequent data moved to fetchStaticData (non-realtime) to save costs
+      // Add common unsubs
+      unsubs.push(unsubLiveFootball, unsubLiveBasketball, unsubMatches, unsubNews, unsubMedia, unsubLayout);
+      unsubs.push(onSnapshot(collection(db, 'media_playlists'), s => setMediaPlaylists(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), err => console.warn('Media playlists sync failed', err)));
+      unsubs.push(onSnapshot(query(collection(db, 'fan_posts'), orderBy('createdAt', 'desc'), limit(50)), s => setFanPosts(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), err => console.warn('Fan posts sync failed', err)));
+      unsubs.push(onSnapshot(query(collection(db, 'polls'), orderBy('createdAt', 'desc'), limit(20)), s => setPolls(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), err => console.warn('Polls sync failed', err)));
+      unsubs.push(onSnapshot(query(collection(db, 'predictions'), orderBy('createdAt', 'desc'), limit(100)), s => setPredictions(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), err => console.warn('Predictions sync failed', err)));
 
-    // Sync News (Real-time with limit)
-    const newsQuery = query(collection(db, 'news'), orderBy('date', 'desc'), limit(50));
-    const unsubNews = onSnapshot(newsQuery, (snapshot) => {
-      const news = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
-      setNews(news);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'news'));
-
-    // Sync Media (Real-time with limit)
-    const mediaQuery = query(collection(db, 'media'), orderBy('date', 'desc'), limit(50));
-    const unsubMedia = onSnapshot(mediaQuery, (snapshot) => {
-      const mediaItems = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
-      setMedia(mediaItems);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'media'));
-
-    // Sync Media Playlists (Real-time)
-    const unsubMediaPlaylists = onSnapshot(collection(db, 'media_playlists'), (snapshot) => {
-      const playlists = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
-      setMediaPlaylists(playlists);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'media_playlists'));
-
-    // Sync Fan Posts (Real-time)
-    const fanPostsQuery = query(collection(db, 'fan_posts'), orderBy('createdAt', 'desc'), limit(50));
-    const unsubFanPosts = onSnapshot(fanPostsQuery, (snapshot) => {
-      const posts = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
-      setFanPosts(posts);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'fan_posts'));
-
-    // Sync Polls (Real-time)
-    const pollsQuery = query(collection(db, 'polls'), orderBy('createdAt', 'desc'), limit(20));
-    const unsubPolls = onSnapshot(pollsQuery, (snapshot) => {
-      const ps = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
-      setPolls(ps);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'polls'));
-
-    // Sync Predictions (Real-time)
-    const predictionsQuery = query(collection(db, 'predictions'), orderBy('createdAt', 'desc'), limit(100));
-    const unsubPredictions = onSnapshot(predictionsQuery, (snapshot) => {
-      const preds = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) })) as any;
-      setPredictions(preds);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'predictions'));
-
-    // Sync Orders (Real-time)
-    let unsubOrders = () => {};
-    if (currentUser) {
-      setTimeout(() => {
-        const isAdminProfile = useAppStore.getState().profile?.role === 'admin';
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        unsubs.push(unsubProfile(currentUser.uid));
+        
+        // Activity Update
+        const lastUpdateKey = `last_active_update_${currentUser.uid}`;
         try {
-          const ordersQuery = isAdminProfile 
+          const lastUpdate = typeof window !== 'undefined' ? localStorage.getItem(lastUpdateKey) : null;
+          const now = Date.now();
+          if (!lastUpdate || now - parseInt(lastUpdate) > 300000) {
+            updateDoc(doc(db, 'users', currentUser.uid), { lastActive: new Date().toISOString() })
+              .then(() => {
+                try {
+                  if (typeof window !== 'undefined') localStorage.setItem(lastUpdateKey, now.toString());
+                } catch (e) {}
+              })
+              .catch(() => {});
+          }
+        } catch (e) {
+          console.warn('Activity update tracking failed', e);
+        }
+
+        // Orders
+        setTimeout(() => {
+          const profile = useAppStore.getState().profile;
+          const isAdmin = profile?.role === 'admin' || (profile?.roles && profile.roles.includes('admin'));
+          const ordersQuery = isAdmin 
             ? query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
             : query(collection(db, 'orders'), where('userId', '==', currentUser.uid), orderBy('createdAt', 'desc'));
             
-          unsubOrders = onSnapshot(ordersQuery, (snapshot) => {
-            const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
-            useAppStore.getState().setOrders(items);
-          }, (error) => handleFirestoreError(error, OperationType.LIST, 'orders'));
-        } catch (e) {
-          console.error('Orders Query Setup Error:', e);
-        }
-      }, 1000); // slight delay to allow profile load
-    }
+          unsubs.push(onSnapshot(ordersQuery, (s) => setOrders(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), err => console.warn('Orders sync failed', err)));
+        }, 1500);
+      }
+    };
 
-    // One-time Fetch for Static/Infrequent Data
-    if (!isFetchedRef.current) {
-      isFetchedRef.current = true;
+    setupRealtimeSync();
 
-      const fetchWithCache = async (cacheKey: string, fetcher: () => Promise<any>, ttlHours = 24) => {
-        const isAdmin = useAppStore.getState().profile?.role === 'admin';
-        // Always try to load from cache first for immediate UI updates
+    const dataLoadTimeout = setTimeout(() => {
+      if (!isFetchedRef.current) {
+        console.warn('Initial data load taking too long (6s), forcing ready state');
+        setDataLoaded(true);
+      }
+    }, 6000);
+
+    // Static Data Fetching
+    const fetchStaticData = async () => {
+      const fetchWithCache = async (key: string, fetcher: () => Promise<any>) => {
+        const cacheKey = `fs_cache_${key}`;
         try {
-          const cached = localStorage.getItem(`fs_cache_${cacheKey}`);
+          const cached = typeof window !== 'undefined' ? localStorage.getItem(cacheKey) : null;
           if (cached) {
             const { data, timestamp } = JSON.parse(cached);
-            // Return cached data immediately if not admin (admins need fresh data)
-            if (!isAdmin && Date.now() - timestamp < ttlHours * 60 * 60 * 1000) {
-              return data;
-            }
-            // For admins or expired cache, return data but we'll fetch fresh in background
-            if (!isAdmin) return data; 
+            if (Date.now() - timestamp < 1800000) return data; // 30m cache
           }
-        } catch (e) { /* ignore */ }
+        } catch (e) {
+          console.warn('Cache read failed', e);
+        }
 
         const data = await fetcher();
-        
-        try {
-          localStorage.setItem(`fs_cache_${cacheKey}`, JSON.stringify({ data, timestamp: Date.now() }));
+        try { 
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() })); 
+          }
         } catch (e) {
-          // ignore cache save errors
+          console.warn('Cache write failed', e);
         }
-        
         return data;
       };
 
-      const fetchStaticData = async () => {
+      const fetchCol = async (col: string, setter: (d: any) => void, q?: any) => {
         try {
-          const catchErr = (path: string) => (err: any) => handleFirestoreError(err, OperationType.GET, path);
-          
-          // Helper for fetching collections
-          const fetchCol = async (colName: string, setter: (data: any) => void, q?: any) => {
-            try {
-              const data = await fetchWithCache(colName, async () => {
-                const snap = await getDocs(q || collection(db, colName));
-                return snap.docs.map(doc => ({ id: doc.id, uid: doc.id, ...(doc.data() as any) }));
-              });
-              setter(data as any);
-            } catch (err) {
-              catchErr(colName)(err);
-            }
-          };
-
-          // Helper for fetching docs
-          const fetchDoc = async (docPath: string, setter: (data: any) => void, mapFn?: (data: any) => any) => {
-            try {
-              const data = await fetchWithCache(docPath.replace('/', '_'), async () => {
-                const paths = docPath.split('/');
-                const snap = await getDoc(doc(db, paths[0], paths[1]));
-                if (snap.exists()) {
-                  const docData = { id: snap.id, ...snap.data() };
-                  return mapFn ? mapFn(docData) : docData;
-                }
-                return null;
-              });
-              if (data) setter(data);
-            } catch (err) {
-              handleFirestoreError(err, OperationType.GET, docPath);
-            }
-          };
-
-          // Settings (No longer real-time to save quota)
-          fetchDoc('settings/global', setSettings);
-          fetchDoc('settings/newsCategories', d => setNewsCategories(d.list || []));
-          fetchDoc('settings/newsTags', d => setNewsTags(d.tags || []));
-          fetchDoc('city_info/alexandria', setCityInfo);
-          
-          // Content
-          fetchCol('users', setUsers);
-          fetchCol('clubs', setClubs);
-          fetchCol('products', setProducts);
-          fetchCol('ads', setAds, query(collection(db, 'ads'), where('active', '==', true), orderBy('order', 'asc')));
-          fetchCol('custom_pages', setCustomPages);
-          
-        } catch (error) {
-          handleFirestoreError(error, OperationType.GET, 'static_data');
-        }
+          const data = await fetchWithCache(col, async () => {
+            const s = await getDocs(q || collection(db, col));
+            return s.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+          });
+          if (data && (data.length > 0 || !isFetchedRef.current)) setter(data);
+        } catch (e) { console.warn(`Fetch ${col} failed`, e); }
       };
 
-      fetchStaticData();
-    }
+      const fetchDocItem = async (path: string, setter: (d: any) => void) => {
+        try {
+          const parts = path.split('/');
+          const data = await fetchWithCache(path.replace('/', '_'), async () => {
+            const s = await getDoc(doc(db, parts[0], parts[1]));
+            return s.exists() ? { id: s.id, ...(s.data() as any) } : null;
+          });
+          if (data) setter(data);
+        } catch (e) { console.warn(`Fetch doc ${path} failed`, e); }
+      };
+
+      await Promise.allSettled([
+        fetchDocItem('settings/global', setSettings),
+        fetchDocItem('city_info/alexandria', setCityInfo),
+        fetchCol('users', setUsers),
+        fetchCol('clubs', setClubs),
+        fetchCol('products', setProducts),
+        fetchCol('ads', setAds, query(collection(db, 'ads'), where('active', '==', true), orderBy('order', 'asc'))),
+        fetchCol('club_titles', setClubTitles, query(collection(db, 'club_titles'), orderBy('count', 'desc'))),
+        fetchCol('club_stats', setClubStats),
+        fetchCol('club_stadiums', setStadiums),
+        fetchCol('club_timeline', setHistoryEvents, query(collection(db, 'club_timeline'), orderBy('year', 'asc')))
+      ]);
+      
+      isFetchedRef.current = true;
+      setDataLoaded(true);
+    };
+
+    fetchStaticData();
 
     return () => {
-      unsubProfile();
-      unsubLive();
-      unsubMatches();
-      unsubLayout();
-      unsubNews();
-      unsubMedia();
-      unsubMediaPlaylists();
-      unsubFanPosts();
-      unsubPolls();
-      unsubPredictions();
-      unsubOrders();
+      clearTimeout(dataLoadTimeout);
+      unsubs.forEach(unsub => unsub());
     };
-  }, [auth.currentUser?.uid]); // Deliberately small dependency array to avoid re-renders triggering refetches
+  }, [auth.currentUser?.uid]);
+ // Deliberately small dependency array to avoid re-renders triggering refetches
 }

@@ -30,8 +30,12 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
   const handleLogout = async () => {
     try {
       await auth.signOut();
-      localStorage.clear();
-      sessionStorage.clear();
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.clear();
+          sessionStorage.clear();
+        }
+      } catch (e) {}
       onClose();
       navigate('/auth', { replace: true });
     } catch (error) {

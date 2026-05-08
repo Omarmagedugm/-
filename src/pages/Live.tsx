@@ -19,7 +19,10 @@ interface Comment {
 }
 
 export default function Live() {
-  const { liveStream, profile, users } = useAppStore();
+  const { liveStream, liveStreams, profile, users } = useAppStore();
+  const [selectedSport, setSelectedSport] = useState<'football' | 'basketball'>('football');
+  
+  const currentStream = selectedSport === 'basketball' ? liveStreams.basketball : liveStreams.football;
   const [chatMessage, setChatMessage] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
   const [isSending, setIsSending] = useState(false);
@@ -95,17 +98,17 @@ export default function Live() {
 
   // Auto-detect video type for rendering
   const renderPlayer = () => {
-    if (!liveStream?.isActive) {
+    if (!currentStream?.isActive) {
       return (
         <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
           <span className="material-symbols-outlined text-[64px] text-slate-700 mb-4">videocam_off</span>
-          <p className="text-white font-bold text-lg mb-2">لا يوجد بث مباشر حالياً</p>
+          <p className="text-white font-bold text-lg mb-2">لا يوجد بث مباشر {selectedSport === 'football' ? 'لكرة القدم' : 'لكرة السلة'} حالياً</p>
           <p className="text-slate-400 text-sm">البث المباشر سيبدأ قبل موعد المباراة</p>
         </div>
       );
     }
 
-    const { url } = liveStream;
+    const { url } = currentStream;
     if (!url) return null;
 
     if (url.includes('youtube.com/embed/') || url.includes('iframe')) {
@@ -152,17 +155,35 @@ export default function Live() {
           {renderPlayer()}
           
           {/* Overlay info if not playing native video (fallback) */}
-          {liveStream.isActive && !liveStream.url && (
+          {currentStream.isActive && !currentStream.url && (
              <div className="absolute top-0 left-0 right-0 p-3 flex justify-between items-start pointer-events-none bg-gradient-to-b from-black/80 to-transparent">
                <div className="bg-black/50 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-md flex items-center gap-1.5">
-                 <span className="material-symbols-outlined text-xs">visibility</span> {(liveStream?.viewers || 0).toLocaleString()}
+                 <span className="material-symbols-outlined text-xs">visibility</span> {(currentStream?.viewers || 0).toLocaleString()}
                </div>
                <div className="bg-primary/90 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-md border border-white/10">
-                 {liveStream.title}
+                 {currentStream.title}
                </div>
              </div>
           )}
         </section>
+
+        {/* Sports Toggle Section */}
+        <div className="bg-white dark:bg-card-dark border-b border-border-light dark:border-border-dark p-3 flex justify-center gap-3">
+          <button 
+            onClick={() => setSelectedSport('football')}
+            className={`flex-1 h-11 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 ${selectedSport === 'football' ? 'bg-primary text-white shadow-glow' : 'bg-slate-50 dark:bg-surface-dark text-slate-400 hover:bg-slate-100'}`}
+          >
+            <span className="material-symbols-outlined !text-[20px]">sports_soccer</span>
+            كرة القدم
+          </button>
+          <button 
+            onClick={() => setSelectedSport('basketball')}
+            className={`flex-1 h-11 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 ${selectedSport === 'basketball' ? 'bg-orange-600 text-white shadow-glow' : 'bg-slate-50 dark:bg-surface-dark text-slate-400 hover:bg-slate-100'}`}
+          >
+            <span className="material-symbols-outlined !text-[20px]">sports_basketball</span>
+            كرة السلة
+          </button>
+        </div>
 
         {/* Live Chat Section */}
         <section className="flex-1 flex flex-col p-4">
@@ -172,7 +193,7 @@ export default function Live() {
               الدردشة المباشرة
             </h2>
             <span className="text-[10px] text-slate-500 font-bold bg-slate-100 dark:bg-surface-dark px-2 py-1 rounded-full">
-              {(liveStream?.isActive ? (liveStream?.viewers || 0) : 0).toLocaleString()} متصل
+              {(currentStream?.isActive ? (currentStream?.viewers || 0) : 0).toLocaleString()} متصل
             </span>
           </div>
           

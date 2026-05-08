@@ -20,8 +20,8 @@ const updateSW = registerSW({
 });
 
 // CRITICAL: Handle chunk loading errors which cause white screens
-// This happens when the browser tries to load a JS chunk that was deleted/replaced on the server
 const handleChunkError = (event: any) => {
+  console.log('Mounting App, checking for errors...');
   const error = event?.error || event?.reason || event;
   const message = String(error?.message || error || '').toLowerCase();
   
@@ -51,8 +51,14 @@ const handleChunkError = (event: any) => {
 window.addEventListener('error', (event) => handleChunkError(event), true);
 window.addEventListener('unhandledrejection', (event) => handleChunkError(event));
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+try {
+  console.log('Application initialization started');
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+} catch (e) {
+  console.error('CRITICAL BOOT ERROR:', e);
+  document.body.innerHTML = `<div style="padding: 20px; color: red;">فشل تشغيل التطبيق. يرجى إعادة المحاولة أو التواصل مع الدعم.</div>`;
+}

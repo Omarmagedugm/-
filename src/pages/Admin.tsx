@@ -351,7 +351,7 @@ const APP_ROLES: { id: AppRole; label: string; icon: any; color: string }[] = [
 
 export default function Admin() {
   const { 
-    news, media, matches, liveStream, users, appSettings, profile, clubs, polls, fanPosts, predictions,
+    news, media, matches, liveStream, liveStreams, users, appSettings, profile, clubs, polls, fanPosts, predictions,
     clubTitles, clubStats, historyEvents, stadiums, newsCategories,
     products, orders, ads, homeSections, undoStack,
     songs, albums, playlists, mediaPlaylists, books, cityInfo,
@@ -365,7 +365,9 @@ export default function Admin() {
   
   const setActiveTab = (tab: any) => {
     setSearchParams({ tab });
-    localStorage.setItem('lastAdminTab', tab);
+    try {
+      if (typeof window !== 'undefined') localStorage.setItem('lastAdminTab', tab);
+    } catch (e) {}
   };
   const [rssSources, setRssSources] = useState<any[]>([]);
   const [rssNews, setRssNews] = useState<any[]>([]);
@@ -378,6 +380,7 @@ export default function Admin() {
   const [historySubTab, setHistorySubTab] = useState<'stats' | 'titles' | 'timeline' | 'stadiums'>('stats');
   const [mediaSubTab, setMediaSubTab] = useState<'items' | 'playlists'>('items');
   const [musicSubTab, setMusicSubTab] = useState<'songs' | 'albums' | 'playlists'>('songs');
+  const [liveSportSubTab, setLiveSportSubTab] = useState<'football' | 'basketball'>('football');
   const [isExporting, setIsExporting] = useState(false);
   const [aiUsage, setAiUsage] = useState<any[]>([]);
 
@@ -538,19 +541,27 @@ export default function Admin() {
   const [comments, setComments] = useState<any[]>([]);
   const [fanComments, setFanComments] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(() => {
-    const saved = localStorage.getItem('adminDraft_showModal');
-    return saved ? JSON.parse(saved) : false;
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('adminDraft_showModal') : null;
+      return saved ? JSON.parse(saved) : false;
+    } catch (e) { return false; }
   });
   const [formData, setFormData] = useState<any>(() => {
-    const saved = localStorage.getItem('adminDraft_formData');
-    return saved ? JSON.parse(saved) : {};
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('adminDraft_formData') : null;
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) { return {}; }
   });
   const [isEditing, setIsEditing] = useState(() => {
-    const saved = localStorage.getItem('adminDraft_isEditing');
-    return saved ? JSON.parse(saved) : false;
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('adminDraft_isEditing') : null;
+      return saved ? JSON.parse(saved) : false;
+    } catch (e) { return false; }
   });
   const [editingId, setEditingId] = useState<string | null>(() => {
-    return localStorage.getItem('adminDraft_editingId') || null;
+    try {
+      return typeof window !== 'undefined' ? localStorage.getItem('adminDraft_editingId') || null : null;
+    } catch (e) { return null; }
   });
   const [activeSearchField, setActiveSearchField] = useState<'home' | 'away' | null>(null);
   const [clubSearchQuery, setClubSearchQuery] = useState('');
@@ -567,11 +578,15 @@ export default function Admin() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('adminDraft_showModal', JSON.stringify(showModal));
-    localStorage.setItem('adminDraft_formData', JSON.stringify(formData));
-    localStorage.setItem('adminDraft_isEditing', JSON.stringify(isEditing));
-    if (editingId) localStorage.setItem('adminDraft_editingId', editingId);
-    else localStorage.removeItem('adminDraft_editingId');
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('adminDraft_showModal', JSON.stringify(showModal));
+        localStorage.setItem('adminDraft_formData', JSON.stringify(formData));
+        localStorage.setItem('adminDraft_isEditing', JSON.stringify(isEditing));
+        if (editingId) localStorage.setItem('adminDraft_editingId', editingId);
+        else localStorage.removeItem('adminDraft_editingId');
+      }
+    } catch (e) {}
   }, [showModal, formData, isEditing, editingId]);
   const [baseData, setBaseData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -1005,14 +1020,19 @@ export default function Admin() {
         }
       } else if (activeTab === 'live') {
         try {
-          await setDoc(doc(db, 'settings', 'liveStream'), {
-            isActive: formData.isActive ?? liveStream.isActive,
-            url: formData.url || liveStream.url,
-            title: formData.title || liveStream.title,
-            viewers: Number(formData.viewers || liveStream.viewers || 0)
+          const docName = liveSportSubTab === 'basketball' ? 'liveStream_basketball' : 'liveStream';
+          const currentStream = liveSportSubTab === 'basketball' ? liveStreams.basketball : liveStreams.football;
+          
+          await setDoc(doc(db, 'settings', docName), {
+            isActive: formData.isActive ?? currentStream.isActive,
+            url: formData.url || currentStream.url,
+            title: formData.title || currentStream.title,
+            viewers: Number(formData.viewers || currentStream.viewers || 0),
+            sport: liveSportSubTab
           });
+          toast.success('تم تحديث البث بنجاح');
         } catch (err) {
-          handleFirestoreError(err, OperationType.WRITE, 'settings/liveStream');
+          handleFirestoreError(err, OperationType.WRITE, `settings/liveStream${liveSportSubTab === 'basketball' ? '_basketball' : ''}`);
         }
       } else if (activeTab === 'clubs') {
         const payload = {
@@ -1505,7 +1525,9 @@ export default function Admin() {
       // Check if all history collections are empty to avoid partial seeding
       // We use a local check to avoid double-seeding if the state hasn't updated yet
       const isSeededKey = 'history_data_seeded_v1';
-      if (localStorage.getItem(isSeededKey)) return;
+      try {
+        if (typeof window !== 'undefined' && localStorage.getItem(isSeededKey)) return;
+      } catch (e) {}
 
       if (clubStats.length === 0 && clubTitles.length === 0 && historyEvents.length === 0 && stadiums.length === 0) {
         console.log('Seeding initial history data...');
@@ -1513,7 +1535,9 @@ export default function Admin() {
           // Double check with a real server fetch to be absolutely sure
           const statsSnap = await getDocs(collection(db, 'club_stats'));
           if (!statsSnap.empty) {
-            localStorage.setItem(isSeededKey, 'true');
+            try {
+              if (typeof window !== 'undefined') localStorage.setItem(isSeededKey, 'true');
+            } catch (e) {}
             return;
           }
 
@@ -1566,7 +1590,9 @@ export default function Admin() {
           for (const st of stadiumsList) await addDoc(collection(db, 'club_stadiums'), st);
 
           console.log('Seeding complete.');
-          localStorage.setItem(isSeededKey, 'true');
+          try {
+            if (typeof window !== 'undefined') localStorage.setItem(isSeededKey, 'true');
+          } catch (e) {}
         } catch (error) {
           console.error('Error auto-seeding history:', error);
         }
@@ -3980,11 +4006,34 @@ export default function Admin() {
 
           {activeTab === 'live' && (
              <div className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-4 flex flex-col gap-4">
+               <div className="flex bg-slate-100 dark:bg-surface-dark p-1 rounded-xl w-fit">
+                  <button 
+                    onClick={() => {
+                        setLiveSportSubTab('football');
+                        setFormData({});
+                    }} 
+                    className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${liveSportSubTab === 'football' ? 'bg-white dark:bg-card-dark text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    <Trophy size={14} />
+                    كرة القدم
+                  </button>
+                  <button 
+                    onClick={() => {
+                        setLiveSportSubTab('basketball');
+                        setFormData({});
+                    }} 
+                    className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${liveSportSubTab === 'basketball' ? 'bg-white dark:bg-card-dark text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    <Trophy size={14} />
+                    كرة السلة
+                  </button>
+               </div>
+
                <div>
-                  <label className="text-xs font-bold mb-1.5 block">حالة البث</label>
+                  <label className="text-xs font-bold mb-1.5 block">حالة بث {liveSportSubTab === 'football' ? 'كرة القدم' : 'كرة السلة'}</label>
                   <select 
                     className="w-full p-2.5 rounded-lg border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" 
-                    value={formData.isActive ?? (liveStream.isActive ? '1' : '0')} 
+                    value={formData.isActive ?? (liveSportSubTab === 'basketball' ? (liveStreams.basketball.isActive ? '1' : '0') : (liveStreams.football.isActive ? '1' : '0'))} 
                     onChange={(e) => setFormData({...formData, isActive: e.target.value === '1'})}
                   >
                      <option value="1">مباشر الآن (مفتوح)</option>
@@ -3996,7 +4045,7 @@ export default function Admin() {
                   <input 
                     type="text" 
                     className="w-full p-2.5 rounded-lg border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" 
-                    value={formData.title ?? liveStream.title} 
+                    value={formData.title ?? (liveSportSubTab === 'basketball' ? liveStreams.basketball.title : liveStreams.football.title)} 
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
                   />
                </div>
@@ -4007,7 +4056,7 @@ export default function Admin() {
                   <input 
                     type="text" 
                     className="w-full p-2.5 rounded-lg border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm text-left dir-ltr" 
-                    value={formData.url ?? liveStream.url} 
+                    value={formData.url ?? (liveSportSubTab === 'basketball' ? liveStreams.basketball.url : liveStreams.football.url)} 
                     placeholder="https://..."
                     onChange={(e) => setFormData({...formData, url: e.target.value})}
                   />

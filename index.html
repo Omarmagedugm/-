@@ -39,8 +39,15 @@
       // Force reload on chunk errors before the app even starts
       window.addEventListener('error', function(e) {
         if (e.message && (e.message.includes('ChunkLoadError') || e.message.includes('Loading chunk'))) {
-          console.warn('Chunk error detected in top-level script, reloading...');
-          window.location.reload();
+          var lastReload = sessionStorage.getItem('last_chunk_reload');
+          var now = Date.now();
+          if (!lastReload || now - parseInt(lastReload) > 10000) { // 10s gap to avoid tight loops
+            sessionStorage.setItem('last_chunk_reload', now);
+            console.warn('Chunk error detected, reloading once...');
+            window.location.reload();
+          } else {
+            console.error('Persistent chunk errors detected, reload suppressed.');
+          }
         }
       }, true);
     </script>

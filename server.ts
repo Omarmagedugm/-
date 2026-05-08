@@ -113,10 +113,18 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*all', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+    if (fs.existsSync(distPath)) {
+      app.use(express.static(distPath));
+      app.get('(.*)', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+      console.log('Serving static files from:', distPath);
+    } else {
+      console.error('DIST folder not found! Build may have failed.');
+      app.get('(.*)', (req, res) => {
+        res.status(500).send('Application is building or failed to build. Please check logs.');
+      });
+    }
   }
 
   app.listen(PORT, '0.0.0.0', () => {

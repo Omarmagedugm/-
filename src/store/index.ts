@@ -151,6 +151,7 @@ export interface LiveStream {
   url: string;
   title: string;
   viewers: number;
+  sport?: 'football' | 'basketball';
 }
 
 export interface ClubTitle {
@@ -307,6 +308,10 @@ interface AppState {
     defaultSport?: 'football' | 'basketball' | 'auto';
   };
   liveStream: LiveStream;
+  liveStreams: {
+    football: LiveStream;
+    basketball: LiveStream;
+  };
   theme: 'dark' | 'light';
   profile: UserProfile;
   clubTitles: ClubTitle[];
@@ -331,6 +336,7 @@ interface AppState {
   playerVolume: number;
   stadiumOpacity: number;
   isAuthReady: boolean;
+  dataLoaded: boolean;
   activePlaylist: Song[];
   undoStack: { collection: string; action: 'add' | 'delete' | 'update'; data: any }[];
   setNews: (news: NewsItem[]) => void;
@@ -354,6 +360,7 @@ interface AppState {
   deleteUser: (uid: string) => void;
   setSettings: (settings: any) => void;
   updateLiveStream: (stream: Partial<LiveStream>) => void;
+  updateLiveStreams: (streams: { football?: Partial<LiveStream>, basketball?: Partial<LiveStream> }) => void;
   toggleTheme: () => void;
   updateProfile: (profile: Partial<UserProfile>) => void;
   setClubTitles: (titles: ClubTitle[]) => void;
@@ -378,6 +385,7 @@ interface AppState {
   setPlayerVolume: (volume: number) => void;
   setStadiumOpacity: (opacity: number) => void;
   setIsAuthReady: (ready: boolean) => void;
+  setDataLoaded: (loaded: boolean) => void;
   setActivePlaylist: (songs: Song[]) => void;
   pushToUndoStack: (op: { collection: string; action: 'add' | 'delete' | 'update'; data: any }) => void;
   popFromUndoStack: () => { collection: string; action: 'add' | 'delete' | 'update'; data: any } | undefined;
@@ -453,10 +461,16 @@ const defaultMatches: MatchItem[] = [
 ];
 
 const defaultLiveStream: LiveStream = {
-  isActive: true,
-  url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-  title: 'مباراة الاتحاد والأهلي - بث مباشر',
-  viewers: 1240,
+  isActive: false,
+  url: '',
+  title: 'بث مباشر',
+  viewers: 0,
+  sport: 'football',
+};
+
+const defaultLiveStreams = {
+  football: { ...defaultLiveStream, sport: 'football' as const },
+  basketball: { ...defaultLiveStream, sport: 'basketball' as const },
 };
 
 const defaultProfile: UserProfile = {
@@ -497,6 +511,7 @@ export const useAppStore = create<AppState>()(
         defaultSport: 'auto'
       },
       liveStream: defaultLiveStream,
+      liveStreams: defaultLiveStreams,
       theme: 'dark',
       profile: defaultProfile,
       isAuthReady: false,
@@ -569,6 +584,7 @@ export const useAppStore = create<AppState>()(
       isPlaying: false,
       playerVolume: 1,
       stadiumOpacity: 0.2,
+      dataLoaded: false,
       activePlaylist: [],
       undoStack: [],
       setNews: (news) => set({ news }),
@@ -602,6 +618,14 @@ export const useAppStore = create<AppState>()(
       })),
       setSettings: (settings) => set((state) => ({ appSettings: { ...state.appSettings, ...settings } })),
       updateLiveStream: (stream) => set((state) => ({ liveStream: { ...state.liveStream, ...stream } })),
+      updateLiveStreams: (streams) => set((state) => ({
+        liveStreams: {
+          football: { ...state.liveStreams.football, ...streams.football },
+          basketball: { ...state.liveStreams.basketball, ...streams.basketball },
+        },
+        // Also update legacy liveStream if football is updated
+        ...(streams.football ? { liveStream: { ...state.liveStream, ...streams.football } } : {})
+      })),
       toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
       updateProfile: (profile) => set((state) => ({ profile: { ...state.profile, ...profile } as UserProfile })),
       setClubTitles: (clubTitles) => set({ clubTitles }),
@@ -626,6 +650,7 @@ export const useAppStore = create<AppState>()(
       setPlayerVolume: (playerVolume) => set({ playerVolume }),
       setStadiumOpacity: (stadiumOpacity) => set({ stadiumOpacity }),
       setIsAuthReady: (isAuthReady) => set({ isAuthReady }),
+      setDataLoaded: (dataLoaded) => set({ dataLoaded }),
       setActivePlaylist: (activePlaylist) => set({ activePlaylist }),
       pushToUndoStack: (op) => set((state) => ({ 
         undoStack: [op, ...state.undoStack].slice(0, 20) // Keep last 20 operations
