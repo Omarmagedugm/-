@@ -29,6 +29,7 @@ import MusicPlayer from './components/MusicPlayer';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import GoalCelebration from './components/GoalCelebration';
 import WinCelebration from './components/WinCelebration';
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -229,6 +230,7 @@ function AppContent() {
           className: 'bg-white dark:bg-card-dark text-slate-800 dark:text-white font-bold font-display shadow-2xl rounded-2xl border border-border-light dark:border-border-dark',
         }}
       />
+      <SpeedInsights />
       <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-[calc(100vh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex flex-col font-display antialiased transition-colors duration-200">
         <TopHeader />
         <Routes>
