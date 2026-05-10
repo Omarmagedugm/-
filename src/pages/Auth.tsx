@@ -448,9 +448,9 @@ export default function Auth() {
                 <div className="mt-8 text-center px-4">
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-relaxed">
                     By continuing, you agree to our{' '}
-                    <Link to="/terms" className="text-primary/80 hover:text-primary transition-colors hover:underline">Terms of Service</Link>
+                    <a href="https://itthadalextv.com/terms" className="text-primary/80 hover:text-primary transition-colors hover:underline">Terms of Service</a>
                     {' '}and{' '}
-                    <Link to="/privacy" className="text-primary/80 hover:text-primary transition-colors hover:underline">Privacy Policy</Link>
+                    <a href="https://itthadalextv.com/privacy" className="text-primary/80 hover:text-primary transition-colors hover:underline">Privacy Policy</a>
                   </p>
                 </div>
               </>

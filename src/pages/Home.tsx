@@ -1896,9 +1896,9 @@ export default function Home() {
 
         <motion.footer variants={itemVariants} className="mt-8 mb-4 text-center px-4">
           <div className="flex items-center justify-center gap-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-            <Link to="/privacy" className="hover:text-primary transition-colors">سياسة الخصوصية</Link>
+            <a href="https://itthadalextv.com/privacy" className="hover:text-primary transition-colors">سياسة الخصوصية</a>
             <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>
-            <Link to="/terms" className="hover:text-primary transition-colors">شروط الخدمة</Link>
+            <a href="https://itthadalextv.com/terms" className="hover:text-primary transition-colors">شروط الخدمة</a>
           </div>
           <p className="mt-2 text-[9px] font-medium text-slate-400/60 dark:text-slate-500/40 uppercase tracking-tighter">
             © {new Date().getFullYear()} Ittihad Alexandria Fan App
