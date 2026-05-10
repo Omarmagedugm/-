@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { 
   signInWithEmailAndPassword, 
@@ -444,6 +444,15 @@ export default function Auth() {
                   <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" referrerPolicy="no-referrer" />
                   الدخول بواسطة Google
                 </button>
+
+                <div className="mt-8 text-center px-4">
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-relaxed">
+                    By continuing, you agree to our{' '}
+                    <Link to="/terms" className="text-primary/80 hover:text-primary transition-colors hover:underline">Terms of Service</Link>
+                    {' '}and{' '}
+                    <Link to="/privacy" className="text-primary/80 hover:text-primary transition-colors hover:underline">Privacy Policy</Link>
+                  </p>
+                </div>
               </>
             )}
           </form>
