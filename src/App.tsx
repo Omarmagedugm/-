@@ -22,6 +22,8 @@ import Store from './pages/Store';
 import Bookmarks from './pages/Bookmarks';
 import Library from './pages/Library';
 import CustomPage from './pages/CustomPage';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 
 import BottomNav from './components/BottomNav';
 import TopHeader from './components/TopHeader';
@@ -251,6 +253,8 @@ function AppContent() {
           <Route path="/bookmarks" element={<Bookmarks />} />
           <Route path="/library" element={<Library />} />
           <Route path="/page/:slug" element={<CustomPage />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <AppNav />

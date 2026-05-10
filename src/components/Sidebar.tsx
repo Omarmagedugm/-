@@ -177,6 +177,21 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                 <span className="material-symbols-outlined !text-[20px]">bookmark</span>
                 <span className="text-sm font-bold">محفوظاتي</span>
               </Link>
+
+              <div className="pt-2 pb-1 px-4 border-t border-slate-100 dark:border-border-dark mt-2">
+                 <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest mt-2">قانوني / Legal</p>
+              </div>
+
+              <Link to="/privacy" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
+                <ShieldCheck size={20} className="text-slate-400" />
+                <span className="text-sm font-bold">سياسة الخصوصية</span>
+              </Link>
+              
+              <Link to="/terms" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
+                <FileText size={20} className="text-slate-400" />
+                <span className="text-sm font-bold">شروط الاستخدام</span>
+              </Link>
+
               <button onClick={() => { 
                 toast((t) => (
                   <div className="flex flex-col gap-2 p-1">
