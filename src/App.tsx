@@ -32,6 +32,7 @@ import PWAInstallPrompt from './components/PWAInstallPrompt';
 import GoalCelebration from './components/GoalCelebration';
 import WinCelebration from './components/WinCelebration';
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Analytics } from "@vercel/analytics/react";
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -233,6 +234,7 @@ function AppContent() {
         }}
       />
       <SpeedInsights />
+      <Analytics />
       <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-[calc(100vh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex flex-col font-display antialiased transition-colors duration-200">
         <TopHeader />
         <Routes>
