@@ -140,7 +140,7 @@ export default function PrivacyPolicy() {
         <motion.div variants={itemVariants} className="text-center p-8 bg-slate-50 dark:bg-card-dark rounded-[32px] border border-dashed border-border-light dark:border-border-dark">
           <Mail className="mx-auto text-primary mb-3" size={24} />
           <h3 className="font-black text-slate-800 dark:text-white mb-2">للتواصل والاستفسارات / Contact Us</h3>
-          <p className="text-primary font-black text-lg">copyrightofficialco@gmail.com</p>
+          <p className="text-primary font-black text-lg">info@itthadalextv.com</p>
         </motion.div>
       </motion.div>
     </div>
