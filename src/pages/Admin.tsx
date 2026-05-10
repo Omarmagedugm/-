@@ -357,7 +357,8 @@ export default function Admin() {
     songs, albums, playlists, mediaPlaylists, books, cityInfo,
     setClubTitles, setClubStats, setHistoryEvents, setStadiums, setNewsCategories,
     setProducts, setOrders, setAds, setHomeSections, pushToUndoStack, popFromUndoStack,
-    setSongs, setAlbums, setPlaylists, setMediaPlaylists, setBooks, setCityInfo
+    setSongs, setAlbums, setPlaylists, setMediaPlaylists, setBooks, setCityInfo,
+    setSettings
   } = useAppStore();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1009,7 +1010,8 @@ export default function Admin() {
           headerLogoDark: formData.headerLogoDark !== undefined ? formData.headerLogoDark : (appSettings.headerLogoDark || ''),
           logoType: formData.logoType || appSettings.logoType || 'image',
           logoText: formData.logoText || appSettings.logoText || '',
-          defaultSport: formData.defaultSport || appSettings.defaultSport || 'auto'
+          defaultSport: formData.defaultSport || appSettings.defaultSport || 'auto',
+          liveViewMode: formData.liveViewMode || appSettings.liveViewMode || 'both'
         };
         try {
           await setDoc(doc(db, 'settings', 'global'), payload);
@@ -4006,6 +4008,28 @@ export default function Admin() {
 
           {activeTab === 'live' && (
              <div className="bg-white dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-4 flex flex-col gap-4">
+               <div>
+                  <label className="text-xs font-bold mb-1.5 block">وضع عرض البث للجماهير</label>
+                  <select 
+                    className="w-full p-2.5 rounded-lg border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" 
+                    value={appSettings.liveViewMode || 'both'} 
+                    onChange={async (e) => {
+                       const val = e.target.value;
+                       try {
+                         await updateDoc(doc(db, 'settings', 'global'), { liveViewMode: val });
+                         setSettings({ ...appSettings, liveViewMode: val });
+                         toast.success('تم تحديث وضع العرض');
+                       } catch (err) {
+                         toast.error('فشل تحديث وضع العرض');
+                       }
+                    }}
+                  >
+                     <option value="both">كرة قدم وسلة (معاً)</option>
+                     <option value="football">كرة قدم فقط</option>
+                     <option value="basketball">كرة سلة فقط</option>
+                  </select>
+               </div>
+
                <div className="flex bg-slate-100 dark:bg-surface-dark p-1 rounded-xl w-fit">
                   <button 
                     onClick={() => {

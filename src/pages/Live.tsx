@@ -19,8 +19,17 @@ interface Comment {
 }
 
 export default function Live() {
-  const { liveStream, liveStreams, profile, users } = useAppStore();
-  const [selectedSport, setSelectedSport] = useState<'football' | 'basketball'>('football');
+  const { liveStream, liveStreams, profile, users, appSettings } = useAppStore();
+  const [selectedSport, setSelectedSport] = useState<'football' | 'basketball'>(() => {
+    if (appSettings.liveViewMode === 'basketball') return 'basketball';
+    return 'football';
+  });
+
+  useEffect(() => {
+    if (appSettings.liveViewMode && appSettings.liveViewMode !== 'both') {
+      setSelectedSport(appSettings.liveViewMode as 'football' | 'basketball');
+    }
+  }, [appSettings.liveViewMode]);
   
   const currentStream = selectedSport === 'basketball' ? liveStreams.basketball : liveStreams.football;
   const [chatMessage, setChatMessage] = useState('');
@@ -168,22 +177,24 @@ export default function Live() {
         </section>
 
         {/* Sports Toggle Section */}
-        <div className="bg-white dark:bg-card-dark border-b border-border-light dark:border-border-dark p-3 flex justify-center gap-3">
-          <button 
-            onClick={() => setSelectedSport('football')}
-            className={`flex-1 h-11 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 ${selectedSport === 'football' ? 'bg-primary text-white shadow-glow' : 'bg-slate-50 dark:bg-surface-dark text-slate-400 hover:bg-slate-100'}`}
-          >
-            <span className="material-symbols-outlined !text-[20px]">sports_soccer</span>
-            كرة القدم
-          </button>
-          <button 
-            onClick={() => setSelectedSport('basketball')}
-            className={`flex-1 h-11 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 ${selectedSport === 'basketball' ? 'bg-orange-600 text-white shadow-glow' : 'bg-slate-50 dark:bg-surface-dark text-slate-400 hover:bg-slate-100'}`}
-          >
-            <span className="material-symbols-outlined !text-[20px]">sports_basketball</span>
-            كرة السلة
-          </button>
-        </div>
+        {(!appSettings.liveViewMode || appSettings.liveViewMode === 'both') && (
+          <div className="bg-white dark:bg-card-dark border-b border-border-light dark:border-border-dark p-3 flex justify-center gap-3">
+            <button 
+              onClick={() => setSelectedSport('football')}
+              className={`flex-1 h-11 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 ${selectedSport === 'football' ? 'bg-primary text-white shadow-glow' : 'bg-slate-50 dark:bg-surface-dark text-slate-400 hover:bg-slate-100'}`}
+            >
+              <span className="material-symbols-outlined !text-[20px]">sports_soccer</span>
+              كرة القدم
+            </button>
+            <button 
+              onClick={() => setSelectedSport('basketball')}
+              className={`flex-1 h-11 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 ${selectedSport === 'basketball' ? 'bg-orange-600 text-white shadow-glow' : 'bg-slate-50 dark:bg-surface-dark text-slate-400 hover:bg-slate-100'}`}
+            >
+              <span className="material-symbols-outlined !text-[20px]">sports_basketball</span>
+              كرة السلة
+            </button>
+          </div>
+        )}
 
         {/* Live Chat Section */}
         <section className="flex-1 flex flex-col p-4">

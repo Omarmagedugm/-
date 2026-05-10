@@ -306,6 +306,7 @@ interface AppState {
     logoType?: 'image' | 'text';
     logoText?: string;
     defaultSport?: 'football' | 'basketball' | 'auto';
+    liveViewMode?: 'both' | 'football' | 'basketball';
   };
   liveStream: LiveStream;
   liveStreams: {
@@ -508,7 +509,8 @@ export const useAppStore = create<AppState>()(
         headerLogoDark: '',
         logoType: 'image',
         logoText: 'الاتحاد السكندري',
-        defaultSport: 'auto'
+        defaultSport: 'auto',
+        liveViewMode: 'both'
       },
       liveStream: defaultLiveStream,
       liveStreams: defaultLiveStreams,
