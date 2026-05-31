@@ -1894,13 +1894,23 @@ export default function Home() {
           );
         })}
 
-        <motion.footer variants={itemVariants} className="mt-8 mb-4 text-center px-4">
-          <div className="flex items-center justify-center gap-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-            <a href="https://itthadalextv.com/privacy" className="hover:text-primary transition-colors">سياسة الخصوصية</a>
-            <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>
-            <a href="https://itthadalextv.com/terms" className="hover:text-primary transition-colors">شروط الخدمة</a>
+        <motion.footer variants={itemVariants} className="mt-12 mb-6 text-center px-4 border-t border-slate-100 dark:border-slate-800/40 pt-8">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-bold text-slate-700 dark:text-slate-300 tracking-wider">
+            <a 
+              href="https://itthadalextv.com/privacy-policy" 
+              className="hover:text-primary transition-colors hover:underline"
+            >
+              Privacy Policy (سياسة الخصوصية)
+            </a>
+            <span className="text-slate-300 dark:text-slate-700 font-normal">|</span>
+            <a 
+              href="https://itthadalextv.com/terms" 
+              className="hover:text-primary transition-colors hover:underline"
+            >
+              Terms of Service (شروط الخدمة)
+            </a>
           </div>
-          <p className="mt-2 text-[9px] font-medium text-slate-400/60 dark:text-slate-500/40 uppercase tracking-tighter">
+          <p className="mt-4 text-[10px] font-medium text-slate-400/60 dark:text-slate-500/40 uppercase tracking-tighter">
             © {new Date().getFullYear()} Ittihad Alexandria Fan App
           </p>
         </motion.footer>

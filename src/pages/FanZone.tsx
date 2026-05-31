@@ -1027,8 +1027,15 @@ export default function FanZone() {
                                   })()
                                 )}
                               </div>
-                              <div className="flex items-center gap-2 text-[9px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest">
-                                 {format(new Date(post.date || Date.now()), 'HH:mm', { locale: ar })}
+                              <div className="flex items-center gap-2 text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-normal">
+                                 {(() => {
+                                   if (!post.createdAt) return 'الآن';
+                                   const createdAny = post.createdAt as any;
+                                   const postDate = createdAny.seconds 
+                                     ? new Date(createdAny.seconds * 1000) 
+                                     : new Date(createdAny);
+                                   return format(postDate, 'd MMMM yyyy - hh:mm a', { locale: ar });
+                                 })()}
                                  {post.location && (
                                    <span className="flex items-center gap-1 text-primary">
                                      <MapPin size={10} /> {post.location}

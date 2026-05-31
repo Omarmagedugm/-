@@ -256,6 +256,7 @@ function AppContent() {
           <Route path="/library" element={<Library />} />
           <Route path="/page/:slug" element={<CustomPage />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
