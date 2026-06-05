@@ -227,7 +227,7 @@ export default function Matches() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex-1 overflow-x-hidden p-4 flex flex-col gap-8"
+        className="flex-1 overflow-x-hidden px-4 pt-2 pb-6 flex flex-col gap-8"
       >
         {/* Matches Feed Upgrade */}
         <motion.section variants={itemVariants} className="space-y-12">

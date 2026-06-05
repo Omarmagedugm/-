@@ -689,7 +689,7 @@ export default function FanZone() {
 
   return (
     <div className="flex-1 pb-32 flex flex-col bg-background-light dark:bg-background-dark min-h-screen text-slate-800 dark:text-white">
-      <main className="p-4 space-y-8">
+      <main className="px-4 pt-2 pb-6 space-y-8">
         {/* AI Jersey Try-On Banner: Prominent call to action */}
         {aiConfig.enabled && (
           <motion.div 
