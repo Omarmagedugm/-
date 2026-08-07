@@ -784,7 +784,7 @@ export default function Home() {
             </div>
 
             <div className="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth snap-x pb-1 -mx-4 px-4">
-              {recentNews.map((item) => (
+              {recentNews.map((item, index) => (
                 <motion.div
                   key={item.id}
                   className="flex-shrink-0 w-[280px] snap-center group"
@@ -800,6 +800,7 @@ export default function Home() {
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700"
                         width={800}
+                        fetchPriority={index === 0 ? "high" : "auto"}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                       <div className="absolute top-4 left-4 z-20 flex gap-1.5 flex-wrap max-w-[90%]">
