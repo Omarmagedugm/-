@@ -724,6 +724,20 @@ export default function Admin() {
     return () => unsub();
   }, []);
 
+  // Sync users with Auth whenever admin opens the users management tab
+  useEffect(() => {
+    if (activeTab === 'users') {
+      fetch('/api/users/sync-auth', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+             console.log(`Successfully synced users with Auth. Created ${data.createdCount} documents. Total: ${data.totalNow}`);
+          }
+        })
+        .catch(err => console.error('Error syncing auth users:', err));
+    }
+  }, [activeTab]);
+
   const handleGoBack = () => {
     if (window.history.length > 1) {
       navigate(-1);

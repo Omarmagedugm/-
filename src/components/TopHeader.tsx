@@ -131,6 +131,7 @@ export default function TopHeader() {
           {isHome ? (
             <motion.button 
               id="menu-button"
+              aria-label="القائمة الرئيسية"
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsMenuOpen(true)}
               className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-600 dark:text-slate-300 hover:text-primary transition-all duration-300"
@@ -140,6 +141,7 @@ export default function TopHeader() {
           ) : (
             <motion.button 
               id="back-button"
+              aria-label="الرجوع للصفحة السابقة"
               whileTap={{ scale: 0.9 }}
               onClick={() => navigate(-1)}
               className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-600 dark:text-slate-300 hover:text-primary transition-all duration-300"
@@ -169,6 +171,7 @@ export default function TopHeader() {
               <motion.button 
                 whileTap={{ scale: 0.9 }}
                 onClick={() => navigate(-1)}
+                aria-label="رجوع للصفحة السابقة"
                 className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-500 dark:text-slate-400 hover:text-primary transition-all duration-300 shadow-sm"
                 title="رجوع للصفحة السابقة"
               >
@@ -182,6 +185,7 @@ export default function TopHeader() {
                     return typeof window !== 'undefined' ? localStorage.getItem('lastAdminTab') || 'overview' : 'overview';
                   } catch (e) { return 'overview'; }
                 })()}`}
+                aria-label="لوحة التحكم"
                 className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-500 dark:text-slate-400 hover:text-primary transition-all duration-300 shadow-sm"
                 title="لوحة التحكم"
               >
@@ -191,6 +195,7 @@ export default function TopHeader() {
             {permission === 'default' && (
               <motion.button 
                 whileTap={{ scale: 0.9 }}
+                aria-label="تفعيل الإشعارات"
                 onClick={() => {
                   requestNotificationPermission().then(() => {
                     if ('Notification' in window) setPermission(Notification.permission);
@@ -209,6 +214,7 @@ export default function TopHeader() {
             )}
             <motion.button 
               id="theme-toggle-button"
+              aria-label="تبديل المظهر"
               whileTap={{ scale: 0.9 }}
               onClick={toggleTheme}
               className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-500 dark:text-slate-400 hover:text-primary transition-all duration-300"
@@ -218,6 +224,7 @@ export default function TopHeader() {
             {isHome ? (
               <motion.button 
                 id="notification-button"
+                aria-label="الإشعارات"
                 whileTap={{ scale: 0.9 }}
                 onClick={handleOpenNotifications}
                 className="relative flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-500 dark:text-slate-400 hover:text-primary transition-all duration-300"
@@ -230,6 +237,7 @@ export default function TopHeader() {
             ) : (
               <Link 
                 id="search-button-link"
+                aria-label="البحث عن الأخبار"
                 to="/news"
                 className="flex h-10 w-10 items-center justify-center rounded-2xl glass-card text-slate-500 dark:text-slate-400 hover:text-primary transition-all duration-300"
               >

@@ -89,8 +89,17 @@ export default function Auth() {
       }
       navigate('/profile');
     } catch (err: any) {
-      console.error(err);
-      setError('فشل تسجيل الدخول بجوجل');
+      console.error("Google Auth Error:", err);
+      const code = err.code || '';
+      if (code === 'auth/unauthorized-domain') {
+        setError('خطأ: هذا الرابط غير مصرح به في Firebase. يرجى إضافة رابط الموقع الحالي ولوحة التحكم إلى قائمة "Authorized Domains" في إعدادات Firebase Authentication.');
+      } else if (code === 'auth/popup-blocked') {
+        setError('تم حظر النافذة المنبثقة من قبل المتصفح. يرجى السماح بالنوافذ المنبثقة لهذا الموقع وإعادة المحاولة.');
+      } else if (code === 'auth/operation-not-allowed') {
+        setError('تسجيل الدخول عن طريق جوجل غير مفعل في مشروع Firebase الحالي. يمكنك تفعيله من خلال Sign-in providers.');
+      } else {
+        setError(`فشل تسجيل الدخول بجوجل: ${err.message || code}`);
+      }
     } finally {
       setLoading(false);
     }

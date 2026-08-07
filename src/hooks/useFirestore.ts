@@ -83,6 +83,7 @@ export function useFirestoreSync() {
       unsubs.push(onSnapshot(query(collection(db, 'fan_posts'), orderBy('createdAt', 'desc'), limit(50)), s => setFanPosts(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), err => console.warn('Fan posts sync failed', err)));
       unsubs.push(onSnapshot(query(collection(db, 'polls'), orderBy('createdAt', 'desc'), limit(20)), s => setPolls(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), err => console.warn('Polls sync failed', err)));
       unsubs.push(onSnapshot(query(collection(db, 'predictions'), orderBy('createdAt', 'desc'), limit(100)), s => setPredictions(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), err => console.warn('Predictions sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'users'), s => setUsers(s.docs.map(d => ({id: d.id, uid: d.id, ...(d.data() as any)})) as any), err => console.warn('Users sync failed', err)));
 
       const currentUser = auth.currentUser;
       if (currentUser) {
@@ -155,10 +156,15 @@ export function useFirestoreSync() {
 
       const fetchCol = async (col: string, setter: (d: any) => void, q?: any) => {
         try {
-          const data = await fetchWithCache(col, async () => {
-            const s = await getDocs(q || collection(db, col));
-            return s.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
-          });
+          const data = col === 'users'
+            ? await (async () => {
+                const s = await getDocs(q || collection(db, col));
+                return s.docs.map(d => ({ id: d.id, uid: d.id, ...(d.data() as any) }));
+              })()
+            : await fetchWithCache(col, async () => {
+                const s = await getDocs(q || collection(db, col));
+                return s.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+              });
           if (data && (data.length > 0 || !isFetchedRef.current)) setter(data);
         } catch (e) { console.warn(`Fetch ${col} failed`, e); }
       };

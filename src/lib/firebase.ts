@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, doc, getDoc, getDocFromServer } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import firebaseConfigJson from '../../firebase-applet-config.json';
@@ -132,15 +132,15 @@ initializeMessaging();
 
 async function testConnection() {
   try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
+    await getDoc(doc(db, 'settings', 'app_settings'));
     console.info('Firestore connection established successfully.');
   } catch (error: any) {
-    console.error('Firestore Initial Connection Test Failed:', {
-      code: error.code,
-      message: error.message
-    });
-    // This is the error the user is seeing. 
-    // We log it clearly but don't crash the app as Firebase handles retries.
+    try {
+      await getDocFromServer(doc(db, 'test', 'connection'));
+      console.info('Firestore connection established successfully.');
+    } catch (e: any) {
+      console.warn('Firestore initial connection status:', e?.message || e?.code || e);
+    }
   }
 }
 testConnection();
