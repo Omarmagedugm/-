@@ -799,7 +799,7 @@ export default function Home() {
                         src={item.image || undefined}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700"
-                        width={800}
+                        width={400}
                         fetchPriority={index === 0 ? "high" : "auto"}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
@@ -893,7 +893,7 @@ export default function Home() {
                       src={item.thumbnailUrl || undefined}
                       alt={item.title}
                       className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
-                      width={600}
+                      width={450}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
 
