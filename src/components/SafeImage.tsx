@@ -19,6 +19,8 @@ export const SafeImage: React.FC<SafeImageProps> = ({
   const [hasError, setHasError] = useState(false);
 
   const optimizedSrc = getOptimizedImage(src, width);
+  const isContain = className.includes('object-contain');
+  const fitClass = isContain ? 'object-contain' : 'object-cover';
 
   return (
     <div className={`relative overflow-hidden ${className} flex items-center justify-center`}>
@@ -28,7 +30,7 @@ export const SafeImage: React.FC<SafeImageProps> = ({
         alt={alt || ''}
         fetchPriority={fetchPriority}
         onError={() => setHasError(true)}
-        className={`${className} object-cover`}
+        className={`w-full h-full ${fitClass}`}
         referrerPolicy="no-referrer"
       />
     </div>
