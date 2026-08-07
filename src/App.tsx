@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import ScrollToTop from './components/ScrollToTop';
@@ -6,33 +6,45 @@ import { useAppStore } from './store';
 import { useFirestoreSync } from './hooks/useFirestore';
 import { auth, requestNotificationPermission } from './lib/firebase';
 
-import Auth from './pages/Auth';
-import Home from './pages/Home';
-import News from './pages/News';
-import NewsDetail from './pages/NewsDetail';
-import Media from './pages/Media';
-import Live from './pages/Live';
-import Matches from './pages/Matches';
-import Profile from './pages/Profile';
-import Admin from './pages/Admin';
-import FanZone from './pages/FanZone';
-import JerseyTryOn from './pages/JerseyTryOn';
-import History from './pages/History';
-import Store from './pages/Store';
-import Bookmarks from './pages/Bookmarks';
-import Library from './pages/Library';
-import CustomPage from './pages/CustomPage';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfService from './pages/TermsOfService';
+// Lazy loaded page components
+const Auth = lazy(() => import('./pages/Auth'));
+const Home = lazy(() => import('./pages/Home'));
+const News = lazy(() => import('./pages/News'));
+const NewsDetail = lazy(() => import('./pages/NewsDetail'));
+const Media = lazy(() => import('./pages/Media'));
+const Live = lazy(() => import('./pages/Live'));
+const Matches = lazy(() => import('./pages/Matches'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Admin = lazy(() => import('./pages/Admin'));
+const FanZone = lazy(() => import('./pages/FanZone'));
+const JerseyTryOn = lazy(() => import('./pages/JerseyTryOn'));
+const History = lazy(() => import('./pages/History'));
+const Store = lazy(() => import('./pages/Store'));
+const Bookmarks = lazy(() => import('./pages/Bookmarks'));
+const Library = lazy(() => import('./pages/Library'));
+const CustomPage = lazy(() => import('./pages/CustomPage'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+
+// Non-critical interactive components
+const MusicPlayer = lazy(() => import('./components/MusicPlayer'));
+const PWAInstallPrompt = lazy(() => import('./components/PWAInstallPrompt'));
+const GoalCelebration = lazy(() => import('./components/GoalCelebration'));
+const WinCelebration = lazy(() => import('./components/WinCelebration'));
 
 import BottomNav from './components/BottomNav';
 import TopHeader from './components/TopHeader';
-import MusicPlayer from './components/MusicPlayer';
-import PWAInstallPrompt from './components/PWAInstallPrompt';
-import GoalCelebration from './components/GoalCelebration';
-import WinCelebration from './components/WinCelebration';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
+
+function PageLoader() {
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center">
+      <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-3" />
+      <span className="text-xs font-bold text-slate-400 animate-pulse">جاري التحميل...</span>
+    </div>
+  );
+}
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -237,43 +249,45 @@ function AppContent() {
       <Analytics />
       <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-[calc(100vh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex flex-col font-display antialiased transition-colors duration-200">
         <TopHeader />
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={<Home />} />
-          <Route path="/feed" element={<FanZone />} />
-          <Route path="/news" element={<News />} />
-          <Route path="/news/:id" element={<NewsDetail />} />
-          <Route path="/media" element={<Media />} />
-          <Route path="/live" element={<Live />} />
-          <Route path="/matches" element={<Matches />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/fan-zone" element={<FanZone />} />
-          <Route path="/jersey-tryon" element={<JerseyTryOn />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/store" element={<Store />} />
-          <Route path="/bookmarks" element={<Bookmarks />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/page/:slug" element={<CustomPage />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms" element={<TermsOfService />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/feed" element={<FanZone />} />
+            <Route path="/news" element={<News />} />
+            <Route path="/news/:id" element={<NewsDetail />} />
+            <Route path="/media" element={<Media />} />
+            <Route path="/live" element={<Live />} />
+            <Route path="/matches" element={<Matches />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/fan-zone" element={<FanZone />} />
+            <Route path="/jersey-tryon" element={<JerseyTryOn />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/store" element={<Store />} />
+            <Route path="/bookmarks" element={<Bookmarks />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="/page/:slug" element={<CustomPage />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+          <MusicPlayer />
+          <PWAInstallPrompt />
+          <WinCelebration
+            show={showWin}
+            onComplete={() => setShowWin(false)}
+            match={activeMatch}
+          />
+          <GoalCelebration 
+            show={showGoal} 
+            onComplete={handleGoalComplete} 
+            teamName={scoredTeam} 
+            match={activeMatch}
+          />
+        </Suspense>
         <AppNav />
-        <MusicPlayer />
-        <PWAInstallPrompt />
-        <WinCelebration
-          show={showWin}
-          onComplete={() => setShowWin(false)}
-          match={activeMatch}
-        />
-        <GoalCelebration 
-          show={showGoal} 
-          onComplete={handleGoalComplete} 
-          teamName={scoredTeam} 
-          match={activeMatch}
-        />
       </div>
     </BrowserRouter>
   );

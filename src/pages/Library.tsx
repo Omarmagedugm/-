@@ -165,7 +165,7 @@ export default function Library() {
       {/* Header */}
       <div className="relative h-[300px] overflow-hidden bg-primary overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary to-green-600 opacity-90"></div>
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=2000')] bg-cover bg-center mix-blend-overlay"></div>
+        <div className="absolute inset-0 bg-gradient-to-tr from-[#023823]/80 via-primary-dark/80 to-[#045536]/80"></div>
         
         <div className="relative z-10 h-full flex flex-col justify-end p-8 max-w-7xl mx-auto w-full">
           <motion.div

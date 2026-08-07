@@ -386,16 +386,20 @@ export default function Home() {
                     <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none rounded-[40px]">
                       {/* Stadium Image Background */}
                       <div className="absolute inset-0 z-0 rounded-[40px] overflow-hidden">
-                        <img 
-                          src={heroMatch?.stadiumImage || (effectiveSport === "basketball" ? "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=2000" : "https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=2000")} 
-                          className="w-full h-full object-cover filter saturate-50 transition-all duration-500 rounded-[40px]" 
-                          style={{ 
-                            opacity: heroMatch?.stadiumOpacity ?? stadiumOpacity,
-                            filter: `saturate(0.5) blur(${(heroMatch?.stadiumOpacity ?? stadiumOpacity) > 0.5 ? '0px' : '2px'})`
-                          }}
-                          alt="stadium"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent rounded-[40px]" />
+                        {heroMatch?.stadiumImage ? (
+                          <img 
+                            src={getOptimizedImage(heroMatch.stadiumImage, 600) || undefined} 
+                            className="w-full h-full object-cover filter saturate-50 transition-all duration-500 rounded-[40px]" 
+                            style={{ 
+                              opacity: heroMatch?.stadiumOpacity ?? stadiumOpacity,
+                              filter: `saturate(0.5) blur(${(heroMatch?.stadiumOpacity ?? stadiumOpacity) > 0.5 ? '0px' : '2px'})`
+                            }}
+                            alt="stadium"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-[#023823] via-[#045536] to-[#012215] rounded-[40px]" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#011a10] via-[#011a10]/40 to-transparent rounded-[40px]" />
                       </div>
                     </div>
 
@@ -726,9 +730,9 @@ export default function Home() {
               to="/fan-zone"
               className="block relative overflow-hidden rounded-[40px] bg-slate-900 shadow-2xl group cinematic-glow border border-white/5"
             >
-              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center opacity-40 group-hover:scale-110 transition-transform duration-1000"></div>
-              <div className="absolute inset-0 stadium-gradient mix-blend-multiply opacity-60"></div>
-              <div className="absolute inset-0 bg-gradient-to-l from-slate-900/90 via-slate-900/40 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[#023823] via-[#045536] to-[#012215] opacity-95 group-hover:scale-105 transition-transform duration-1000"></div>
+              <div className="absolute inset-0 stadium-gradient mix-blend-multiply opacity-80"></div>
+              <div className="absolute inset-0 bg-gradient-to-l from-[#011a10]/90 via-[#011a10]/40 to-transparent"></div>
 
               <div className="relative p-7 flex flex-col items-start gap-2">
                 <div className="flex items-center gap-2 rounded-full bg-primary/20 backdrop-blur-md px-3 py-1 border border-primary/30">
