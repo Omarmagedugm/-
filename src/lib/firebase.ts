@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, doc, getDoc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, doc, getDoc, getDocFromServer, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import firebaseConfigJson from '../../firebase-applet-config.json';
@@ -135,12 +135,7 @@ async function testConnection() {
     await getDoc(doc(db, 'settings', 'app_settings'));
     console.info('Firestore connection established successfully.');
   } catch (error: any) {
-    try {
-      await getDocFromServer(doc(db, 'test', 'connection'));
-      console.info('Firestore connection established successfully.');
-    } catch (e: any) {
-      console.warn('Firestore initial connection status:', e?.message || e?.code || e);
-    }
+    console.debug('Firestore running in offline/cached mode:', error?.message || error?.code || error);
   }
 }
 testConnection();
@@ -193,7 +188,6 @@ export const requestNotificationPermission = async () => {
     
     if (currentToken) {
       console.log('FCM Token generated:', currentToken);
-      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
       const user = getAuth().currentUser;
       
       // Save token with more metadata

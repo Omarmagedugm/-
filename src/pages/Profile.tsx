@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Camera, X, Check, Lock, ShieldCheck, Mail, Loader2, Save, Upload, Edit2, Newspaper } from 'lucide-react';
 import { db, auth, uploadImage, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
-import { updatePassword, updateProfile as updateAuthProfile } from 'firebase/auth';
+import { updatePassword, updateProfile as updateAuthProfile, updateEmail } from 'firebase/auth';
 import toast from 'react-hot-toast';
 import ImageUploader from '../components/ImageUploader';
 import DigitalFanID from '../components/DigitalFanID';
@@ -50,6 +50,7 @@ export default function Profile() {
     silver: { label: 'عضو فضي', color: 'bg-slate-400', icon: 'stars' },
     gold: { label: 'عضو ذهبي', color: 'bg-yellow-500', icon: 'diamond' },
     diamond: { label: 'عضو ماسي', color: 'bg-cyan-400', icon: 'auto_awesome' },
+    premium: { label: 'عضو ملكي', color: 'bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600', icon: 'military_tech' },
   };
 
   const handleSaveProfile = async () => {
@@ -118,7 +119,6 @@ export default function Profile() {
     setEmailLoading(true);
     setMessage(null);
     try {
-      const { updateEmail } = await import('firebase/auth');
       await updateEmail(auth.currentUser, newEmail);
       
       // Also update in Firestore
@@ -232,12 +232,32 @@ export default function Profile() {
             </h1>
             <p className="text-slate-500 dark:text-slate-400 text-xs font-bold -mt-1">@{profile.username || 'user'}</p>
             
-            {profile.tier && (
-              <div className={`mt-2 flex items-center gap-1.5 px-3 py-1 rounded-full text-white text-[10px] font-black shadow-sm ${TIER_DATA[profile.tier as keyof typeof TIER_DATA]?.color || 'bg-slate-500'}`}>
-                <span className="material-symbols-outlined !text-[14px]">{TIER_DATA[profile.tier as keyof typeof TIER_DATA]?.icon}</span>
-                <span>{TIER_DATA[profile.tier as keyof typeof TIER_DATA]?.label}</span>
-              </div>
-            )}
+            <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
+              {(profile.role === 'admin' || (profile.roles && profile.roles.includes('admin'))) && (
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-600 text-white text-[10px] font-black shadow-md ring-2 ring-red-500/20">
+                  <span className="material-symbols-outlined !text-[14px]">shield_person</span>
+                  <span>مدير التطبيق</span>
+                </div>
+              )}
+              {(profile.role === 'moderator' || (profile.roles && profile.roles.includes('user_manager'))) && (
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-600 text-white text-[10px] font-black shadow-md">
+                  <span className="material-symbols-outlined !text-[14px]">verified_user</span>
+                  <span>مشرف النظام</span>
+                </div>
+              )}
+              {(profile.role === 'writer' || (profile.roles && profile.roles.includes('news_editor'))) && (
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-md">
+                  <span className="material-symbols-outlined !text-[14px]">edit_note</span>
+                  <span>محرر الأخبار</span>
+                </div>
+              )}
+              {profile.tier && (
+                <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-white text-[10px] font-black shadow-md ${TIER_DATA[profile.tier as keyof typeof TIER_DATA]?.color || 'bg-slate-500'}`}>
+                  <span className="material-symbols-outlined !text-[14px]">{TIER_DATA[profile.tier as keyof typeof TIER_DATA]?.icon}</span>
+                  <span>{TIER_DATA[profile.tier as keyof typeof TIER_DATA]?.label || 'عضو'}</span>
+                </div>
+              )}
+            </div>
 
             {profile.bio && (
               <p className="mt-3 text-slate-600 dark:text-slate-300 text-xs font-medium max-w-[280px] leading-relaxed">
@@ -302,6 +322,8 @@ export default function Profile() {
             <DigitalFanID 
               username={profile.name || auth.currentUser?.displayName || 'مستخدم جديد'}
               avatarUrl={getOptimizedImage(profile.avatar || auth.currentUser?.photoURL || 'https://ui-avatars.com/api/?name=User', 120)}
+              role={profile.role}
+              tier={profile.tier}
             />
           </div>
         </motion.div>

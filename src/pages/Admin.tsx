@@ -749,8 +749,6 @@ export default function Admin() {
   const handleSeedClubs = async () => {
     setLoading(true);
     try {
-      const { addDoc, collection } = await import('firebase/firestore');
-      const { db } = await import('../lib/firebase');
       let added = 0;
       for (const clubName of EGYPTIAN_CLUBS) {
         if (!clubs.find(c => c.name === clubName)) {
@@ -2222,7 +2220,7 @@ export default function Admin() {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">عنوان البانر (FanZone)</label>
                       <input 
@@ -2241,6 +2239,16 @@ export default function Admin() {
                         onChange={(e) => setAiConfig({ ...aiConfig, bannerDescription: e.target.value })}
                         className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-xs font-bold text-right"
                         placeholder="حول صورتك بالذكاء الاصطناعي..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">الحد اليومي للمستخدم (0 = غير محدود)</label>
+                      <input 
+                        type="number" 
+                        value={aiConfig.userDailyLimit !== undefined ? aiConfig.userDailyLimit : 20}
+                        onChange={(e) => setAiConfig({ ...aiConfig, userDailyLimit: Number(e.target.value) })}
+                        className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-xs font-bold text-right"
+                        placeholder="20"
                       />
                     </div>
                   </div>
@@ -2872,8 +2880,6 @@ export default function Admin() {
                           value={order.status}
                           onChange={async (e) => {
                             try {
-                              const { updateDoc, doc } = await import('firebase/firestore');
-                              const { db } = await import('../lib/firebase');
                               await updateDoc(doc(db, 'orders', order.id), { status: e.target.value as any });
                               toast.success('تم تحديث الحالة بنجاح');
                             } catch (err) {
@@ -3328,10 +3334,15 @@ export default function Admin() {
                           {member.tier === 'premium' && <Star size={12} className="text-yellow-500 fill-current" />}
                         </h4>
                         <p className="text-[10px] font-bold text-slate-400">{member.email}</p>
-                        <div className="flex gap-1.5 mt-1.5">
-                           <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${member.role === 'admin' ? 'bg-accent/10 text-accent' : 'bg-primary/10 text-primary'}`}>
-                             {member.role === 'admin' ? 'مدير' : 'عضو'}
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                           <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${member.role === 'admin' ? 'bg-red-500/10 text-red-500' : member.role === 'moderator' ? 'bg-indigo-500/10 text-indigo-500' : 'bg-primary/10 text-primary'}`}>
+                             {member.role === 'admin' ? 'مدير التطبيق' : member.role === 'moderator' ? 'مشرف' : member.role === 'writer' ? 'محرر' : 'عضو'}
                            </span>
+                           {member.tier && (
+                             <span className="px-2 py-0.5 rounded-lg text-[9px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                               {member.tier === 'premium' ? 'عضو ملكي 👑' : member.tier === 'diamond' ? 'عضو ماسي 💎' : member.tier === 'gold' ? 'عضو ذهبي 🥇' : member.tier === 'silver' ? 'عضو فضي 🥈' : member.tier === 'bronze' ? 'عضو برونزي 🥉' : 'عضو جديد'}
+                             </span>
+                           )}
                            {member.roles?.slice(0, 2).map(r => (
                              <span key={r} className="px-2 py-0.5 rounded-lg text-[8px] font-black bg-slate-100 dark:bg-surface-dark text-slate-500 uppercase">{r}</span>
                            ))}

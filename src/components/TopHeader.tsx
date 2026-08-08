@@ -155,9 +155,6 @@ export default function TopHeader() {
               <img 
                 src={currentLogo} 
                 alt={title} 
-                width="200"
-                height="80"
-                fetchPriority="high"
                 className="h-14 sm:h-20 w-auto max-w-[180px] sm:max-w-[240px] object-contain drop-shadow-sm transition-all duration-300" 
                 referrerPolicy="no-referrer"
                 onError={() => setImageError(true)}

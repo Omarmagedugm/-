@@ -25,7 +25,6 @@ export const SafeImage: React.FC<SafeImageProps> = ({
   return (
     <div className={`relative overflow-hidden ${className} flex items-center justify-center`}>
       <img
-        width={width}
         {...props}
         src={hasError ? fallback : optimizedSrc}
         alt={alt || ''}

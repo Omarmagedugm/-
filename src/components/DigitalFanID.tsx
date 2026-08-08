@@ -8,12 +8,25 @@ interface DigitalFanIDProps {
   username: string;
   memberId?: string;
   avatarUrl: string;
+  role?: string;
+  tier?: string;
 }
 
-export default function DigitalFanID({ username, memberId, avatarUrl }: DigitalFanIDProps) {
+export default function DigitalFanID({ username, memberId, avatarUrl, role, tier }: DigitalFanIDProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const { appSettings } = useAppStore();
+
+  const getBadgeLabel = () => {
+    if (role === 'admin') return 'مدير التطبيق 🛡️';
+    if (role === 'moderator') return 'مشرف النظام ⚡';
+    if (tier === 'premium') return 'عضو ملكي 👑';
+    if (tier === 'diamond') return 'عضو ماسي 💎';
+    if (tier === 'gold') return 'عضو ذهبي 🥇';
+    if (tier === 'silver') return 'عضو فضي 🥈';
+    if (tier === 'bronze') return 'عضو برونزي 🥉';
+    return 'عضو مشجع 🟢';
+  };
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
@@ -80,8 +93,13 @@ export default function DigitalFanID({ username, memberId, avatarUrl }: DigitalF
           </div>
           <div className="min-w-0">
             <h2 className="font-black text-xl truncate drop-shadow-md pb-1" style={{ color: '#ffffff' }}>{username}</h2>
-            <div className="text-sm font-bold px-2 py-0.5 rounded-md inline-block shadow-sm" style={{ color: '#1e293b', backgroundColor: 'rgba(255,255,255,0.8)' }}>
-              {displayId}
+            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+              <div className="text-xs font-bold px-2 py-0.5 rounded-md inline-block shadow-sm" style={{ color: '#1e293b', backgroundColor: 'rgba(255,255,255,0.85)' }}>
+                {displayId}
+              </div>
+              <div className="text-[10px] font-black px-2 py-0.5 rounded-md inline-block shadow-sm" style={{ color: '#0f172a', backgroundColor: 'rgba(255,255,255,0.95)' }}>
+                {getBadgeLabel()}
+              </div>
             </div>
           </div>
         </div>

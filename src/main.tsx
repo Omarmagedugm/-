@@ -7,12 +7,8 @@ import { registerSW } from 'virtual:pwa-register';
 // Handle service worker updates
 const updateSW = registerSW({
   onNeedRefresh() {
-    // When a new version is available, we force a reload
-    // Since we use autoUpdate, this might not be strictly necessary
-    // but it's a good safety measure for some browsers
-    if (confirm('يتوفر تحديث جديد للتطبيق. هل ترغب في التحديث الآن؟')) {
-      updateSW(true);
-    }
+    console.log('New app version available, updating SW...');
+    updateSW(true);
   },
   onOfflineReady() {
     console.log('App is ready for offline use');
@@ -21,13 +17,14 @@ const updateSW = registerSW({
 
 // CRITICAL: Handle chunk loading errors which cause white screens
 const handleChunkError = (event: any) => {
-  console.log('Mounting App, checking for errors...');
   const error = event?.error || event?.reason || event;
   const message = String(error?.message || error || '').toLowerCase();
   
   // Stricter check for chunk mapping errors from Vite/Rollup
   const isChunkError = 
+    message.includes('importing a module script failed') ||
     message.includes('dynamically imported module') ||
+    message.includes('failed to fetch dynamically imported module') ||
     (message.includes('failed to fetch') && message.includes('module')) ||
     (message.includes('loading chunk') && message.includes('failed'));
 
@@ -42,9 +39,12 @@ const handleChunkError = (event: any) => {
   if (isChunkError) {
     console.warn('Detected chunk loading error, forcing reload to get latest version...', message);
     sessionStorage.setItem('last_chunk_error_reload', now.toString());
+    if ('caches' in window) {
+      caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(() => {});
+    }
     setTimeout(() => {
       window.location.reload();
-    }, 1000);
+    }, 500);
   }
 };
 

@@ -18,7 +18,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { useAppStore } from '../store';
-import { GoogleGenAI } from "@google/genai";
 
 import Sidebar from '../components/Sidebar';
 
@@ -219,9 +218,6 @@ const JerseyTryOn: React.FC = () => {
     setIsProcessing(true);
     setResultImage(null);
 
-    // 0. AI Initialization (Client-side per skill requirements)
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
     // 1. Quota Check
     const isAdmin = profile.role === 'admin' || (profile.roles && profile.roles.includes('admin'));
     const today = new Date().toISOString().split('T')[0];
@@ -235,15 +231,14 @@ const JerseyTryOn: React.FC = () => {
         currentUsage = usageDoc.exists() ? (usageDoc.data().count || 0) : 0;
       } catch (err) {
         console.warn('Could not read AI usage, continuing with default 0:', err);
-        // We don't throw hero, just continue. The write later might fail or log a warn.
       }
       
-      const USER_LIMIT = 3; 
-      const ADMIN_LIMIT = 100;
+      const USER_LIMIT = aiConfig.userDailyLimit !== undefined ? Number(aiConfig.userDailyLimit) : 20; 
+      const ADMIN_LIMIT = 500;
       const limitCount = isAdmin ? ADMIN_LIMIT : USER_LIMIT;
       
-      if (currentUsage >= limitCount) {
-        throw new Error(`لقد انتهت حصتك المجانية لهذا اليوم (${limitCount} صور). يمكنك المحاولة مرة أخرى غداً.`);
+      if (limitCount > 0 && currentUsage >= limitCount) {
+        throw new Error(`لقد استنفدت حصتك لهذا اليوم (${limitCount} صور). يمكنك المحاولة مجدداً غداً.`);
       }
 
       // Scroll to preview area
@@ -289,125 +284,57 @@ const JerseyTryOn: React.FC = () => {
         }
       }
 
-      const backgroundDetail = selectedBackground === 'room' ? `
-SCENE: STANDING IN A WARM, AUTHENTIC "ISKANDARI FAN ROOM" (ZAEEM EL-THAGHR):
-- The background is a homey room belonging to a passionate Al Ittihad fan in Alexandria.
-- Walls decorated with many green and white flags and official Alittihad Alexandria club scarves (Etthadawy).
-- Include framed photos of club legends and newspaper clippings of famous victories.
-- Modern high-contrast lighting with a soft green ambient glow.` : 
-      selectedBackground === 'studio' ? `
-SCENE: STANDING IN A SLEEK MODERN BRANDED STUDIO:
-- Minimalist, high-end professional photo studio with a clean aesthetic.
-- A wall featuring a stylish arrangement of club articles and newspaper clippings.
-- Artistic display of Al Ittihad (Etthadawy) scarves and flags as cinematic backdrops.
-- Prominent Al Ittihad Alexandria club logo integrated into the backlit decor.
-- Clean studio shadows and professional sports photography lighting with green neon touches.` :
-      selectedBackground === 'stadium' ? `
-SCENE: STANDING ON THE PITCH OF THE ALEXANDRIA STADIUM:
-- The background is the iconic Alexandria Stadium (historic towers visible).
-- Thousands of green and white cheering fans blurred in the background.
-- Floodlights creating a dramatic evening match atmosphere.
-- The person looks like a star player posing on the grass.` :
-      `
-SCENE: CELEBRATING A "SIDI EL-BALAD" THEMED BIRTHDAY:
-- Festive atmosphere with a massive green and white Al Ittihad birthday cake.
-- Green and white balloons everywhere.
-- A "Happy Birthday" banner with the club logo.
-- The person is holding a club scarf, looking happy in a celebration setting.`;
+      // Call server API
+      const apiResponse = await fetch('/api/jersey-try-on', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userImageBase64,
+          jerseyImageBase64,
+          logoImageBase64,
+          selectedBackground,
+          userId: profile.uid,
+          userEmail: profile.email
+        }),
+      });
 
-      const prompt = `Perform a professional, high-end CLOTHING REPLACEMENT and FULL-BODY SCENE TRANSFORMATION.
-
-IDENTITY PRESERVATION (ABSOLUTE): You MUST perfectly preserve the person's face, features, hair, eyes, and unique identity from "Customer Image". The face must be 100% IDENTICAL to the original. NO adjustments to facial structure.
-
-BODY POSE & FULL-BODY COMPLETION (CRITICAL): 
-1. If the "Customer Image" is a portrait or half-body, generate the rest of the body to create a full-body standing pose.
-2. Adapt the posture to fit the environment naturally (e.g., a fan's proud stance, or an athlete's pose).
-
-JERSEY & LOWER OUTFIT:
-1. UPPER BODY: Replace the person's current outfit with the EXACT Al Ittihad Alexandria (Etthadawy) green and white jersey kit provided in "Target Jersey to Wear".
-2. LOWER BODY: Complete the outfit with matching black Adidas sports pants and white Nike sneakers.
-3. FIT: Ensure realistic fabric textures, natural folds, and integrated lighting.
-4. BRANDING: Use the "Official Club Logo" as the mandatory reference for the crest/badge.
-
-${backgroundDetail}
-
-STYLE: 8k resolution, ultra-photorealistic sports/studio photography.
-
-OUTPUT: Return ONLY the transformed image.`;
-
-      const aiParts = [
-        { text: "Customer Image (Identity to preserve):" },
-        { inlineData: { data: userImageBase64, mimeType: 'image/jpeg' } },
-        { text: "Target Jersey to Wear:" },
-        { inlineData: { data: jerseyImageBase64, mimeType: 'image/jpeg' } }
-      ];
-
-      if (logoImageBase64) {
-        aiParts.push({ text: "Official Club Logo (Brand Reference):" });
-        aiParts.push({ inlineData: { data: logoImageBase64, mimeType: 'image/jpeg' } });
+      if (!apiResponse.ok) {
+        const errData = await apiResponse.json().catch(() => ({}));
+        throw new Error(errData.error || 'فشل الاتصال بخادم الذكاء الاصطناعي.');
       }
 
-      aiParts.push({ text: prompt });
+      const data = await apiResponse.json();
+      const generatedImageBase64 = data.imageBase64 || (data.image ? data.image.replace(/^data:image\/\w+;base64,/, '') : '');
 
-      // Call client-side GenAI SDK
-      try {
-        const response = await ai.models.generateContent({
-          model: 'gemini-3.1-flash-image-preview',
-          contents: { parts: aiParts as any },
-          config: {
-            imageConfig: {
-              aspectRatio: "3:4",
-              imageSize: "1K"
-            }
-          }
-        });
+      if (generatedImageBase64) {
+        // Update usage count
+        try {
+          await setDoc(doc(db, 'ai_usage', usageId), {
+            count: currentUsage + 1,
+            lastUsed: new Date().toISOString(),
+            userId: profile.uid,
+            date: today
+          }, { merge: true });
 
-        let generatedImageBase64 = '';
-        const candidates = response.candidates || [];
-        if (candidates.length > 0 && candidates[0].content) {
-          const parts = candidates[0].content.parts || [];
-          for (const part of parts) {
-            if (part.inlineData && part.inlineData.data) {
-              generatedImageBase64 = part.inlineData.data;
-              break;
-            }
-          }
+          // Log generation
+          await addDoc(collection(db, 'ai_generation_logs'), {
+            userId: profile.uid,
+            userEmail: profile.email,
+            timestamp: serverTimestamp(),
+            type: 'jersey_tryon',
+            jerseyId: selectedJersey.id,
+            mood: selectedBackground
+          });
+        } catch (err) {
+          console.warn('Frontend quota update failed (logging only):', err);
         }
 
-        if (generatedImageBase64) {
-          // Update usage count
-          try {
-            await setDoc(doc(db, 'ai_usage', usageId), {
-              count: currentUsage + 1,
-              lastUsed: new Date().toISOString(),
-              userId: profile.uid,
-              date: today
-            }, { merge: true });
-
-            // Log generation
-            await addDoc(collection(db, 'ai_generation_logs'), {
-              userId: profile.uid,
-              userEmail: profile.email,
-              timestamp: serverTimestamp(),
-              type: 'jersey_tryon',
-              jerseyId: selectedJersey.id,
-              mood: selectedBackground
-            });
-          } catch (err) {
-            console.warn('Frontend quota update failed (logging only):', err);
-          }
-
-          setResultImage(`data:image/jpeg;base64,${generatedImageBase64}`);
-          toast.success('تمت العملية بنجاح! نورت استوديو سيد البلد');
-        } else {
-          throw new Error('فشل الذكاء الاصطناعي في إنشاء الصورة. يرجى المحاولة مرة أخرى.');
-        }
-      } catch (err: any) {
-        // If "Requested entity was not found", it might be an invalid model or API issue
-        if (err.message?.includes("Requested entity was not found")) {
-          throw new Error("حدث خطأ في طلب الذكاء الاصطناعي. يرجى التواصل مع الإدارة.");
-        }
-        throw err;
+        setResultImage(`data:image/jpeg;base64,${generatedImageBase64}`);
+        toast.success('تمت العملية بنجاح! نورت استوديو سيد البلد');
+      } else {
+        throw new Error('فشل الذكاء الاصطناعي في إنشاء الصورة. يرجى المحاولة مرة أخرى.');
       }
 
     } catch (error: any) {
@@ -428,9 +355,12 @@ OUTPUT: Return ONLY the transformed image.`;
         }
       }
 
-      const isQuotaError = errorMessage.toLowerCase().includes('429') || 
+      const isUserQuotaExceeded = errorMessage.includes('حصتك المجانية') || errorMessage.includes('انتهت حصتك');
+
+      const isQuotaError = !isUserQuotaExceeded && (
+                          errorMessage.toLowerCase().includes('429') || 
                           errorMessage.toLowerCase().includes('resource_exhausted') || 
-                          errorMessage.toLowerCase().includes('quota');
+                          errorMessage.toLowerCase().includes('quota'));
       
       const isSpendCapError = errorMessage.toLowerCase().includes('monthly spending cap') || 
                              errorMessage.toLowerCase().includes('spend cap');
@@ -438,14 +368,16 @@ OUTPUT: Return ONLY the transformed image.`;
       const isSafetyError = errorMessage.toLowerCase().includes('safety') || 
                            errorMessage.toLowerCase().includes('blocked');
 
-      if (isSpendCapError) {
-        toast.error('تم تجاوز سقف الإنفاق الشهري الخاص بمفتاح الـ API. يرجى مراجعة إعدادات AI Studio (ai.studio/spend) لرفع السقف.');
+      if (isUserQuotaExceeded) {
+        toast.error(errorMessage);
+      } else if (isSpendCapError) {
+        toast.error('تم تجاوز سقف الإنفاق الشهري الخاص بمفتاح الـ API. يرجى مراجعة إعدادات Google AI Studio لرفع السقف.');
       } else if (isQuotaError) {
-        toast.error(errorMessage.includes('حصتك المجانية') ? errorMessage : 'نعتذر، تم استهلاك كامل حصة الصور المجانية حالياً. يرجى المحاولة مرة أخرى لاحقاً.');
+        toast.error(errorMessage.includes('مفوتر') ? errorMessage : 'يتطلب توليد الصور تفعيل خطة الفوترة (Paid Plan) في Google AI Studio. يرجى إعداد الفوترة في الإعدادات.');
       } else if (isSafetyError) {
         toast.error('تم حظر الصورة بواسطة فلاتر الأمان. يرجى استخدام صورة شخصية لائقة وواضحة.');
       } else {
-        toast.error(`حدث خطأ: ${errorMessage.slice(0, 60)}${errorMessage.length > 60 ? '...' : ''}`);
+        toast.error(errorMessage || 'حدث خطأ غير متوقع أثناء معالجة الصورة.');
       }
     } finally {
       setIsProcessing(false);

@@ -6,36 +6,89 @@ import { useAppStore } from './store';
 import { useFirestoreSync } from './hooks/useFirestore';
 import { auth, requestNotificationPermission } from './lib/firebase';
 
+import Home from './pages/Home';
+
+function safeLazy<T extends React.ComponentType<any>>(
+  factory: () => Promise<{ default: T }>
+) {
+  return lazy(async () => {
+    try {
+      return await factory();
+    } catch (error: any) {
+      console.warn('Failed to load route chunk, attempting recovery:', error);
+      const isChunkError = 
+        error?.message?.includes('Importing a module script failed') ||
+        error?.message?.includes('dynamically imported module') ||
+        error?.message?.includes('Loading chunk') ||
+        error?.name === 'TypeError';
+
+      if (isChunkError) {
+        const reloadKey = 'chunk_reload_' + window.location.pathname;
+        const reloaded = sessionStorage.getItem(reloadKey);
+        if (!reloaded) {
+          sessionStorage.setItem(reloadKey, 'true');
+          if ('caches' in window) {
+            try {
+              const keys = await caches.keys();
+              await Promise.all(keys.map(k => caches.delete(k)));
+            } catch (e) {}
+          }
+          window.location.reload();
+          return new Promise<{ default: T }>(() => {});
+        }
+      }
+      // Second attempt
+      try {
+        return await factory();
+      } catch (retryErr) {
+        throw retryErr;
+      }
+    }
+  });
+}
+
 // Lazy loaded page components
-const Auth = lazy(() => import('./pages/Auth'));
-const Home = lazy(() => import('./pages/Home'));
-const News = lazy(() => import('./pages/News'));
-const NewsDetail = lazy(() => import('./pages/NewsDetail'));
-const Media = lazy(() => import('./pages/Media'));
-const Live = lazy(() => import('./pages/Live'));
-const Matches = lazy(() => import('./pages/Matches'));
-const Profile = lazy(() => import('./pages/Profile'));
-const Admin = lazy(() => import('./pages/Admin'));
-const FanZone = lazy(() => import('./pages/FanZone'));
-const JerseyTryOn = lazy(() => import('./pages/JerseyTryOn'));
-const History = lazy(() => import('./pages/History'));
-const Store = lazy(() => import('./pages/Store'));
-const Bookmarks = lazy(() => import('./pages/Bookmarks'));
-const Library = lazy(() => import('./pages/Library'));
-const CustomPage = lazy(() => import('./pages/CustomPage'));
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
-const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const Auth = safeLazy(() => import('./pages/Auth'));
+const News = safeLazy(() => import('./pages/News'));
+const NewsDetail = safeLazy(() => import('./pages/NewsDetail'));
+const Media = safeLazy(() => import('./pages/Media'));
+const Live = safeLazy(() => import('./pages/Live'));
+const Matches = safeLazy(() => import('./pages/Matches'));
+const Profile = safeLazy(() => import('./pages/Profile'));
+const Admin = safeLazy(() => import('./pages/Admin'));
+const FanZone = safeLazy(() => import('./pages/FanZone'));
+const JerseyTryOn = safeLazy(() => import('./pages/JerseyTryOn'));
+const History = safeLazy(() => import('./pages/History'));
+const Store = safeLazy(() => import('./pages/Store'));
+const Bookmarks = safeLazy(() => import('./pages/Bookmarks'));
+const Library = safeLazy(() => import('./pages/Library'));
+const CustomPage = safeLazy(() => import('./pages/CustomPage'));
+const PrivacyPolicy = safeLazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = safeLazy(() => import('./pages/TermsOfService'));
 
 // Non-critical interactive components
-const MusicPlayer = lazy(() => import('./components/MusicPlayer'));
-const PWAInstallPrompt = lazy(() => import('./components/PWAInstallPrompt'));
-const GoalCelebration = lazy(() => import('./components/GoalCelebration'));
-const WinCelebration = lazy(() => import('./components/WinCelebration'));
+const MusicPlayer = safeLazy(() => import('./components/MusicPlayer'));
+const PWAInstallPrompt = safeLazy(() => import('./components/PWAInstallPrompt'));
+const GoalCelebration = safeLazy(() => import('./components/GoalCelebration'));
+const WinCelebration = safeLazy(() => import('./components/WinCelebration'));
 
 import BottomNav from './components/BottomNav';
 import TopHeader from './components/TopHeader';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
+
+function VercelAnalytics() {
+  try {
+    return (
+      <>
+        <SpeedInsights />
+        <Analytics />
+      </>
+    );
+  } catch (e) {
+    return null;
+  }
+}
 
 function PageLoader() {
   return (
@@ -61,18 +114,77 @@ class GlobalErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBound
   static getDerivedStateFromError(error: any) {
     return { hasError: true, error };
   }
+
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("APP CRASH:", error, errorInfo);
+    const msg = String(error?.message || '');
+    if (msg.includes('Importing a module script failed') || msg.includes('dynamically imported module') || msg.includes('Loading chunk')) {
+      const reloadCount = parseInt(sessionStorage.getItem('global_chunk_reload_count') || '0', 10);
+      if (reloadCount < 2) {
+        sessionStorage.setItem('global_chunk_reload_count', String(reloadCount + 1));
+        if ('caches' in window) {
+          caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(() => {});
+        }
+        window.location.reload();
+      }
+    }
   }
+
+  handleReload = () => {
+    sessionStorage.clear();
+    if ('caches' in window) {
+      caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(() => {});
+    }
+    window.location.reload();
+  };
+
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-background-light dark:bg-background-dark">
-          <h1 className="text-2xl font-black text-red-500 mb-4">عذراً، حدث خطأ غير متوقع</h1>
-          <p className="text-sm text-slate-500 mb-6 font-bold">{this.state.error?.message || "فشل تحميل التطبيق"}</p>
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '2rem',
+          textAlign: 'center',
+          backgroundColor: '#072418',
+          color: '#ffffff',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          direction: 'rtl'
+        }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '1.5rem'
+          }}>
+            <span style={{ fontSize: '32px' }}>⚽</span>
+          </div>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '0.5rem' }}>
+            عذراً، حدث خطأ أثناء تحميل التطبيق
+          </h1>
+          <p style={{ fontSize: '0.875rem', opacity: 0.8, marginBottom: '1.5rem', maxWidth: '320px' }}>
+            {this.state.error?.message || "فشل تحميل بعض عناصر الصفحة."}
+          </p>
           <button 
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-primary text-white rounded-2xl font-black shadow-premium"
+            onClick={this.handleReload}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#10b981',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '1rem',
+              fontWeight: 800,
+              fontSize: '0.875rem',
+              cursor: 'pointer',
+              boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3)'
+            }}
           >
             إعادة تحميل التطبيق
           </button>
@@ -245,8 +357,7 @@ function AppContent() {
           className: 'bg-white dark:bg-card-dark text-slate-800 dark:text-white font-bold font-display shadow-2xl rounded-2xl border border-border-light dark:border-border-dark',
         }}
       />
-      <SpeedInsights />
-      <Analytics />
+      <VercelAnalytics />
       <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-[calc(100vh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex flex-col font-display antialiased transition-colors duration-200">
         <TopHeader />
         <Suspense fallback={<PageLoader />}>

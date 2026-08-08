@@ -236,12 +236,23 @@ export default function Live() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span className={`text-[11px] font-black ${isMsgAdmin ? 'text-primary' : 'text-slate-700 dark:text-slate-300'}`}>{chatName}</span>
+                        {isMsgAdmin && (
+                          <span className="bg-red-500/10 text-red-500 text-[8px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                            <ShieldCheck size={9} />
+                            مدير التطبيق
+                          </span>
+                        )}
+                        {chatUser?.tier === 'premium' && (
+                          <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[8px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                            عضو ملكي 👑
+                          </span>
+                        )}
                         <span className="text-[9px] text-slate-400 font-bold">
-                        {msg.createdAt && formatDistanceToNow(msg.createdAt.toDate(), { locale: ar, addSuffix: true })}
-                      </span>
-                    </div>
+                          {msg.createdAt && formatDistanceToNow(msg.createdAt.toDate(), { locale: ar, addSuffix: true })}
+                        </span>
+                      </div>
                     {(profile.role === 'admin' || auth.currentUser?.uid === msg.userId) && (
                       <button onClick={() => handleDeleteComment(msg.id)} className="p-1 text-red-400 hover:text-red-500 transition-colors">
                         <Trash2 size={12} />

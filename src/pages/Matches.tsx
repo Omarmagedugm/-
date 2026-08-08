@@ -255,20 +255,24 @@ export default function Matches() {
                             {section.id === 'basketball' ? <Dribbble size={10} className="text-orange-400" /> : <Trophy size={10} className="text-accent" />}
                             {section.newestMatch.competition}
                           </div>
-                          <div className="flex flex-col items-end">
-                            <div className="flex items-center gap-1.5 text-white/60 text-[9px] font-black uppercase tracking-tighter">
-                              <Calendar size={10} />
-                              {format(new Date(section.newestMatch.date), 'dd MMMM yyyy', { locale: ar })}
+                          <div className="flex flex-col items-end shrink-0 max-w-[60%]">
+                            <div className="flex flex-col items-center text-white/90 text-[8px] sm:text-[10px] font-black max-w-full w-fit bg-black/30 px-2.5 py-1 rounded-xl border border-white/10 leading-tight">
+                              <span className="whitespace-nowrap max-w-full">{format(new Date(section.newestMatch.date), 'd MMMM yyyy', { locale: ar })}</span>
+                              <div className="flex items-center gap-1 whitespace-nowrap max-w-full">
+                                <span className="text-amber-400 font-black">{format(new Date(section.newestMatch.date), 'h:mm a', { locale: ar })}</span>
+                                <span className="text-white/60">-</span>
+                                <span>{format(new Date(section.newestMatch.date), 'EEEE', { locale: ar })}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
 
                         <div className="flex justify-center items-center gap-4 sm:gap-8 my-2">
-                          <div className="flex flex-col items-center gap-2 sm:gap-4 w-20 sm:w-32">
-                            <div className="w-18 h-18 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-xl rounded-[24px] sm:rounded-[32px] p-2.5 sm:p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float">
+                          <div className="flex flex-col items-center gap-2 sm:gap-4 w-20 sm:w-32 shrink-0">
+                            <div className="w-18 h-18 sm:w-24 sm:h-24 shrink-0 bg-white/10 backdrop-blur-xl rounded-[24px] sm:rounded-[32px] p-2.5 sm:p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float">
                               <img src={getOptimizedImage(section.newestMatch.homeLogo, 200) || undefined} alt={section.newestMatch.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
                             </div>
-                            <span className="text-white font-black text-[9px] sm:text-[10px] text-center uppercase tracking-widest line-clamp-2">{section.newestMatch.homeTeam}</span>
+                            <span className={`text-white font-black text-center uppercase tracking-widest whitespace-nowrap max-w-full w-full ${((section.newestMatch.homeTeam || '').trim().includes(' ') || (section.newestMatch.homeTeam || '').length > 7) ? 'text-[8px] sm:text-[9px]' : 'text-[9px] sm:text-[11px]'}`}>{section.newestMatch.homeTeam}</span>
                           </div>
 
                           <div className="flex flex-col items-center flex-shrink-0">
@@ -298,11 +302,11 @@ export default function Matches() {
                             )}
                           </div>
 
-                          <div className="flex flex-col items-center gap-2 sm:gap-4 w-20 sm:w-32">
-                            <div className="w-18 h-18 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-xl rounded-[24px] sm:rounded-[32px] p-2.5 sm:p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float [animation-delay:0.5s]">
+                          <div className="flex flex-col items-center gap-2 sm:gap-4 w-20 sm:w-32 shrink-0">
+                            <div className="w-18 h-18 sm:w-24 sm:h-24 shrink-0 bg-white/10 backdrop-blur-xl rounded-[24px] sm:rounded-[32px] p-2.5 sm:p-4 flex items-center justify-center ring-1 ring-white/20 shadow-premium animate-float [animation-delay:0.5s]">
                               <img src={getOptimizedImage(section.newestMatch.awayLogo, 200) || undefined} alt={section.newestMatch.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-2xl" />
                             </div>
-                            <span className="text-white font-black text-[9px] sm:text-[10px] text-center uppercase tracking-widest line-clamp-2">{section.newestMatch.awayTeam}</span>
+                            <span className={`text-white font-black text-center uppercase tracking-widest whitespace-nowrap max-w-full w-full ${((section.newestMatch.awayTeam || '').trim().includes(' ') || (section.newestMatch.awayTeam || '').length > 7) ? 'text-[8px] sm:text-[9px]' : 'text-[9px] sm:text-[11px]'}`}>{section.newestMatch.awayTeam}</span>
                           </div>
                         </div>
 
@@ -391,11 +395,11 @@ export default function Matches() {
                       </div>
 
                       <div className="flex justify-center items-center gap-4 sm:gap-8">
-                        <div className="flex flex-col items-center gap-2 sm:gap-3 w-20 sm:w-32 group/team">
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 sm:p-3 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center transition-transform group-hover/team:scale-110">
+                        <div className="flex flex-col items-center gap-2 sm:gap-3 w-20 sm:w-28 shrink-0 group/team">
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 sm:p-3 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center transition-transform group-hover/team:scale-110">
                             <img src={getOptimizedImage(match.homeLogo, 100) || undefined} alt={match.homeTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-md" />
                           </div>
-                          <span className="text-[10px] sm:text-xs font-black text-slate-800 dark:text-white uppercase text-center line-clamp-1">{match.homeTeam}</span>
+                          <span className={`font-black text-slate-800 dark:text-white uppercase text-center whitespace-nowrap max-w-full w-full ${((match.homeTeam || '').trim().includes(' ') || (match.homeTeam || '').length > 7) ? 'text-[8px] sm:text-[10px]' : 'text-[10px] sm:text-xs'}`}>{match.homeTeam}</span>
                         </div>
 
                         <div className="flex flex-col items-center flex-shrink-0">
@@ -418,17 +422,25 @@ export default function Matches() {
                           )}
                         </div>
 
-                        <div className="flex flex-col items-center gap-2 sm:gap-3 w-20 sm:w-32 group/team">
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 sm:p-3 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center transition-transform group-hover/team:scale-110 [animation-delay:0.5s]">
+                        <div className="flex flex-col items-center gap-2 sm:gap-3 w-20 sm:w-28 shrink-0 group/team">
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 bg-slate-50 dark:bg-background-dark rounded-2xl p-2 sm:p-3 shadow-inner ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center transition-transform group-hover/team:scale-110 [animation-delay:0.5s]">
                             <img src={getOptimizedImage(match.awayLogo, 100) || undefined} alt={match.awayTeam} referrerPolicy="no-referrer" className="w-full h-full object-contain filter drop-shadow-md" />
                           </div>
-                          <span className="text-[10px] sm:text-xs font-black text-slate-800 dark:text-white uppercase text-center line-clamp-1">{match.awayTeam}</span>
+                          <span className={`font-black text-slate-800 dark:text-white uppercase text-center whitespace-nowrap max-w-full w-full ${((match.awayTeam || '').trim().includes(' ') || (match.awayTeam || '').length > 7) ? 'text-[8px] sm:text-[10px]' : 'text-[10px] sm:text-xs'}`}>{match.awayTeam}</span>
                         </div>
                       </div>
-                      <div className="mt-6 pt-4 border-t border-border-light/40 dark:border-border-dark/40 flex items-center justify-between">
-                         <div className="flex flex-wrap items-center gap-2">
-                            <div className="flex h-6 px-3 items-center justify-center border border-slate-200 dark:border-slate-800 rounded-lg text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tighter">
-                              {format(new Date(match.date), 'EEEE, dd MMM', { locale: ar })}
+                      <div className="mt-5 pt-3 border-t border-border-light/40 dark:border-border-dark/40 flex flex-wrap items-center justify-between gap-2 max-w-full">
+                         <div className="flex flex-wrap items-center gap-2 max-w-full min-w-0">
+                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 rounded-xl text-[8px] sm:text-[10px] font-black text-slate-600 dark:text-slate-300 max-w-full w-fit bg-slate-50 dark:bg-surface-dark shrink-0">
+                              <Calendar size={12} className="shrink-0 text-primary" />
+                              <div className="flex flex-col max-w-full leading-tight">
+                                <span className="whitespace-nowrap">{format(new Date(match.date), 'd MMMM yyyy', { locale: ar })}</span>
+                                <div className="flex items-center gap-1 whitespace-nowrap">
+                                  <span className="text-amber-500 dark:text-amber-400 font-black">{format(new Date(match.date), 'h:mm a', { locale: ar })}</span>
+                                  <span>-</span>
+                                  <span>{format(new Date(match.date), 'EEEE', { locale: ar })}</span>
+                                </div>
+                              </div>
                             </div>
                             {auth.currentUser && (
                               <div className="flex items-center gap-2">

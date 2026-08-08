@@ -1002,30 +1002,30 @@ export default function FanZone() {
                               />
                             </div>
                             <div>
-                              <div className="flex items-center gap-2 mb-1">
+                              <div className="flex flex-wrap items-center gap-1.5 mb-1">
                                 <h4 className="text-[14px] font-black text-slate-800 dark:text-white uppercase tracking-tight">{displayName}</h4>
-                                {isManagement ? (
-                                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-yellow-400/20 text-yellow-600 dark:text-yellow-400 text-[8px] font-black uppercase ring-1 ring-yellow-400/30">
+                                {isManagement && (
+                                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-red-500/20 text-red-600 dark:text-red-400 text-[8px] font-black uppercase ring-1 ring-red-500/30">
                                     <ShieldCheck size={10} />
-                                    Admin
+                                    مدير التطبيق
                                   </span>
-                                ) : (
-                                  (() => {
-                                    const tierMap: any = {
-                                       diamond: { label: 'Diamond', color: 'bg-cyan-500' },
-                                       gold: { label: 'Gold', color: 'bg-yellow-500' },
-                                       silver: { label: 'Silver', color: 'bg-slate-400' },
-                                       bronze: { label: 'Bronze', color: 'bg-orange-700' },
-                                       new: { label: 'Fan', color: 'bg-primary' }
-                                    };
-                                    const tData = tierMap[tier] || tierMap.new;
-                                    return (
-                                      <div className={`${tData.color} text-white text-[8px] font-black px-2 py-0.5 rounded-lg uppercase tracking-tighter shadow-sm flex items-center gap-1`}>
-                                        {tData.label}
-                                      </div>
-                                    );
-                                  })()
                                 )}
+                                {(() => {
+                                  const tierMap: any = {
+                                     premium: { label: 'عضو ملكي 👑', color: 'bg-gradient-to-r from-amber-500 to-yellow-500' },
+                                     diamond: { label: 'عضو ماسي 💎', color: 'bg-cyan-500' },
+                                     gold: { label: 'عضو ذهبي 🥇', color: 'bg-yellow-500' },
+                                     silver: { label: 'عضو فضي 🥈', color: 'bg-slate-400' },
+                                     bronze: { label: 'عضو برونزي 🥉', color: 'bg-orange-700' },
+                                     new: { label: 'مشجع جديد 🟢', color: 'bg-primary' }
+                                  };
+                                  const tData = tierMap[tier] || tierMap.new;
+                                  return (
+                                    <div className={`${tData.color} text-white text-[8px] font-black px-2 py-0.5 rounded-lg tracking-tighter shadow-sm flex items-center gap-1`}>
+                                      {tData.label}
+                                    </div>
+                                  );
+                                })()}
                               </div>
                               <div className="flex items-center gap-2 text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-normal">
                                  {(() => {
@@ -1513,13 +1513,20 @@ export default function FanZone() {
                       <div key={match.id} className={`glass-card rounded-[40px] p-8 border border-primary/20 shadow-premium relative overflow-hidden group ${isPastDeadline ? 'opacity-75 grayscale-[0.3]' : ''}`}>
                         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full"></div>
                         <div className="flex flex-col items-center gap-6 relative z-10">
-                          <div className="flex items-center justify-between w-full mb-2">
+                          <div className="flex flex-wrap items-center justify-between w-full gap-2 mb-2 max-w-full overflow-hidden">
                              <div className="flex items-center gap-2">
                                <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full">
                                  {isPastDeadline ? 'انتهت المهلة' : userPred ? 'تعديل التوقع' : 'مباراة متاحة للتوقع'}
                                </span>
                              </div>
-                             <span className="text-[10px] font-bold text-slate-400">{format(new Date(match.date), 'EEEE d MMMM', { locale: ar })}</span>
+                             <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-surface-dark px-2.5 py-1 rounded-xl max-w-full w-fit flex flex-col items-end leading-tight shrink-0">
+                               <span>{format(new Date(match.date), 'd MMMM yyyy', { locale: ar })}</span>
+                               <div className="flex items-center gap-1">
+                                 <span className="text-amber-500 dark:text-amber-400 font-black">{format(new Date(match.date), 'h:mm a', { locale: ar })}</span>
+                                 <span>-</span>
+                                 <span>{format(new Date(match.date), 'EEEE', { locale: ar })}</span>
+                               </div>
+                             </div>
                           </div>
                           
                           <div className="flex items-center justify-center gap-8 w-full">
@@ -1537,7 +1544,7 @@ export default function FanZone() {
                                         </div>
                                       )}
                                    </div>
-                                   <span className="text-xs font-black uppercase text-center line-clamp-1">{match.homeTeam}</span>
+                                   <span className={`font-black uppercase text-center whitespace-nowrap max-w-full w-full ${((match.homeTeam || "").trim().includes(" ") || (match.homeTeam || "").length > 7) ? "text-[9px] sm:text-[10px]" : "text-xs"}`}>{match.homeTeam}</span>
                                    <div className="px-4 py-1.5 rounded-full bg-black/10 text-[9px] font-black">توقع الفوز</div>
                                  </button>
 
@@ -1559,7 +1566,7 @@ export default function FanZone() {
                                         </div>
                                       )}
                                    </div>
-                                   <span className="text-xs font-black uppercase text-center line-clamp-1">{match.awayTeam}</span>
+                                   <span className={`font-black uppercase text-center whitespace-nowrap max-w-full w-full ${((match.awayTeam || "").trim().includes(" ") || (match.awayTeam || "").length > 7) ? "text-[9px] sm:text-[10px]" : "text-xs"}`}>{match.awayTeam}</span>
                                    <div className="px-4 py-1.5 rounded-full bg-black/10 text-[9px] font-black">توقع الفوز</div>
                                  </button>
                                </div>
@@ -1574,7 +1581,7 @@ export default function FanZone() {
                                        </div>
                                      )}
                                    </div>
-                                   <span className="text-[10px] font-black uppercase text-center line-clamp-1">{match.homeTeam}</span>
+                                   <span className={`font-black uppercase text-center whitespace-nowrap max-w-full ${((match.homeTeam || "").trim().includes(" ") || (match.homeTeam || "").length > 7) ? "text-[8px] sm:text-[9px]" : "text-[10px]"}`}>{match.homeTeam}</span>
                                    <button 
                                      onClick={() => setSelectedPrediction({ matchId: match.id, home: 1, away: 0 })}
                                      className={`px-3 py-1 rounded-full text-[8px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home > selectedPrediction.away ? 'bg-primary text-white scale-110 shadow-lg' : (userPred && userPred.homeScore > userPred.awayScore && selectedPrediction?.matchId !== match.id) ? 'bg-primary/50 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-primary/20'}`}
@@ -1629,7 +1636,7 @@ export default function FanZone() {
                                        </div>
                                      )}
                                    </div>
-                                   <span className="text-[10px] font-black uppercase text-center line-clamp-1">{match.awayTeam}</span>
+                                   <span className={`font-black uppercase text-center whitespace-nowrap max-w-full ${((match.awayTeam || "").trim().includes(" ") || (match.awayTeam || "").length > 7) ? "text-[8px] sm:text-[9px]" : "text-[10px]"}`}>{match.awayTeam}</span>
                                    <button 
                                      onClick={() => setSelectedPrediction({ matchId: match.id, home: 0, away: 1 })}
                                      className={`px-3 py-1 rounded-full text-[8px] font-black transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.away > selectedPrediction.home ? 'bg-accent text-white scale-110 shadow-lg' : (userPred && userPred.awayScore > userPred.homeScore && selectedPrediction?.matchId !== match.id) ? 'bg-accent/50 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-accent/20'}`}
@@ -1970,7 +1977,7 @@ export default function FanZone() {
                         <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-3xl flex items-center justify-center mb-3 sm:mb-4 backdrop-blur-md border border-white/20 shadow-premium">
                           <img src={getOptimizedImage(nextMatch.homeLogo, 200)} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-lg" alt="home" referrerPolicy="no-referrer" />
                         </div>
-                        <span className="text-[10px] sm:text-[11px] font-black text-center line-clamp-1 uppercase tracking-tight">{nextMatch.homeTeam}</span>
+                        <span className={`font-black text-center whitespace-nowrap max-w-full uppercase tracking-tight ${((nextMatch.homeTeam || "").trim().includes(" ") || (nextMatch.homeTeam || "").length > 7) ? "text-[8px] sm:text-[9px]" : "text-[10px] sm:text-[11px]"}`}>{nextMatch.homeTeam}</span>
                       </div>
 
                       <div className="flex flex-col items-center gap-2 flex-shrink-0">
@@ -1992,7 +1999,7 @@ export default function FanZone() {
                         <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-3xl flex items-center justify-center mb-3 sm:mb-4 backdrop-blur-md border border-white/20 shadow-premium">
                           <img src={getOptimizedImage(nextMatch.awayLogo, 200)} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-lg" alt="away" referrerPolicy="no-referrer" />
                         </div>
-                        <span className="text-[10px] sm:text-[11px] font-black text-center line-clamp-1 uppercase tracking-tight">{nextMatch.awayTeam}</span>
+                        <span className={`font-black text-center whitespace-nowrap max-w-full uppercase tracking-tight ${((nextMatch.awayTeam || "").trim().includes(" ") || (nextMatch.awayTeam || "").length > 7) ? "text-[8px] sm:text-[9px]" : "text-[10px] sm:text-[11px]"}`}>{nextMatch.awayTeam}</span>
                       </div>
                     </div>
                   </div>

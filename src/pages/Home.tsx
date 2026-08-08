@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { updateDoc, serverTimestamp } from "firebase/firestore";
 import { useAppStore } from "../store";
 import { auth, db } from "../lib/firebase";
 import toast from "react-hot-toast";
@@ -209,7 +210,6 @@ export default function Home() {
     const newScore = Math.max(0, currentScore + change);
 
     try {
-      const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
       await updateDoc(doc(db, 'matches', matchId), {
         [team === 'home' ? 'homeScore' : 'awayScore']: newScore.toString(),
         updatedAt: serverTimestamp()
@@ -224,7 +224,6 @@ export default function Home() {
     if (!match) return;
 
     try {
-      const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
       const updates: any = {
         status: newStatus,
         updatedAt: serverTimestamp()
@@ -408,7 +407,7 @@ export default function Home() {
                         {/* Right: Competition */}
                         <div className={`absolute right-0 top-0 text-[10px] sm:text-[11px] shrink-0 font-black text-white px-2 sm:px-3 py-1.5 h-8 rounded-lg backdrop-blur-md border border-white/10 tracking-tighter flex items-center justify-center gap-1.5 z-20 ${effectiveSport === "basketball" ? "bg-orange-500/30" : "bg-white/10"}`}>
                           {effectiveSport === "basketball" ? <Dribbble size={12} className="text-orange-400 shrink-0" /> : <Trophy size={12} className="text-white shrink-0" />}
-                          <span className="truncate max-w-[70px] sm:max-w-none">{heroMatch.competition}</span>
+                          <span className="whitespace-nowrap">{heroMatch.competition}</span>
                         </div>
                         
                         {/* Center: Live / Timer */}
@@ -468,28 +467,30 @@ export default function Home() {
                       </div>
 
                       <div className="flex justify-center items-center gap-2 sm:gap-6 py-4 sm:py-6 px-1 sm:px-4">
-                        <div className="flex flex-col items-center gap-2 sm:gap-5 w-[90px] sm:w-44 group/team shrink-0 z-10">
-                          <div className={`relative flex items-center justify-center rounded-[28px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium h-24 w-24 sm:h-44 sm:w-44`}>
+                        <div className="flex flex-col items-center gap-2 sm:gap-4 w-[84px] sm:w-36 group/team shrink-0 z-10">
+                          <div className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[36px] bg-white/10 p-2.5 sm:p-4 ring-1 ring-white/20 backdrop-blur-xl shadow-premium h-20 w-20 sm:h-32 sm:w-32 shrink-0`}>
                             <SafeImage alt={heroMatch.homeTeam} className="w-full h-full object-contain filter drop-shadow-2xl" src={heroMatch.homeLogo || undefined} width={200} />
                           </div>
-                          <span className="text-center text-[11px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">{heroMatch.homeTeam}</span>
+                          <span className={`text-center font-black text-white uppercase tracking-wider whitespace-nowrap max-w-full w-full ${((heroMatch.homeTeam || '').trim().includes(' ') || (heroMatch.homeTeam || '').length > 7) ? 'text-[8px] sm:text-[12px]' : 'text-[10px] sm:text-[14px]'}`}>{heroMatch.homeTeam}</span>
                         </div>
 
-                        <div className="flex flex-col items-center flex-1 px-1 sm:px-4 z-10 min-w-0">
+                        <div className="flex flex-col items-center justify-center flex-1 px-1 sm:px-4 z-10 min-w-0 max-w-[50%] sm:max-w-none overflow-hidden">
                           <div className={`font-black text-white filter flex flex-col items-center w-full ${effectiveSport === "basketball" ? "drop-shadow-[0_5px_15px_rgba(234,88,12,0.3)]" : "drop-shadow-[0_5px_15px_rgba(46,204,113,0.3)]"}`}>
                             {heroMatch.status === "upcoming" ? (
                               <div className="flex flex-col items-center w-full justify-center gap-1 sm:gap-2">
                                 <div className="text-xl sm:text-3xl opacity-60">VS</div>
-                                <div className="w-fit max-w-[110px] sm:max-w-none mx-auto text-center font-bold text-white/90 bg-black/40 px-2 py-1.5 sm:px-5 sm:py-2.5 rounded-xl border border-white/10 leading-tight" style={{ fontSize: "clamp(8.5px, 2.5vw, 13px)" }}>
+                                <div className="w-fit max-w-full mx-auto text-center font-bold text-white/90 bg-black/40 px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border border-white/10 leading-tight overflow-hidden">
                                   {heroMatch.date && !isNaN(new Date(heroMatch.date).getTime()) ? (
-                                    <div className="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5">
-                                      <span className="truncate w-full text-center">{format(new Date(heroMatch.date), "EEEE d MMMM", { locale: ar })}</span>
-                                      <span className="hidden sm:inline">|</span>
-                                      <span className="text-white/70">{format(new Date(heroMatch.date), "h:mm a", { locale: ar })}</span>
+                                    <div className="flex flex-col items-center justify-center gap-0.5 max-w-full text-[9px] sm:text-xs">
+                                      <span className="text-slate-200 whitespace-nowrap max-w-full">{format(new Date(heroMatch.date), "d MMMM yyyy", { locale: ar })}</span>
+                                      <div className="flex items-center gap-1.5 whitespace-nowrap max-w-full">
+                                        <span className="text-amber-400 font-black">{format(new Date(heroMatch.date), "h:mm a", { locale: ar })}</span>
+                                        <span className="text-white/60">-</span>
+                                        <span className="text-white/90">{format(new Date(heroMatch.date), "EEEE", { locale: ar })}</span>
+                                      </div>
                                     </div>
                                   ) : "غير محدد"}
                                 </div>
-
                               </div>
                             ) : (
                               <div
@@ -608,9 +609,9 @@ export default function Home() {
                           </div>
                         </div>
 
-                        <div className="flex flex-col items-center gap-2 sm:gap-5 w-[90px] sm:w-44 group/team shrink-0 z-10">
+                        <div className="flex flex-col items-center gap-2 sm:gap-4 w-[84px] sm:w-36 group/team shrink-0 z-10">
                           <div
-                            className={`relative flex items-center justify-center rounded-[28px] sm:rounded-[44px] bg-white/10 p-2.5 sm:p-5 ring-1 ring-white/20 backdrop-blur-xl shadow-premium h-24 w-24 sm:h-44 sm:w-44`}
+                            className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[36px] bg-white/10 p-2.5 sm:p-4 ring-1 ring-white/20 backdrop-blur-xl shadow-premium h-20 w-20 sm:h-32 sm:w-32 shrink-0`}
                           >
                             <SafeImage
                               alt={heroMatch.awayTeam}
@@ -619,7 +620,7 @@ export default function Home() {
                               width={200}
                             />
                           </div>
-                          <span className="text-center text-[11px] sm:text-[14px] font-black text-white uppercase tracking-wider line-clamp-2 w-full">
+                          <span className={`text-center font-black text-white uppercase tracking-wider whitespace-nowrap max-w-full w-full ${((heroMatch.awayTeam || '').trim().includes(' ') || (heroMatch.awayTeam || '').length > 7) ? 'text-[8px] sm:text-[12px]' : 'text-[10px] sm:text-[14px]'}`}>
                             {heroMatch.awayTeam}
                           </span>
                         </div>
@@ -799,7 +800,7 @@ export default function Home() {
                         src={item.image || undefined}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700"
-                        width={400}
+                        width={800}
                         fetchPriority={index === 0 ? "high" : "auto"}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
@@ -893,7 +894,7 @@ export default function Home() {
                       src={item.thumbnailUrl || undefined}
                       alt={item.title}
                       className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
-                      width={450}
+                      width={600}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
 
@@ -973,10 +974,13 @@ export default function Home() {
                         <span className="text-[9px] font-black text-primary-light bg-primary/5 px-2 py-0.5 rounded-lg">
                           {match.competition}
                         </span>
-                        <span className="text-[9px] font-bold text-slate-400">
-                          {format(new Date(match.date), "EEEE d MMMM | h:mm a", {
-                            locale: ar,
-                          })}
+                        <span className="text-[9px] font-bold text-slate-400 flex flex-col items-start gap-0.5">
+                          <span>{format(new Date(match.date), "d MMMM yyyy", { locale: ar })}</span>
+                          <span className="flex items-center gap-1">
+                            <span className="text-amber-500 dark:text-amber-400 font-black">{format(new Date(match.date), "h:mm a", { locale: ar })}</span>
+                            <span>-</span>
+                            <span>{format(new Date(match.date), "EEEE", { locale: ar })}</span>
+                          </span>
                         </span>
                       </div>
                     </div>
