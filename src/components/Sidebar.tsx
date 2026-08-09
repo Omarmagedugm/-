@@ -16,7 +16,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
-  const { appSettings, customPages } = useAppStore();
+  const { appSettings, customPages, aiConfig } = useAppStore();
   const navigate = useNavigate();
   
   // No longer needing local fetch as it's synced in useFirestoreSync
@@ -124,22 +124,19 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                 <span className="text-sm font-black">منطقة الجماهير</span>
               </Link>
 
-              <Link to="/jersey-tryon" onClick={onClose} className="flex items-center justify-between p-3.5 rounded-2xl bg-primary/5 hover:bg-primary/10 transition-colors text-slate-700 dark:text-slate-300 pressable group border border-primary/10">
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined !text-[20px] text-primary group-hover:rotate-12 transition-transform">bolt</span>
-                  <span className="text-sm font-black">استوديو المشجع (AI)</span>
-                </div>
-                <span className="px-2 py-0.5 bg-red-500 text-white text-[8px] font-black rounded-full animate-pulse uppercase">جديد</span>
-              </Link>
+              { (aiConfig?.enabled ?? true) && (
+                <Link to="/jersey-tryon" onClick={onClose} className="flex items-center justify-between p-3.5 rounded-2xl bg-primary/5 hover:bg-primary/10 transition-colors text-slate-700 dark:text-slate-300 pressable group border border-primary/10">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined !text-[20px] text-primary group-hover:rotate-12 transition-transform">bolt</span>
+                    <span className="text-sm font-black">استوديو المشجع (AI)</span>
+                  </div>
+                  <span className="px-2 py-0.5 bg-red-500 text-white text-[8px] font-black rounded-full animate-pulse uppercase">جديد</span>
+                </Link>
+              )}
 
               <Link to="/library" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <span className="material-symbols-outlined !text-[20px]">library_music</span>
-                <span className="text-sm font-bold">المكتبة الرقمية</span>
-              </Link>
-
-              <Link to="/media" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <span className="material-symbols-outlined !text-[20px]">movie</span>
-                <span className="text-sm font-bold">الميديا والملخصات</span>
+                <span className="material-symbols-outlined !text-[20px]">perm_media</span>
+                <span className="text-sm font-bold">المكتبة الرقمية والوسائط</span>
               </Link>
 
               <Link to="/history" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable uppercase">

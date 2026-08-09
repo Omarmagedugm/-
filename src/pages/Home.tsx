@@ -672,7 +672,7 @@ export default function Home() {
                           </Link>
                         ) : (
                           <Link
-                            to="/media"
+                            to="/library?tab=videos"
                             className="h-14 rounded-2xl bg-[#EAB308] text-white hover:bg-[#CA8A04] transition-all duration-300 font-black text-[12px] flex items-center justify-center gap-3 shadow-premium relative z-30 cursor-pointer"
                           >
                             <span className="material-symbols-outlined !text-[20px]">
@@ -884,7 +884,7 @@ export default function Home() {
                 </span>
               </div>
               <Link
-                to="/media"
+                to="/library?tab=videos"
                 className="h-8 px-4 rounded-xl glass-card flex items-center justify-center text-[10px] font-black text-primary hover:bg-primary hover:text-white transition-all"
               >
                 عرض المزيد
@@ -900,7 +900,7 @@ export default function Home() {
                   className={idx === 0 ? "col-span-2" : ""}
                 >
                   <Link
-                    to="/media"
+                    to={`/library?tab=${item.type === 'photo' ? 'photos' : 'videos'}`}
                     className={`relative flex ${idx === 0 ? "aspect-[16/9]" : "aspect-square"} overflow-hidden rounded-[32px] shadow-premium group cinematic-glow`}
                   >
                     <SafeImage

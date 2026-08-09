@@ -6,7 +6,7 @@ import { useAppStore } from '../store';
 export function useFirestoreSync() {
   const { 
     setNews, setMedia, setMatches, setClubs, setPolls, setPredictions, setFanPosts,
-    setUsers, setSettings, updateLiveStream, updateLiveStreams, updateProfile, setCityInfo, setAds, setCustomPages,
+    setUsers, setSettings, setAiConfig, updateLiveStream, updateLiveStreams, updateProfile, setCityInfo, setAds, setCustomPages,
     setNewsCategories, setNewsTags, setHomeSections, setProducts, setSongs, setAlbums, setPlaylists, setMediaPlaylists, setBooks,
     setClubStats, setClubTitles, setHistoryEvents, setStadiums, setDataLoaded, setOrders
   } = useAppStore();
@@ -83,6 +83,7 @@ export function useFirestoreSync() {
       unsubs.push(onSnapshot(collection(db, 'ads'), s => setAds(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Ads sync failed', err)));
       unsubs.push(onSnapshot(collection(db, 'custom_pages'), s => setCustomPages(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Custom pages sync failed', err)));
       unsubs.push(onSnapshot(doc(db, 'settings', 'global'), s => { if (s.exists()) setSettings({ id: s.id, ...(s.data() as any) }); }, err => console.warn('Settings global sync failed', err)));
+      unsubs.push(onSnapshot(doc(db, 'settings', 'ai_config'), s => { if (s.exists()) setAiConfig(s.data()); }, err => console.warn('AI config sync failed', err)));
       unsubs.push(onSnapshot(doc(db, 'city_info', 'alexandria'), s => { if (s.exists()) setCityInfo({ id: s.id, ...(s.data() as any) }); }, err => console.warn('City info sync failed', err)));
       unsubs.push(onSnapshot(collection(db, 'songs'), s => setSongs(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Songs sync failed', err)));
       unsubs.push(onSnapshot(collection(db, 'books'), s => setBooks(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Books sync failed', err)));

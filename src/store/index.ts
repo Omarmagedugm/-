@@ -49,6 +49,7 @@ export interface MediaItem {
   views?: string;
   likes?: string[];
   playlistId?: string;
+  isFeatured?: boolean;
 }
 
 export interface MediaPlaylist {
@@ -298,6 +299,7 @@ interface AppState {
   predictions: PredictionItem[];
   fanPosts: FanPostItem[];
   users: UserProfile[];
+  aiConfig: { enabled: boolean; bannerTitle?: string; bannerDescription?: string; bannerImage?: string; clubLogo?: string; userDailyLimit?: number };
   appSettings: {
     appName: string;
     appLogo: string;
@@ -307,6 +309,7 @@ interface AppState {
     logoText?: string;
     defaultSport?: 'football' | 'basketball' | 'auto';
     liveViewMode?: 'both' | 'football' | 'basketball';
+    libraryBanner?: string;
   };
   liveStream: LiveStream;
   liveStreams: {
@@ -381,6 +384,7 @@ interface AppState {
   setMediaPlaylists: (playlists: MediaPlaylist[]) => void;
   setBooks: (books: Book[]) => void;
   setCityInfo: (info: CityInfo | null) => void;
+  setAiConfig: (config: any) => void;
   setCurrentSong: (song: Song | null) => void;
   setIsPlaying: (playing: boolean) => void;
   setPlayerVolume: (volume: number) => void;
@@ -582,6 +586,7 @@ export const useAppStore = create<AppState>()(
       mediaPlaylists: [],
       books: [],
       cityInfo: null,
+      aiConfig: { enabled: true },
       currentSong: null,
       isPlaying: false,
       playerVolume: 1,
@@ -619,6 +624,7 @@ export const useAppStore = create<AppState>()(
         users: state.users.filter(u => u.uid !== uid)
       })),
       setSettings: (settings) => set((state) => ({ appSettings: { ...state.appSettings, ...settings } })),
+      setAiConfig: (config) => set((state) => ({ aiConfig: { ...state.aiConfig, ...config } })),
       updateLiveStream: (stream) => set((state) => ({ liveStream: { ...state.liveStream, ...stream } })),
       updateLiveStreams: (streams) => set((state) => ({
         liveStreams: {

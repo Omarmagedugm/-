@@ -9,7 +9,7 @@ export default function BottomNav() {
     { path: '/', icon: 'home', label: 'الرئيسية' },
     { path: '/news', icon: 'newspaper', label: 'الأخبار' },
     { path: '/fan-zone', icon: 'stadium', label: 'فان زون' },
-    { path: '/matches', icon: 'sports_soccer', label: 'المباريات' },
+    { path: '/library', icon: 'perm_media', label: 'الوسائط' },
     { path: '/profile', icon: 'person', label: 'ملفي' },
   ];
 

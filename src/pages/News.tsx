@@ -3,8 +3,8 @@ import { useAppStore } from '../store';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'motion/react';
-import { Rss, Search, SlidersHorizontal, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { Rss, Search, SlidersHorizontal, ChevronRight, ChevronLeft } from 'lucide-react';
+import { useState, useRef } from 'react';
 import { getOptimizedImage } from '../lib/cloudinary';
 
 export default function News() {
@@ -37,6 +37,16 @@ export default function News() {
     }
   } as const;
 
+  const categoriesRef = useRef<HTMLDivElement>(null);
+  const scrollCategories = (dir: 'left' | 'right') => {
+    if (categoriesRef.current) {
+      categoriesRef.current.scrollBy({
+        left: dir === 'left' ? -180 : 180,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <div className="flex-1 w-full max-w-md mx-auto flex flex-col pb-32 px-0 bg-background-light dark:bg-background-dark min-h-screen">
       <motion.main 
@@ -47,21 +57,39 @@ export default function News() {
       >
         {/* Categories Carousel */}
         <motion.section variants={itemVariants}>
-          <div className="flex gap-3 overflow-x-auto no-scrollbar scroll-smooth snap-x -mx-4 px-4 pb-2">
-            {categories.map((cat, i) => (
-              <motion.button 
-                key={i} 
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setSelectedCategory(cat)}
-                className={`flex-shrink-0 px-6 py-2.5 rounded-2xl font-black text-xs transition-all duration-300 snap-center border ${
-                  selectedCategory === cat 
-                    ? 'bg-primary text-white shadow-premium shadow-primary/30 border-primary' 
-                    : 'bg-white dark:bg-surface-dark text-slate-500 dark:text-slate-400 border-border-light dark:border-border-dark hover:border-primary/50'
-                }`}
-              >
-                {cat}
-              </motion.button>
-            ))}
+          <div className="relative flex items-center group/cat-scroll">
+            <button
+              type="button"
+              onClick={() => scrollCategories('right')}
+              className="absolute -right-2 z-10 w-7 h-7 rounded-full bg-slate-800/80 hover:bg-slate-900 text-white flex items-center justify-center shadow-md transition-all active:scale-90"
+            >
+              <ChevronRight size={16} />
+            </button>
+
+            <div ref={categoriesRef} className="flex gap-3 overflow-x-auto no-scrollbar scroll-smooth snap-x px-5 pb-2 w-full">
+              {categories.map((cat, i) => (
+                <motion.button 
+                  key={i} 
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`flex-shrink-0 px-6 py-2.5 rounded-2xl font-black text-xs transition-all duration-300 snap-center border ${
+                    selectedCategory === cat 
+                      ? 'bg-primary text-white shadow-premium shadow-primary/30 border-primary' 
+                      : 'bg-white dark:bg-surface-dark text-slate-500 dark:text-slate-400 border-border-light dark:border-border-dark hover:border-primary/50'
+                  }`}
+                >
+                  {cat}
+                </motion.button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => scrollCategories('left')}
+              className="absolute -left-2 z-10 w-7 h-7 rounded-full bg-slate-800/80 hover:bg-slate-900 text-white flex items-center justify-center shadow-md transition-all active:scale-90"
+            >
+              <ChevronLeft size={16} />
+            </button>
           </div>
         </motion.section>
 

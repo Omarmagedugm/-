@@ -86,7 +86,7 @@ export default function TopHeader() {
     if (path === '/') return 'قناة الاتحاد السكندري';
     if (path === '/news') return 'مركز الأخبار';
     if (path.startsWith('/news/')) return 'تفاصيل الخبر';
-    if (path === '/media') return 'ميديا الاتحاد';
+    if (path === '/media' || path === '/library') return 'المكتبة الرقمية والوسائط';
     if (path === '/live') return 'البث المباشر';
     if (path === '/matches') return 'مباريات كرة القدم';
     if (path === '/profile') return 'ملفي الشخصي';

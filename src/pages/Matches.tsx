@@ -360,7 +360,7 @@ export default function Matches() {
                             {section.newestMatch.status === 'finished' && (
                               <motion.button 
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => navigate('/media')}
+                                onClick={() => navigate('/library?tab=videos')}
                                 className="h-12 bg-white/10 backdrop-blur-md text-white border border-white/20 font-black text-[11px] rounded-2xl flex items-center justify-center gap-2 transition-all"
                               >
                                   <Play size={16} fill="white" />

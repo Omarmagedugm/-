@@ -381,7 +381,7 @@ export default function Admin() {
   const [aiConfig, setAiConfig] = useState<any>({ enabled: true, clubLogo: '' });
   const [showSidebar, setShowSidebar] = useState(false);
   const [historySubTab, setHistorySubTab] = useState<'stats' | 'titles' | 'timeline' | 'stadiums'>('stats');
-  const [mediaSubTab, setMediaSubTab] = useState<'items' | 'playlists'>('items');
+  const [mediaSubTab, setMediaSubTab] = useState<'items' | 'playlists' | 'banner'>('items');
   const [musicSubTab, setMusicSubTab] = useState<'songs' | 'albums' | 'playlists'>('songs');
   const [liveSportSubTab, setLiveSportSubTab] = useState<'football' | 'basketball'>('football');
   const [isExporting, setIsExporting] = useState(false);
@@ -843,7 +843,8 @@ export default function Admin() {
             duration: formData.duration || '',
             views: formData.views || '0',
             likes: isEditing ? (formData.likes || []) : [],
-            playlistId: formData.playlistId || ''
+            playlistId: formData.playlistId || '',
+            isFeatured: formData.isFeatured ?? false
           };
 
           if (isEditing && editingId) {
@@ -945,7 +946,8 @@ export default function Admin() {
           logoType: formData.logoType || appSettings.logoType || 'image',
           logoText: formData.logoText || appSettings.logoText || '',
           defaultSport: formData.defaultSport || appSettings.defaultSport || 'auto',
-          liveViewMode: formData.liveViewMode || appSettings.liveViewMode || 'both'
+          liveViewMode: formData.liveViewMode || appSettings.liveViewMode || 'both',
+          libraryBanner: formData.libraryBanner !== undefined ? formData.libraryBanner : (appSettings.libraryBanner || '')
         };
         try {
           await setDoc(doc(db, 'settings', 'global'), payload);
@@ -1354,6 +1356,16 @@ export default function Admin() {
       } catch (err) {
         handleFirestoreError(err, OperationType.DELETE, `${coll}/${id}`);
       }
+    }
+  };
+
+  const toggleFeaturedMedia = async (item: any) => {
+    try {
+      const newStatus = !item.isFeatured;
+      await updateDoc(doc(db, 'media', item.id), { isFeatured: newStatus });
+      toast.success(newStatus ? 'تم تعيين العنصر كعنصر مميز بنجاح' : 'تم إلغاء التمييز بنجاح');
+    } catch (err) {
+      toast.error('حدث خطأ أثناء تحديث حالة التمييز');
     }
   };
 
@@ -3007,6 +3019,12 @@ export default function Admin() {
                 >
                   قوائم التشغيل
                 </button>
+                <button 
+                  onClick={() => setMediaSubTab('banner')} 
+                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${mediaSubTab === 'banner' ? 'bg-white dark:bg-card-dark text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  خلفية البانر
+                </button>
               </div>
 
               {mediaSubTab === 'items' && (
@@ -3036,6 +3054,12 @@ export default function Admin() {
                             <span className="text-[10px] font-black uppercase px-2 py-1 bg-slate-100 dark:bg-surface-dark text-slate-500 rounded-lg">
                               {item.type === 'video' ? 'فيديو' : 'صورة'}
                             </span>
+                            {item.isFeatured && (
+                              <span className="text-[10px] font-black px-2 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg flex items-center gap-1 border border-amber-500/20">
+                                <Sparkles size={10} className="fill-amber-500 text-amber-500" />
+                                <span>مميز</span>
+                              </span>
+                            )}
                             {item.playlistId && (
                                <div className="flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded-lg">
                                   <Layers size={10} className="shrink-0" />
@@ -3050,6 +3074,17 @@ export default function Admin() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
+                          <button 
+                            onClick={() => toggleFeaturedMedia(item)} 
+                            title={item.isFeatured ? "إلغاء التمييز" : "تعيين كعنصر مميز"}
+                            className={`p-2.5 rounded-2xl transition-all ${
+                              item.isFeatured 
+                                ? 'text-amber-500 bg-amber-500/10 hover:bg-amber-500/20' 
+                                : 'text-slate-400 bg-slate-100 dark:bg-surface-dark hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10'
+                            }`}
+                          >
+                            <Sparkles size={16} className={item.isFeatured ? 'fill-amber-500' : ''} />
+                          </button>
                           <button 
                             onClick={() => handleEditItem(item)} 
                             className="p-2.5 text-blue-500 bg-blue-500/5 hover:bg-blue-500/10 rounded-2xl transition-all"
@@ -3112,6 +3147,99 @@ export default function Admin() {
                        </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {mediaSubTab === 'banner' && (
+                <div className="bg-white dark:bg-card-dark rounded-3xl border border-border-light dark:border-border-dark p-6 shadow-sm flex flex-col gap-6">
+                  <div>
+                    <h3 className="text-base font-black text-slate-800 dark:text-white mb-1">خلفية بانر مكتبة الوسائط الرقمية</h3>
+                    <p className="text-xs text-slate-500 font-bold">يمكنك رفع صورة خلفية مخصصة للبانر العلوي في صفحة المكتبة الرقمية (أغاني، صور، فيديوهات، كتب)</p>
+                  </div>
+
+                  <UploadOrUrlField 
+                    label="صورة خلفية البانر" 
+                    fieldName="libraryBanner" 
+                    currentUrl={formData.libraryBanner !== undefined ? formData.libraryBanner : (appSettings.libraryBanner || '')} 
+                    formData={formData} 
+                    setFormData={setFormData}
+                    uploading={uploading} 
+                    handleFileUpload={handleFileUpload} 
+                  />
+
+                  {/* Banner Live Preview */}
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-black text-slate-500">معاينة مباشرة للبانر:</span>
+                    <div className="relative h-48 md:h-56 rounded-3xl overflow-hidden bg-primary shadow-inner border border-border-light dark:border-border-dark">
+                      {(formData.libraryBanner || appSettings.libraryBanner) ? (
+                        <>
+                          <img 
+                            src={formData.libraryBanner ?? appSettings.libraryBanner} 
+                            alt="Banner Preview" 
+                            className="absolute inset-0 w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/60 to-black/40"></div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-primary to-emerald-700 opacity-95"></div>
+                          <div className="absolute inset-0 bg-gradient-to-tr from-[#023823]/90 via-primary-dark/80 to-[#045536]/80"></div>
+                        </>
+                      )}
+                      <div className="relative z-10 h-full flex flex-col justify-end p-6">
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 text-[10px] font-black uppercase tracking-wider border border-emerald-400/30 w-fit mb-1">
+                          المحتوى الرقمي الشامل
+                        </span>
+                        <h2 className="text-xl md:text-2xl font-black text-white">المكتبة الرقمية والوسائط</h2>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <button 
+                      onClick={async () => {
+                        const payload = {
+                          ...appSettings,
+                          libraryBanner: formData.libraryBanner !== undefined ? formData.libraryBanner : (appSettings.libraryBanner || '')
+                        };
+                        try {
+                          await setDoc(doc(db, 'settings', 'global'), payload);
+                          const { setSettings } = useAppStore.getState();
+                          setSettings(payload);
+                          toast.success('تم حفظ خلفية بانر المكتبة بنجاح');
+                        } catch (err) {
+                          handleFirestoreError(err, OperationType.WRITE, 'settings/global');
+                        }
+                      }} 
+                      disabled={loading}
+                      className="flex-1 bg-primary text-white py-3.5 rounded-2xl font-black text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2 hover:scale-[1.01] transition-all"
+                    >
+                      {loading && <Loader2 className="animate-spin" size={18} />}
+                      حفظ خلفية البانر
+                    </button>
+
+                    {(formData.libraryBanner || appSettings.libraryBanner) && (
+                      <button 
+                        type="button"
+                        onClick={async () => {
+                          setFormData({ ...formData, libraryBanner: '' });
+                          const payload = { ...appSettings, libraryBanner: '' };
+                          try {
+                            await setDoc(doc(db, 'settings', 'global'), payload);
+                            const { setSettings } = useAppStore.getState();
+                            setSettings(payload);
+                            toast.success('تم إزالة الصورة واستعادة الخلفية الافتراضية');
+                          } catch (err) {
+                            handleFirestoreError(err, OperationType.WRITE, 'settings/global');
+                          }
+                        }}
+                        className="px-4 py-3.5 bg-red-500/10 text-red-600 hover:bg-red-500/20 rounded-2xl font-black text-sm transition-colors"
+                      >
+                        إعادة للافتراضي
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -3707,6 +3835,41 @@ export default function Admin() {
                    </p>
                  </div>
                </div>
+                <div className="pt-4 border-t border-border-light dark:border-border-dark mt-4 mb-4">
+                  <h3 className="text-sm font-black mb-1">خلفية بانر مكتبة الوسائط</h3>
+                  <p className="text-[10px] text-slate-500 font-bold mb-4">رفع أو تخصيص صورة خلفية البانر العلوي لصفحة المكتبة الرقمية والوسائط</p>
+                  
+                  <UploadOrUrlField 
+                    label="صورة خلفية البانر" 
+                    fieldName="libraryBanner" 
+                    currentUrl={formData.libraryBanner !== undefined ? formData.libraryBanner : (appSettings.libraryBanner || '')} 
+                    formData={formData} 
+                    setFormData={setFormData}
+                    uploading={uploading} 
+                    handleFileUpload={handleFileUpload} 
+                  />
+
+                  {(formData.libraryBanner || appSettings.libraryBanner) && (
+                    <div className="mt-3 relative h-32 rounded-2xl overflow-hidden border border-border-light dark:border-border-dark group shadow-md">
+                      <img 
+                        src={formData.libraryBanner ?? appSettings.libraryBanner} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover" 
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          type="button"
+                          onClick={() => setFormData({...formData, libraryBanner: ''})}
+                          className="px-3 py-1.5 bg-red-600 text-white text-xs font-black rounded-xl shadow-lg hover:bg-red-700 transition-colors"
+                        >
+                          إزالة الصورة
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
               <button 
                 onClick={handleAdd} 
                 disabled={loading}
@@ -4703,6 +4866,20 @@ export default function Admin() {
                             </div>
                           </div>
                         )}
+
+                        <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl mt-2">
+                          <input 
+                            type="checkbox" 
+                            id="isFeaturedMediaCheckbox"
+                            checked={formData.isFeatured ?? false} 
+                            onChange={(e) => setFormData({...formData, isFeatured: e.target.checked})} 
+                            className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer" 
+                          />
+                          <label htmlFor="isFeaturedMediaCheckbox" className="text-xs font-black text-slate-700 dark:text-slate-200 cursor-pointer flex items-center gap-1.5 select-none">
+                            <Sparkles size={14} className="text-amber-500 fill-amber-500" />
+                            <span>تعيين كعنصر مميز (يظهر كفيديو أو صورة مميزة بالمرئيات والمكتبة)</span>
+                          </label>
+                        </div>
                      </>
                    ) : (
                      <>
