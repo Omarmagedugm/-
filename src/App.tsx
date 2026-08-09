@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import ScrollToTop from './components/ScrollToTop';
+import PullToRefresh from './components/PullToRefresh';
 import { useAppStore } from './store';
 import { useFirestoreSync } from './hooks/useFirestore';
 import { auth, requestNotificationPermission } from './lib/firebase';
@@ -345,6 +346,19 @@ function AppContent() {
     return () => window.removeEventListener('fcm-message', handleFcmMessage);
   }, []);
 
+  const handlePullRefresh = async () => {
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('fs_cache_')) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (e) {}
+
+    window.dispatchEvent(new CustomEvent('app-pull-refresh'));
+    await new Promise(resolve => setTimeout(resolve, 700));
+  };
+
   // Auth Redirection Logic
   return (
     <BrowserRouter>
@@ -358,48 +372,50 @@ function AppContent() {
         }}
       />
       <VercelAnalytics />
-      <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-[calc(100vh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex flex-col font-display antialiased transition-colors duration-200">
-        <TopHeader />
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<Home />} />
-            <Route path="/feed" element={<FanZone />} />
-            <Route path="/news" element={<News />} />
-            <Route path="/news/:id" element={<NewsDetail />} />
-            <Route path="/media" element={<Media />} />
-            <Route path="/live" element={<Live />} />
-            <Route path="/matches" element={<Matches />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/fan-zone" element={<FanZone />} />
-            <Route path="/jersey-tryon" element={<JerseyTryOn />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/store" element={<Store />} />
-            <Route path="/bookmarks" element={<Bookmarks />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/page/:slug" element={<CustomPage />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfService />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          <MusicPlayer />
-          <PWAInstallPrompt />
-          <WinCelebration
-            show={showWin}
-            onComplete={() => setShowWin(false)}
-            match={activeMatch}
-          />
-          <GoalCelebration 
-            show={showGoal} 
-            onComplete={handleGoalComplete} 
-            teamName={scoredTeam} 
-            match={activeMatch}
-          />
-        </Suspense>
-        <AppNav />
-      </div>
+      <PullToRefresh onRefresh={handlePullRefresh}>
+        <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-[calc(100vh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex flex-col font-display antialiased transition-colors duration-200">
+          <TopHeader />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/feed" element={<FanZone />} />
+              <Route path="/news" element={<News />} />
+              <Route path="/news/:id" element={<NewsDetail />} />
+              <Route path="/media" element={<Media />} />
+              <Route path="/live" element={<Live />} />
+              <Route path="/matches" element={<Matches />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/fan-zone" element={<FanZone />} />
+              <Route path="/jersey-tryon" element={<JerseyTryOn />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/store" element={<Store />} />
+              <Route path="/bookmarks" element={<Bookmarks />} />
+              <Route path="/library" element={<Library />} />
+              <Route path="/page/:slug" element={<CustomPage />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+            <MusicPlayer />
+            <PWAInstallPrompt />
+            <WinCelebration
+              show={showWin}
+              onComplete={() => setShowWin(false)}
+              match={activeMatch}
+            />
+            <GoalCelebration 
+              show={showGoal} 
+              onComplete={handleGoalComplete} 
+              teamName={scoredTeam} 
+              match={activeMatch}
+            />
+          </Suspense>
+          <AppNav />
+        </div>
+      </PullToRefresh>
     </BrowserRouter>
   );
 }

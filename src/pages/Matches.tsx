@@ -4,11 +4,12 @@ import { ar } from 'date-fns/locale';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
-import { ChevronRight, Calendar, Trophy, MapPin, Edit2, Play, Users, Send, Target, X, FileText, Dribbble } from 'lucide-react';
+import { ChevronRight, Calendar, Trophy, MapPin, Edit2, Play, Users, Send, Target, X, FileText, Dribbble, FileSpreadsheet } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, query, where, getDocs, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import ScoreSelector from '../components/ScoreSelector';
 import { getOptimizedImage } from '../lib/cloudinary';
+import CsvMatchesImporter from '../components/CsvMatchesImporter';
 
 export default function Matches() {
   const { matches, profile } = useAppStore();
@@ -24,6 +25,7 @@ export default function Matches() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [userPredictions, setUserPredictions] = useState<Record<string, any>>({});
+  const [isCsvImporterOpen, setIsCsvImporterOpen] = useState(false);
 
   const isPastPredictionDeadline = (matchDate: string) => {
     const matchTime = new Date(matchDate).getTime();
@@ -220,6 +222,21 @@ export default function Matches() {
             </button>
           ))}
         </div>
+
+        {profile?.role === 'admin' && (
+          <div className="mt-1 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 p-2.5 rounded-2xl flex items-center justify-between gap-2 shadow-sm">
+            <div className="flex items-center gap-2 text-xs font-black text-emerald-800 dark:text-emerald-300">
+              <FileSpreadsheet size={16} className="text-emerald-600" />
+              <span>رفع جدول المباريات (CSV)</span>
+            </div>
+            <button
+              onClick={() => setIsCsvImporterOpen(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-[11px] font-black shadow-sm shrink-0 transition-all active:scale-95"
+            >
+              إضافة بالجملة
+            </button>
+          </div>
+        )}
       </div>
 
       <motion.main 
@@ -227,7 +244,7 @@ export default function Matches() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex-1 overflow-x-hidden px-4 pt-2 pb-6 flex flex-col gap-8"
+        className="flex-1 overflow-x-hidden px-4 pt-4 pb-6 flex flex-col gap-8"
       >
         {/* Matches Feed Upgrade */}
         <motion.section variants={itemVariants} className="space-y-12">
@@ -792,6 +809,12 @@ export default function Matches() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* CSV Matches Importer Modal */}
+      <CsvMatchesImporter 
+        isOpen={isCsvImporterOpen} 
+        onClose={() => setIsCsvImporterOpen(false)} 
+      />
     </div>
   );
 }

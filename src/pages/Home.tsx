@@ -1847,7 +1847,7 @@ export default function Home() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex-1 overflow-x-hidden px-4 flex flex-col gap-0 pt-2 pb-6"
+        className="flex-1 overflow-x-hidden px-4 flex flex-col gap-0 pt-4 pb-6"
       >
         {isEmpty && (
           <motion.div 

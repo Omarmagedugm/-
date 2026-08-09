@@ -78,12 +78,14 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   Layers,
-  ShieldCheck
+  ShieldCheck,
+  FileSpreadsheet
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import AdminSidebar from '../components/AdminSidebar';
 import ScoreSelector from '../components/ScoreSelector';
 import ImageUploader from '../components/ImageUploader';
+import CsvMatchesImporter from '../components/CsvMatchesImporter';
 import { getOptimizedImage } from '../lib/cloudinary';
 
 const handleFileUploadFn = async (
@@ -566,6 +568,7 @@ export default function Admin() {
   });
   const [activeSearchField, setActiveSearchField] = useState<'home' | 'away' | null>(null);
   const [clubSearchQuery, setClubSearchQuery] = useState('');
+  const [isCsvImporterOpen, setIsCsvImporterOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1650,15 +1653,26 @@ export default function Admin() {
              activeTab === 'ai-studio' ? 'إعدادات استوديو الصور (AI)' :
              activeTab === 'comments' ? 'تعليقات البث المباشر' : 'لوحة التحكم'}
           </h1>
-          {['news', 'media', 'matches', 'clubs', 'polls', 'predictions', 'products', 'history', 'music', 'books', 'ai-studio'].includes(activeTab) && (
-            <button 
-              onClick={openAddModal}
-              className="flex items-center gap-1 bg-primary text-white px-3 py-1.5 rounded-lg font-bold shadow-sm shadow-primary/20 hover:scale-105 transition-all text-xs"
-            >
-              <Plus size={14} />
-              إضافة
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {activeTab === 'matches' && (
+              <button 
+                onClick={() => setIsCsvImporterOpen(true)}
+                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold shadow-sm shadow-emerald-600/20 hover:scale-105 transition-all text-xs"
+              >
+                <FileSpreadsheet size={15} />
+                <span>رفع CSV (إضافة بالجملة)</span>
+              </button>
+            )}
+            {['news', 'media', 'matches', 'clubs', 'polls', 'predictions', 'products', 'history', 'music', 'books', 'ai-studio'].includes(activeTab) && (
+              <button 
+                onClick={openAddModal}
+                className="flex items-center gap-1 bg-primary text-white px-3 py-1.5 rounded-lg font-bold shadow-sm shadow-primary/20 hover:scale-105 transition-all text-xs"
+              >
+                <Plus size={14} />
+                إضافة
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col gap-6">
@@ -3105,6 +3119,23 @@ export default function Admin() {
 
           {activeTab === 'matches' && (
             <div className="flex flex-col gap-3">
+              <div className="bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shrink-0 shadow-sm shadow-emerald-600/30">
+                    <FileSpreadsheet size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white">إضافة جدول المباريات بالجملة (CSV)</h3>
+                    <p className="text-xs font-bold text-slate-500">رفع ملف CSV لإضافة وإدراج عدة مباريات دفعة واحدة في جدول القناة</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsCsvImporterOpen(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm shrink-0 hover:scale-105 transition-all active:scale-95"
+                >
+                  رفع ملف CSV
+                </button>
+              </div>
               {matches.filter(item => 
                 item.homeTeam.toLowerCase().includes(contentSearch.toLowerCase()) || 
                 item.awayTeam.toLowerCase().includes(contentSearch.toLowerCase()) ||
@@ -5172,6 +5203,12 @@ export default function Admin() {
           </div>
         </div>
       )}
+
+      {/* CSV Matches Importer Modal */}
+      <CsvMatchesImporter 
+        isOpen={isCsvImporterOpen} 
+        onClose={() => setIsCsvImporterOpen(false)} 
+      />
     </div>
   );
 }
