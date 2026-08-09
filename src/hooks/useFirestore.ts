@@ -77,6 +77,22 @@ export function useFirestoreSync() {
         }
       }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/homeLayout'));
 
+      // Real-time listener additions for instant updates when editing in Admin
+      unsubs.push(onSnapshot(collection(db, 'clubs'), s => setClubs(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Clubs sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'products'), s => setProducts(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Products sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'ads'), s => setAds(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Ads sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'custom_pages'), s => setCustomPages(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Custom pages sync failed', err)));
+      unsubs.push(onSnapshot(doc(db, 'settings', 'global'), s => { if (s.exists()) setSettings({ id: s.id, ...(s.data() as any) }); }, err => console.warn('Settings global sync failed', err)));
+      unsubs.push(onSnapshot(doc(db, 'city_info', 'alexandria'), s => { if (s.exists()) setCityInfo({ id: s.id, ...(s.data() as any) }); }, err => console.warn('City info sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'songs'), s => setSongs(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Songs sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'books'), s => setBooks(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Books sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'news_categories'), s => setNewsCategories(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('News categories sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'news_tags'), s => setNewsTags(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('News tags sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'club_titles'), s => setClubTitles(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Club titles sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'club_stats'), s => setClubStats(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Club stats sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'club_stadiums'), s => setStadiums(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Stadiums sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'club_timeline'), s => setHistoryEvents(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('History events sync failed', err)));
+
       // Add common unsubs
       unsubs.push(unsubLiveFootball, unsubLiveBasketball, unsubMatches, unsubNews, unsubMedia, unsubLayout);
       unsubs.push(onSnapshot(collection(db, 'media_playlists'), s => setMediaPlaylists(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), err => console.warn('Media playlists sync failed', err)));
@@ -137,7 +153,7 @@ export function useFirestoreSync() {
           const cached = typeof window !== 'undefined' ? localStorage.getItem(cacheKey) : null;
           if (cached) {
             const { data, timestamp } = JSON.parse(cached);
-            if (Date.now() - timestamp < 1800000) return data; // 30m cache
+            if (Date.now() - timestamp < 15000) return data; // 15s cache
           }
         } catch (e) {
           console.warn('Cache read failed', e);
