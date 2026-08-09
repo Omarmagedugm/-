@@ -3,8 +3,17 @@
  */
 export const getOptimizedImage = (url: string | undefined | null, width?: number) => {
   if (!url) return '';
-  if (url.startsWith('data:') || url.startsWith('blob:') || url.endsWith('.svg')) return url;
-  if (url.includes('ui-avatars.com') || url.includes('lh3.googleusercontent.com')) return url;
+  if (
+    url.startsWith('data:') || 
+    url.startsWith('blob:') || 
+    url.endsWith('.svg') ||
+    url.includes('wikimedia.org') ||
+    url.includes('wikipedia.org') ||
+    url.includes('ui-avatars.com') ||
+    url.includes('lh3.googleusercontent.com')
+  ) {
+    return url;
+  }
 
   const isLogo = url.toLowerCase().includes('logo') || url.toLowerCase().includes('favicon');
 

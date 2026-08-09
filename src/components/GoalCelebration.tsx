@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trophy, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { SafeImage } from './SafeImage';
 
 interface GoalCelebrationProps {
   show: boolean;
@@ -115,7 +116,7 @@ export default function GoalCelebration({ show, onComplete, teamName, match }: G
                   <div className="inline-flex items-center gap-3 sm:gap-5 bg-black/80 backdrop-blur-3xl px-4 py-3 rounded-[32px] border border-white/30 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-2xl bg-white/5 p-2 flex items-center justify-center">
-                        <img src={match.homeLogo} className="w-full h-full object-contain drop-shadow-md" alt="" />
+                        <SafeImage teamName={match.homeTeam} src={match.homeLogo} className="w-full h-full object-contain drop-shadow-md" alt={match.homeTeam} />
                       </div>
                       <span className="text-4xl font-black text-white tabular-nums">
                         {match.homeScore}
@@ -129,7 +130,7 @@ export default function GoalCelebration({ show, onComplete, teamName, match }: G
                         {match.awayScore}
                       </span>
                       <div className="w-12 h-12 rounded-2xl bg-white/5 p-2 flex items-center justify-center">
-                        <img src={match.awayLogo} className="w-full h-full object-contain drop-shadow-md" alt="" />
+                        <SafeImage teamName={match.awayTeam} src={match.awayLogo} className="w-full h-full object-contain drop-shadow-md" alt={match.awayTeam} />
                       </div>
                     </div>
                   </div>

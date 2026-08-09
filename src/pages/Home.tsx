@@ -481,7 +481,7 @@ export default function Home() {
                       <div className="flex justify-center items-center gap-2 sm:gap-6 py-4 sm:py-6 px-1 sm:px-4">
                         <div className="flex flex-col items-center gap-2 sm:gap-4 w-[84px] sm:w-36 group/team shrink-0 z-10">
                           <div className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[36px] bg-white/10 p-2.5 sm:p-4 ring-1 ring-white/20 backdrop-blur-xl shadow-premium h-20 w-20 sm:h-32 sm:w-32 shrink-0`}>
-                            <SafeImage alt={heroMatch.homeTeam} className="w-full h-full object-contain filter drop-shadow-2xl" src={heroMatch.homeLogo || undefined} width={200} />
+                            <SafeImage teamName={heroMatch.homeTeam} alt={heroMatch.homeTeam} className="w-full h-full object-contain filter drop-shadow-2xl" src={heroMatch.homeLogo || undefined} width={200} />
                           </div>
                           <span className={`text-center font-black text-white uppercase tracking-wider whitespace-nowrap max-w-full w-full ${((heroMatch.homeTeam || '').trim().includes(' ') || (heroMatch.homeTeam || '').length > 7) ? 'text-[8px] sm:text-[12px]' : 'text-[10px] sm:text-[14px]'}`}>{heroMatch.homeTeam}</span>
                         </div>
@@ -626,6 +626,7 @@ export default function Home() {
                             className={`relative flex items-center justify-center rounded-[24px] sm:rounded-[36px] bg-white/10 p-2.5 sm:p-4 ring-1 ring-white/20 backdrop-blur-xl shadow-premium h-20 w-20 sm:h-32 sm:w-32 shrink-0`}
                           >
                             <SafeImage
+                              teamName={heroMatch.awayTeam}
                               alt={heroMatch.awayTeam}
                               className="w-full h-full object-contain filter drop-shadow-2xl"
                               src={heroMatch.awayLogo || undefined}
@@ -962,19 +963,19 @@ export default function Home() {
                   <div className="flex items-center gap-4 sm:gap-6">
                     <div className="flex items-center -space-x-4 rtl:space-x-reverse">
                       <div className="h-14 w-14 rounded-2xl bg-white dark:bg-background-dark p-2.5 shadow-premium ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center z-10 transition-transform hover:scale-110">
-                        <img
-                          src={match.homeLogo || undefined}
-                          alt="Home"
+                        <SafeImage
+                          teamName={match.homeTeam}
+                          src={match.homeLogo}
+                          alt={match.homeTeam}
                           className="h-full w-full object-contain"
-                          referrerPolicy="no-referrer"
                         />
                       </div>
                       <div className="h-14 w-14 rounded-2xl bg-white dark:bg-background-dark p-2.5 shadow-premium ring-1 ring-border-light dark:ring-border-dark flex items-center justify-center z-0 scale-90 opacity-90 transition-transform hover:scale-110">
-                        <img
-                          src={match.awayLogo || undefined}
-                          alt="Away"
+                        <SafeImage
+                          teamName={match.awayTeam}
+                          src={match.awayLogo}
+                          alt={match.awayTeam}
                           className="h-full w-full object-contain"
-                          referrerPolicy="no-referrer"
                         />
                       </div>
                     </div>

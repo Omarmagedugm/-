@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trophy, X, PartyPopper } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { SafeImage } from './SafeImage';
 
 interface WinCelebrationProps {
   show: boolean;
@@ -112,7 +113,7 @@ export default function WinCelebration({ show, onComplete, match }: WinCelebrati
                   <div className="relative flex items-center justify-center gap-8">
                     <div className="flex flex-col items-center gap-2 min-w-[80px]">
                       <div className="w-16 h-16 bg-white/5 rounded-2xl p-2 border border-white/10 shadow-inner">
-                        <img src={match.homeLogo} className="w-full h-full object-contain drop-shadow-md" alt="" />
+                        <SafeImage teamName={match.homeTeam} src={match.homeLogo} className="w-full h-full object-contain drop-shadow-md" alt={match.homeTeam} />
                       </div>
                       <span className="text-white font-bold text-[10px] truncate max-w-[80px]">{match.homeTeam}</span>
                     </div>
@@ -129,7 +130,7 @@ export default function WinCelebration({ show, onComplete, match }: WinCelebrati
 
                     <div className="flex flex-col items-center gap-2 min-w-[80px]">
                       <div className="w-16 h-16 bg-white/5 rounded-2xl p-2 border border-white/10 shadow-inner">
-                        <img src={match.awayLogo} className="w-full h-full object-contain drop-shadow-md" alt="" />
+                        <SafeImage teamName={match.awayTeam} src={match.awayLogo} className="w-full h-full object-contain drop-shadow-md" alt={match.awayTeam} />
                       </div>
                       <span className="text-white font-bold text-[10px] truncate max-w-[80px]">{match.awayTeam}</span>
                     </div>

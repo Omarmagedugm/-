@@ -44,6 +44,7 @@ import Sidebar from '../components/Sidebar';
 import ScoreSelector from '../components/ScoreSelector';
 import ImageUploader from '../components/ImageUploader';
 import { getOptimizedImage } from '../lib/cloudinary';
+import { SafeImage } from '../components/SafeImage';
 import { 
   doc, 
   updateDoc, 
@@ -1546,7 +1547,7 @@ export default function FanZone() {
                                    className={`flex-1 flex flex-col items-center gap-3 p-6 rounded-[32px] border-2 transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.home > selectedPrediction.away ? 'bg-orange-500 border-orange-400 text-white shadow-lg scale-105' : (userPred && userPred.homeScore > userPred.awayScore && selectedPrediction?.matchId !== match.id) ? 'bg-orange-500/50 border-orange-400/50 text-white' : 'bg-white dark:bg-surface-dark border-border-light dark:border-border-dark text-slate-500 hover:border-orange-500/50'}`}
                                  >
                                    <div className="relative w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center p-2 mb-1">
-                                      <img src={getOptimizedImage(match.homeLogo, 200)} className="w-full h-full object-contain" alt="home" referrerPolicy="no-referrer" />
+                                      <SafeImage teamName={match.homeTeam} src={match.homeLogo} width={200} className="w-full h-full object-contain" alt={match.homeTeam} />
                                       {predictions.filter(p => p.matchId === match.id).length > 0 && (
                                         <div className="absolute -top-2 -right-2 bg-orange-600 text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg border border-white/20">
                                           {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.homeScore) > Number(p.awayScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
@@ -1568,7 +1569,7 @@ export default function FanZone() {
                                    className={`flex-1 flex flex-col items-center gap-3 p-6 rounded-[32px] border-2 transition-all ${selectedPrediction?.matchId === match.id && selectedPrediction.away > selectedPrediction.home ? 'bg-orange-500 border-orange-400 text-white shadow-lg scale-105' : (userPred && userPred.awayScore > userPred.homeScore && selectedPrediction?.matchId !== match.id) ? 'bg-orange-500/50 border-orange-400/50 text-white' : 'bg-white dark:bg-surface-dark border-border-light dark:border-border-dark text-slate-500 hover:border-orange-500/50'}`}
                                  >
                                    <div className="relative w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center p-2 mb-1">
-                                      <img src={getOptimizedImage(match.awayLogo, 200)} className="w-full h-full object-contain" alt="away" referrerPolicy="no-referrer" />
+                                      <SafeImage teamName={match.awayTeam} src={match.awayLogo} width={200} className="w-full h-full object-contain" alt={match.awayTeam} />
                                       {predictions.filter(p => p.matchId === match.id).length > 0 && (
                                         <div className="absolute -top-2 -left-2 bg-orange-600 text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg border border-white/20">
                                           {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.awayScore) > Number(p.homeScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
@@ -1583,7 +1584,7 @@ export default function FanZone() {
                                <>
                                  <div className="flex flex-col items-center gap-2 w-24">
                                    <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 relative group-hover:border-primary/50 transition-colors">
-                                     <img src={getOptimizedImage(match.homeLogo, 150)} className="w-8 h-8 object-contain" alt="home" referrerPolicy="no-referrer" />
+                                     <SafeImage teamName={match.homeTeam} src={match.homeLogo} width={150} className="w-8 h-8 object-contain" alt={match.homeTeam} />
                                      {predictions.filter(p => p.matchId === match.id).length > 0 && (
                                        <div className="absolute -top-2 -right-2 bg-primary text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
                                          {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.homeScore) > Number(p.awayScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
@@ -1638,7 +1639,7 @@ export default function FanZone() {
                                  </div>
                                  <div className="flex flex-col items-center gap-2 w-24">
                                    <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 relative group-hover:border-accent/50 transition-colors">
-                                     <img src={getOptimizedImage(match.awayLogo, 200)} className="w-8 h-8 object-contain" alt="away" referrerPolicy="no-referrer" />
+                                     <SafeImage teamName={match.awayTeam} src={match.awayLogo} width={200} className="w-8 h-8 object-contain" alt={match.awayTeam} />
                                      {predictions.filter(p => p.matchId === match.id).length > 0 && (
                                        <div className="absolute -top-2 -left-2 bg-accent text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
                                          {Math.round((predictions.filter(p => p.matchId === match.id && Number(p.awayScore) > Number(p.homeScore)).length / predictions.filter(p => p.matchId === match.id).length) * 100)}%
@@ -1984,7 +1985,7 @@ export default function FanZone() {
                     <div className="flex justify-center items-center gap-6 sm:gap-12 relative z-10">
                       <div className="flex flex-col items-center w-20 sm:w-24">
                         <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-3xl flex items-center justify-center mb-3 sm:mb-4 backdrop-blur-md border border-white/20 shadow-premium">
-                          <img src={getOptimizedImage(nextMatch.homeLogo, 200)} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-lg" alt="home" referrerPolicy="no-referrer" />
+                          <SafeImage teamName={nextMatch.homeTeam} src={nextMatch.homeLogo} width={200} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-lg" alt={nextMatch.homeTeam} />
                         </div>
                         <span className={`font-black text-center whitespace-nowrap max-w-full uppercase tracking-tight ${((nextMatch.homeTeam || "").trim().includes(" ") || (nextMatch.homeTeam || "").length > 7) ? "text-[8px] sm:text-[9px]" : "text-[10px] sm:text-[11px]"}`}>{nextMatch.homeTeam}</span>
                       </div>
@@ -2006,7 +2007,7 @@ export default function FanZone() {
 
                       <div className="flex flex-col items-center w-20 sm:w-24">
                         <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-3xl flex items-center justify-center mb-3 sm:mb-4 backdrop-blur-md border border-white/20 shadow-premium">
-                          <img src={getOptimizedImage(nextMatch.awayLogo, 200)} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-lg" alt="away" referrerPolicy="no-referrer" />
+                          <SafeImage teamName={nextMatch.awayTeam} src={nextMatch.awayLogo} width={200} className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-lg" alt={nextMatch.awayTeam} />
                         </div>
                         <span className={`font-black text-center whitespace-nowrap max-w-full uppercase tracking-tight ${((nextMatch.awayTeam || "").trim().includes(" ") || (nextMatch.awayTeam || "").length > 7) ? "text-[8px] sm:text-[9px]" : "text-[10px] sm:text-[11px]"}`}>{nextMatch.awayTeam}</span>
                       </div>
