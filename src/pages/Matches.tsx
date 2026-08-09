@@ -134,7 +134,30 @@ export default function Matches() {
     return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}'`;
   };
 
-  const sortedMatches = [...matches].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const sortedMatches = [...matches].sort((a, b) => {
+    const timeA = new Date(a.date || 0).getTime();
+    const timeB = new Date(b.date || 0).getTime();
+
+    // 1. Live matches first
+    if (a.status === 'live' && b.status !== 'live') return -1;
+    if (a.status !== 'live' && b.status === 'live') return 1;
+
+    // 2. Upcoming matches before finished
+    if (a.status === 'upcoming' && b.status === 'finished') return -1;
+    if (a.status === 'finished' && b.status === 'upcoming') return 1;
+
+    // 3. For upcoming matches: closest date/time first (ascending order)
+    if (a.status === 'upcoming' && b.status === 'upcoming') {
+      return timeA - timeB;
+    }
+
+    // 4. For finished matches: most recently finished first (descending order)
+    if (a.status === 'finished' && b.status === 'finished') {
+      return timeB - timeA;
+    }
+
+    return timeA - timeB;
+  });
 
   const getNewestMatch = (sportMatches: any[]) => {
     return sportMatches.find(m => m.status === 'live') || sportMatches.find(m => m.status === 'upcoming') || sportMatches[0];
@@ -244,7 +267,7 @@ export default function Matches() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex-1 overflow-x-hidden px-4 pt-4 pb-6 flex flex-col gap-8"
+        className="flex-1 overflow-x-hidden px-4 pt-2 pb-6 flex flex-col gap-8"
       >
         {/* Matches Feed Upgrade */}
         <motion.section variants={itemVariants} className="space-y-12">

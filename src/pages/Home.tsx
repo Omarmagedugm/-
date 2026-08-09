@@ -284,7 +284,7 @@ export default function Home() {
 
   const allFeatured = useMemo(() => matches
     .filter((m) => m.featured === true)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [matches]);
+    .sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime()), [matches]);
 
   const allLive = useMemo(() => matches.filter((m) => m.status === "live"), [matches]);
 
@@ -292,10 +292,21 @@ export default function Home() {
   
   const effectiveSport = useMemo(() => selectedSport === "auto" ? defaultSport : selectedSport, [selectedSport, defaultSport]);
 
-  const sportMatches = useMemo(() => matches.filter(
-    (m) =>
-      m.sport === effectiveSport || (!m.sport && effectiveSport === "football"),
-  ), [matches, effectiveSport]);
+  const sportMatches = useMemo(() => {
+    const filtered = matches.filter(
+      (m) => m.sport === effectiveSport || (!m.sport && effectiveSport === "football")
+    );
+    return filtered.sort((a, b) => {
+      const timeA = new Date(a.date || 0).getTime();
+      const timeB = new Date(b.date || 0).getTime();
+      if (a.status === 'live' && b.status !== 'live') return -1;
+      if (a.status !== 'live' && b.status === 'live') return 1;
+      if (a.status === 'upcoming' && b.status === 'finished') return -1;
+      if (a.status === 'finished' && b.status === 'upcoming') return 1;
+      if (a.status === 'upcoming') return timeA - timeB;
+      return timeB - timeA;
+    });
+  }, [matches, effectiveSport]);
 
   // Strict hero selection that respects active filter without cross-sport fallbacks
   const heroMatch = useMemo(() => 
@@ -314,6 +325,7 @@ export default function Home() {
         m.id !== heroMatch?.id &&
         (m.sport === currentSport || (!m.sport && currentSport === "football")),
     )
+    .sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime())
     .slice(0, 3);
 
   let timeLeft = { d: 0, h: 0, m: 0, s: 0 };
@@ -1847,7 +1859,7 @@ export default function Home() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex-1 overflow-x-hidden px-4 flex flex-col gap-0 pt-4 pb-6"
+        className="flex-1 overflow-x-hidden px-4 flex flex-col gap-0 pt-2 pb-6"
       >
         {isEmpty && (
           <motion.div 

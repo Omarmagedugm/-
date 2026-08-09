@@ -165,10 +165,19 @@ export default function FanZone() {
   const [chatMessage, setChatMessage] = useState('');
   const [chatRooms, setChatRooms] = useState<any[]>([]);
 
-  const sortedMatches = [...matches].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const sortedMatches = [...matches].sort((a, b) => {
+    const timeA = new Date(a.date || 0).getTime();
+    const timeB = new Date(b.date || 0).getTime();
+    if (a.status === 'live' && b.status !== 'live') return -1;
+    if (a.status !== 'live' && b.status === 'live') return 1;
+    if (a.status === 'upcoming' && b.status === 'finished') return -1;
+    if (a.status === 'finished' && b.status === 'upcoming') return 1;
+    if (a.status === 'upcoming') return timeA - timeB;
+    return timeB - timeA;
+  });
   const nextMatch = matches.find(m => m.isMatchDay) || 
-                    matches.find(m => m.status === 'live') || 
-                    matches.find(m => m.status === 'upcoming') || 
+                    sortedMatches.find(m => m.status === 'live') || 
+                    sortedMatches.find(m => m.status === 'upcoming') || 
                     sortedMatches[0];
 
   // Listen to match day moments

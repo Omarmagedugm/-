@@ -372,9 +372,9 @@ function AppContent() {
         }}
       />
       <VercelAnalytics />
-      <PullToRefresh onRefresh={handlePullRefresh}>
-        <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-[calc(100vh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex flex-col font-display antialiased transition-colors duration-200">
-          <TopHeader />
+      <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-[calc(100vh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex flex-col font-display antialiased transition-colors duration-200">
+        <TopHeader />
+        <PullToRefresh onRefresh={handlePullRefresh}>
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/auth" element={<Auth />} />
@@ -413,9 +413,9 @@ function AppContent() {
               match={activeMatch}
             />
           </Suspense>
-          <AppNav />
-        </div>
-      </PullToRefresh>
+        </PullToRefresh>
+        <AppNav />
+      </div>
     </BrowserRouter>
   );
 }

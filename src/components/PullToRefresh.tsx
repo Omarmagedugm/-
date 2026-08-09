@@ -108,13 +108,13 @@ export default function PullToRefresh({ children, onRefresh }: PullToRefreshProp
     <div className="relative min-h-screen">
       {/* Pull To Refresh Top Indicator Bar */}
       <div 
-        className="fixed top-0 left-0 right-0 z-40 flex items-center justify-center pointer-events-none transition-all duration-150 ease-out"
+        className="fixed top-14 left-0 right-0 z-40 flex items-center justify-center pointer-events-none transition-all duration-150 ease-out"
         style={{
-          transform: `translateY(${isRefreshing ? 18 : pullDistance > 0 ? pullDistance - 45 : -60}px)`,
+          transform: `translateY(${isRefreshing ? 14 : pullDistance > 0 ? pullDistance - 40 : -50}px)`,
           opacity: pullDistance > 0 || isRefreshing ? 1 : 0
         }}
       >
-        <div className="bg-white dark:bg-card-dark border border-border-light dark:border-border-dark shadow-2xl rounded-full p-2.5 flex items-center justify-center">
+        <div className="bg-white/90 dark:bg-card-dark/90 backdrop-blur-md border border-border-light/60 dark:border-border-dark/60 shadow-xl rounded-full p-2 flex items-center justify-center">
           <div className={`p-2 rounded-full transition-all duration-200 ${isReadyToRelease || isRefreshing ? 'bg-primary text-white scale-110 shadow-md shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
             {isRefreshing ? (
               <RefreshCw size={18} className="animate-spin" />
@@ -128,10 +128,10 @@ export default function PullToRefresh({ children, onRefresh }: PullToRefreshProp
         </div>
       </div>
 
-      {/* Main App Content Wrapper with smooth transform offset */}
+      {/* Main App Content Wrapper */}
       <div 
         style={{
-          transform: `translateY(${pullDistance > 0 ? Math.min(pullDistance * 0.4, 35) : 0}px)`,
+          transform: pullDistance > 0 ? `translateY(${Math.min(pullDistance * 0.4, 35)}px)` : undefined,
           transition: isPullingRef.current ? 'none' : 'transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)'
         }}
       >
