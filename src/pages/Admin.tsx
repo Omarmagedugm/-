@@ -4503,7 +4503,7 @@ export default function Admin() {
                    {musicSubTab === 'songs' ? (
                      <>
                         <div>
-                          <label className="text-[10px] font-black text-slate-500 mb-1 block">عنوان الأغنية/الأهزوجة</label>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">عنوان الأغنية/التسجيل الصوتي</label>
                           <input type="text" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
                         </div>
                         <div>
@@ -4513,9 +4513,8 @@ export default function Admin() {
                         <div>
                           <label className="text-[10px] font-black text-slate-500 mb-1 block">التصنيف</label>
                           <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm font-bold" value={formData.category || 'chant'} onChange={(e) => setFormData({...formData, category: e.target.value})}>
-                             <option value="chant">أهزوجة مدرج</option>
-                             <option value="anthem">النشيد الرسمي</option>
-                             <option value="song">أغنية خاصة</option>
+                             <option value="song">أغاني</option>
+                             <option value="chant">تسجيلات صوتية</option>
                           </select>
                         </div>
                         <UploadOrUrlField label="رابط الملف الصوتي (MP3)" fieldName="audioUrl" currentUrl={formData.audioUrl} type="audio" formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />

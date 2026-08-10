@@ -119,7 +119,6 @@ export default function Library() {
   const [activeTab, setActiveTabState] = useState<TabType>(getTabFromParam(searchParams.get('tab')));
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
-  const [selectedSectionFilter, setSelectedSectionFilter] = useState<string>('all');
   
   // Modals state
   const [selectedBook, setSelectedBook] = useState<any | null>(null);
@@ -153,6 +152,7 @@ export default function Library() {
   const photoPlaylistsRef = React.useRef<HTMLDivElement>(null);
   const videoPlaylistsRef = React.useRef<HTMLDivElement>(null);
   const songCategoriesRef = React.useRef<HTMLDivElement>(null);
+  const albumsRef = React.useRef<HTMLDivElement>(null);
 
   const scrollHorizontally = (ref: React.RefObject<HTMLDivElement>, direction: 'left' | 'right') => {
     if (ref.current) {
@@ -249,164 +249,22 @@ export default function Library() {
     };
   }, []);
 
-  // Gather photos from ALL sections of the application
-  const mediaPhotos = media.filter(m => m.type === 'photo').map(m => ({
-    ...m,
-    sectionName: m.playlistId ? (mediaPlaylists.find(p => p.id === m.playlistId)?.title || 'معرض الصور والوسائط') : 'معرض الصور والوسائط'
-  }));
-
-  const newsPhotos = (news || [])
-    .filter(n => n.image && n.image.trim() !== '')
-    .map(n => ({
-      id: `news-${n.id}`,
-      title: n.title,
-      type: 'photo' as const,
-      url: n.image,
-      thumbnailUrl: n.image,
-      date: n.date || new Date().toISOString(),
-      likes: [],
-      sectionName: n.category ? `أخبار - ${n.category}` : 'الأخبار والتعاقدات'
-    }));
-
-  const fanPostPhotos = (fanPosts || [])
-    .filter(p => p.image && p.image.trim() !== '')
-    .map(p => ({
-      id: `fan-${p.id}`,
-      title: p.content ? (p.content.slice(0, 60) + (p.content.length > 60 ? '...' : '')) : (p.userName ? `تصوير: ${p.userName}` : 'منشور جماهيري'),
-      type: 'photo' as const,
-      url: p.image,
-      thumbnailUrl: p.image,
-      date: p.createdAt || new Date().toISOString(),
-      likes: Array.isArray(p.likes) ? p.likes : [],
-      sectionName: 'منطقة الجماهير'
-    }));
-
-  const stadiumPhotos = (stadiums || [])
-    .filter(s => (s.imageUrl || (s as any).image) && (s.imageUrl || (s as any).image).trim() !== '')
-    .map(s => ({
-      id: `stadium-${s.id}`,
-      title: s.name ? `${s.name} - ${s.type || 'ملعب النادي'}` : 'ملعب النادي',
-      type: 'photo' as const,
-      url: s.imageUrl || (s as any).image,
-      thumbnailUrl: s.imageUrl || (s as any).image,
-      date: new Date().toISOString(),
-      likes: [],
-      sectionName: 'الملاعب والاستادات'
-    }));
-
-  const historyPhotos = (historyEvents || [])
-    .filter(h => (h as any).image && (h as any).image.trim() !== '')
-    .map(h => ({
-      id: `history-${h.id}`,
-      title: h.title || 'حدث من تاريخ النادي',
-      type: 'photo' as const,
-      url: (h as any).image,
-      thumbnailUrl: (h as any).image,
-      date: (h as any).date || new Date().toISOString(),
-      likes: [],
-      sectionName: 'تاريخ النادي والأرشيف'
-    }));
-
-  const matchPhotos = (matches || [])
-    .filter(m => (m.stadiumImage || m.homeLogo || m.awayLogo) && (m.stadiumImage || m.homeLogo || m.awayLogo).trim() !== '')
-    .map(m => {
-      const img = m.stadiumImage || m.homeLogo;
-      return {
-        id: `match-${m.id}`,
-        title: `مباراة: ${m.homeTeam} ضد ${m.awayTeam} (${m.competition || 'كرة القدم'})`,
-        type: 'photo' as const,
-        url: img,
-        thumbnailUrl: img,
-        date: m.date || new Date().toISOString(),
-        likes: [],
-        sectionName: 'كرة القدم والمباريات'
-      };
+  // Photos strictly from Media section, sorted newest first
+  const mediaPhotos = media
+    .filter(m => m.type === 'photo')
+    .sort((a, b) => {
+      const timeA = a.date ? new Date(a.date).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+      const timeB = b.date ? new Date(b.date).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+      return timeB - timeA;
     });
 
-  const productPhotos = (products || [])
-    .filter(p => p.imageUrl && p.imageUrl.trim() !== '')
-    .map(p => ({
-      id: `product-${p.id}`,
-      title: `متجر النادي: ${p.name}`,
-      type: 'photo' as const,
-      url: p.imageUrl,
-      thumbnailUrl: p.imageUrl,
-      date: new Date().toISOString(),
-      likes: [],
-      sectionName: 'متجر النادي والمنتجات'
-    }));
-
-  const adPhotos = (ads || [])
-    .filter(a => a.image && a.image.trim() !== '')
-    .map(a => ({
-      id: `ad-${a.id}`,
-      title: a.title || 'رعاية النادي وإعلانات',
-      type: 'photo' as const,
-      url: a.image,
-      thumbnailUrl: a.image,
-      date: a.createdAt || new Date().toISOString(),
-      likes: [],
-      sectionName: 'الرعاة والإعلانات'
-    }));
-
-  const albumPhotos = (albums || [])
-    .filter(a => a.coverUrl && a.coverUrl.trim() !== '')
-    .map(a => ({
-      id: `album-${a.id}`,
-      title: `ألبوم: ${a.title} - ${a.artist}`,
-      type: 'photo' as const,
-      url: a.coverUrl,
-      thumbnailUrl: a.coverUrl,
-      date: a.year || new Date().toISOString(),
-      likes: [],
-      sectionName: 'ألبومات الصوتيات'
-    }));
-
-  const bookPhotos = (books || [])
-    .filter(b => b.coverUrl && b.coverUrl.trim() !== '')
-    .map(b => ({
-      id: `book-${b.id}`,
-      title: `غلاف كتاب: ${b.title}`,
-      type: 'photo' as const,
-      url: b.coverUrl,
-      thumbnailUrl: b.coverUrl,
-      date: new Date().toISOString(),
-      likes: [],
-      sectionName: 'المكتبة والكتب'
-    }));
-
-  // Combine and deduplicate
-  const existingImageUrls = new Set<string>();
-  const combinedPhotos: any[] = [];
-
-  [
-    ...mediaPhotos,
-    ...newsPhotos, 
-    ...matchPhotos,
-    ...historyPhotos,
-    ...fanPostPhotos, 
-    ...stadiumPhotos, 
-    ...productPhotos, 
-    ...adPhotos, 
-    ...albumPhotos, 
-    ...bookPhotos
-  ].forEach(item => {
-    const url = item.thumbnailUrl || item.url;
-    if (url && !existingImageUrls.has(url)) {
-      existingImageUrls.add(url);
-      combinedPhotos.push(item);
-    }
-  });
-
-  // Filter based on playlist selection, section category, or search query
-  const photos = combinedPhotos.filter(m => {
-    if (selectedPlaylistId && (m as any).playlistId !== selectedPlaylistId) return false;
-    if (selectedSectionFilter !== 'all' && (m as any).sectionName !== selectedSectionFilter) return false;
+  // Filter based on playlist selection or search query
+  const photos = mediaPhotos.filter(m => {
+    if (selectedPlaylistId && m.playlistId !== selectedPlaylistId) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const matchTitle = m.title?.toLowerCase().includes(q);
-      const matchSec = (m as any).sectionName?.toLowerCase().includes(q);
-      if (!matchTitle && !matchSec) return false;
+      if (!matchTitle) return false;
     }
     return true;
   });
@@ -592,7 +450,7 @@ export default function Library() {
               { 
                 id: 'songs', 
                 label: 'الأغاني والأناشيد', 
-                desc: 'النشيد الرسمي والأهازيج', 
+                desc: 'الأغاني والتسجيلات الصوتية', 
                 icon: Music, 
                 badge: `${songs.length} صوتيات`,
                 color: 'from-rose-500/20 to-rose-600/10 text-rose-600 dark:text-rose-400'
@@ -739,57 +597,6 @@ export default function Library() {
                 )}
 
 
-
-                {/* Section Filter Pills */}
-                <div className="space-y-2 my-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-black text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                      <Sliders size={14} className="text-primary" />
-                      <span>تصفية صور التطبيق حسب القسم ({combinedPhotos.length} صورة)</span>
-                    </h3>
-                    {selectedSectionFilter !== 'all' && (
-                      <button 
-                        onClick={() => setSelectedSectionFilter('all')}
-                        className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1"
-                      >
-                        <X size={12} /> إظهار جميع الأقسام
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 pt-1 w-full">
-                    <button
-                      onClick={() => setSelectedSectionFilter('all')}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-black shrink-0 transition-all ${
-                        selectedSectionFilter === 'all' 
-                          ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md' 
-                          : 'bg-white dark:bg-card-dark text-slate-600 dark:text-slate-300 border border-border-light dark:border-border-dark hover:bg-slate-100'
-                      }`}
-                    >
-                      الكل ({combinedPhotos.length})
-                    </button>
-                    {Array.from(new Set(combinedPhotos.map(p => (p as any).sectionName || 'عام'))).map((section) => {
-                      const count = combinedPhotos.filter(p => (p as any).sectionName === section).length;
-                      return (
-                        <button
-                          key={section}
-                          onClick={() => setSelectedSectionFilter(section)}
-                          className={`px-3.5 py-1.5 rounded-xl text-xs font-black shrink-0 transition-all flex items-center gap-1.5 ${
-                            selectedSectionFilter === section
-                              ? 'bg-primary text-white shadow-md'
-                              : 'bg-white dark:bg-card-dark text-slate-600 dark:text-slate-300 border border-border-light dark:border-border-dark hover:bg-slate-100'
-                          }`}
-                        >
-                          <span>{section}</span>
-                          <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-                            selectedSectionFilter === section ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-surface-dark text-slate-500 dark:text-slate-400'
-                          }`}>
-                            {count}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
 
                 {/* Featured Photo Hero Card */}
                 {featuredPhoto && (
@@ -1131,36 +938,57 @@ export default function Library() {
                       </h2>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-                      {albums.map((album) => (
-                        <motion.div 
-                          key={album.id}
-                          whileHover={{ y: -4 }}
-                          className="group bg-white dark:bg-card-dark p-3.5 rounded-3xl border border-border-light dark:border-border-dark shadow-sm hover:shadow-xl transition-all"
-                        >
-                          <div className="aspect-square rounded-2xl overflow-hidden mb-3 relative bg-slate-100 dark:bg-surface-dark">
-                            {album.coverUrl && album.coverUrl.trim() !== '' ? (
-                              <img 
-                                src={album.coverUrl} 
-                                alt={album.title}
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                                referrerPolicy="no-referrer" 
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Disc size={40} className="text-slate-300" />
+                    <div className="relative flex items-center group/albums">
+                      <button
+                        type="button"
+                        onClick={() => scrollHorizontally(albumsRef, 'right')}
+                        className="absolute -right-2 z-10 w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-900 text-white flex items-center justify-center shadow-md transition-all active:scale-90"
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+
+                      <div 
+                        ref={albumsRef} 
+                        className="flex items-center gap-4 overflow-x-auto no-scrollbar pb-2 px-2 scroll-smooth w-full"
+                      >
+                        {albums.map((album) => (
+                          <motion.div 
+                            key={album.id}
+                            whileHover={{ y: -4 }}
+                            className="group bg-white dark:bg-card-dark p-3.5 rounded-3xl border border-border-light dark:border-border-dark shadow-sm hover:shadow-xl transition-all shrink-0 w-44 sm:w-52"
+                          >
+                            <div className="aspect-square rounded-2xl overflow-hidden mb-3 relative bg-slate-100 dark:bg-surface-dark">
+                              {album.coverUrl && album.coverUrl.trim() !== '' ? (
+                                <img 
+                                  src={album.coverUrl} 
+                                  alt={album.title}
+                                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                                  referrerPolicy="no-referrer" 
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Disc size={40} className="text-slate-300" />
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <button className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all">
+                                  <Play fill="currentColor" size={20} className="mr-0.5" />
+                                </button>
                               </div>
-                            )}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <button className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all">
-                                <Play fill="currentColor" size={20} className="mr-0.5" />
-                              </button>
                             </div>
-                          </div>
-                          <h3 className="font-black text-xs md:text-sm truncate text-slate-800 dark:text-white">{album.title}</h3>
-                          <p className="text-[10px] text-slate-400 font-bold">{album.artist} {album.year ? `• ${album.year}` : ''}</p>
-                        </motion.div>
-                      ))}
+                            <h3 className="font-black text-xs md:text-sm truncate text-slate-800 dark:text-white">{album.title}</h3>
+                            <p className="text-[10px] text-slate-400 font-bold">{album.artist} {album.year ? `• ${album.year}` : ''}</p>
+                          </motion.div>
+                        ))}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => scrollHorizontally(albumsRef, 'left')}
+                        className="absolute -left-2 z-10 w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-900 text-white flex items-center justify-center shadow-md transition-all active:scale-90"
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
                     </div>
                   </section>
                 )}
@@ -1176,9 +1004,8 @@ export default function Library() {
                     <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
                       {[
                         { id: 'all', label: 'الكل' },
-                        { id: 'anthem', label: 'النشيد الرسمي' },
-                        { id: 'chant', label: 'أهزوجة' },
-                        { id: 'song', label: 'أغنية' }
+                        { id: 'song', label: 'أغاني' },
+                        { id: 'chant', label: 'تسجيلات صوتية' }
                       ].map(cat => (
                         <button 
                           key={cat.id}
