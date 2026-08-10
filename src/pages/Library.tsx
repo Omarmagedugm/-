@@ -16,6 +16,7 @@ import {
   Library as LibraryIcon,
   Book as BookIcon,
   Maximize2,
+  Minimize2,
   X,
   Image as ImageIcon,
   Video,
@@ -26,7 +27,13 @@ import {
   Radio,
   Layers,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  ExternalLink,
+  Sliders,
+  FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -85,6 +92,10 @@ export default function Library() {
     fanPosts,
     stadiums,
     historyEvents,
+    matches,
+    products,
+    ads,
+    clubs,
     currentSong, 
     setCurrentSong, 
     setIsPlaying, 
@@ -108,12 +119,31 @@ export default function Library() {
   const [activeTab, setActiveTabState] = useState<TabType>(getTabFromParam(searchParams.get('tab')));
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+  const [selectedSectionFilter, setSelectedSectionFilter] = useState<string>('all');
   
   // Modals state
   const [selectedBook, setSelectedBook] = useState<any | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
   const [isBookLoading, setIsBookLoading] = useState(true);
+
+  // Book reader enhanced controls state
+  const [bookPage, setBookPage] = useState<number>(1);
+  const [bookZoom, setBookZoom] = useState<number>(100);
+  const [bookViewMode, setBookViewMode] = useState<'fit-width' | 'fit-height' | 'single'>('fit-width');
+  const [bookPageInput, setBookPageInput] = useState<string>('1');
+  const [isFullscreenBook, setIsFullscreenBook] = useState<boolean>(false);
+
+  // Reset book reader state when a book is selected
+  const handleOpenBook = (book: any) => {
+    setSelectedBook(book);
+    setBookPage(1);
+    setBookPageInput('1');
+    setBookZoom(100);
+    setBookViewMode('fit-width');
+    setIsBookLoading(true);
+    setIsFullscreenBook(false);
+  };
 
   // Filters
   const [songFilterCategory, setSongFilterCategory] = useState<string>('all');
@@ -219,8 +249,11 @@ export default function Library() {
     };
   }, []);
 
-  // Gather photos from all sections of the application
-  const mediaPhotos = media.filter(m => m.type === 'photo');
+  // Gather photos from ALL sections of the application
+  const mediaPhotos = media.filter(m => m.type === 'photo').map(m => ({
+    ...m,
+    sectionName: m.playlistId ? (mediaPlaylists.find(p => p.id === m.playlistId)?.title || 'معرض الصور والوسائط') : 'معرض الصور والوسائط'
+  }));
 
   const newsPhotos = (news || [])
     .filter(n => n.image && n.image.trim() !== '')
@@ -232,7 +265,7 @@ export default function Library() {
       thumbnailUrl: n.image,
       date: n.date || new Date().toISOString(),
       likes: [],
-      sectionName: 'الأخبار'
+      sectionName: n.category ? `أخبار - ${n.category}` : 'الأخبار والتعاقدات'
     }));
 
   const fanPostPhotos = (fanPosts || [])
@@ -271,25 +304,112 @@ export default function Library() {
       thumbnailUrl: (h as any).image,
       date: (h as any).date || new Date().toISOString(),
       likes: [],
-      sectionName: 'تاريخ النادي'
+      sectionName: 'تاريخ النادي والأرشيف'
+    }));
+
+  const matchPhotos = (matches || [])
+    .filter(m => (m.stadiumImage || m.homeLogo || m.awayLogo) && (m.stadiumImage || m.homeLogo || m.awayLogo).trim() !== '')
+    .map(m => {
+      const img = m.stadiumImage || m.homeLogo;
+      return {
+        id: `match-${m.id}`,
+        title: `مباراة: ${m.homeTeam} ضد ${m.awayTeam} (${m.competition || 'كرة القدم'})`,
+        type: 'photo' as const,
+        url: img,
+        thumbnailUrl: img,
+        date: m.date || new Date().toISOString(),
+        likes: [],
+        sectionName: 'كرة القدم والمباريات'
+      };
+    });
+
+  const productPhotos = (products || [])
+    .filter(p => p.imageUrl && p.imageUrl.trim() !== '')
+    .map(p => ({
+      id: `product-${p.id}`,
+      title: `متجر النادي: ${p.name}`,
+      type: 'photo' as const,
+      url: p.imageUrl,
+      thumbnailUrl: p.imageUrl,
+      date: new Date().toISOString(),
+      likes: [],
+      sectionName: 'متجر النادي والمنتجات'
+    }));
+
+  const adPhotos = (ads || [])
+    .filter(a => a.image && a.image.trim() !== '')
+    .map(a => ({
+      id: `ad-${a.id}`,
+      title: a.title || 'رعاية النادي وإعلانات',
+      type: 'photo' as const,
+      url: a.image,
+      thumbnailUrl: a.image,
+      date: a.createdAt || new Date().toISOString(),
+      likes: [],
+      sectionName: 'الرعاة والإعلانات'
+    }));
+
+  const albumPhotos = (albums || [])
+    .filter(a => a.coverUrl && a.coverUrl.trim() !== '')
+    .map(a => ({
+      id: `album-${a.id}`,
+      title: `ألبوم: ${a.title} - ${a.artist}`,
+      type: 'photo' as const,
+      url: a.coverUrl,
+      thumbnailUrl: a.coverUrl,
+      date: a.year || new Date().toISOString(),
+      likes: [],
+      sectionName: 'ألبومات الصوتيات'
+    }));
+
+  const bookPhotos = (books || [])
+    .filter(b => b.coverUrl && b.coverUrl.trim() !== '')
+    .map(b => ({
+      id: `book-${b.id}`,
+      title: `غلاف كتاب: ${b.title}`,
+      type: 'photo' as const,
+      url: b.coverUrl,
+      thumbnailUrl: b.coverUrl,
+      date: new Date().toISOString(),
+      likes: [],
+      sectionName: 'المكتبة والكتب'
     }));
 
   // Combine and deduplicate
-  const existingImageUrls = new Set(mediaPhotos.map(m => m.thumbnailUrl || m.url));
-  const combinedPhotos = [...mediaPhotos];
+  const existingImageUrls = new Set<string>();
+  const combinedPhotos: any[] = [];
 
-  [...newsPhotos, ...fanPostPhotos, ...stadiumPhotos, ...historyPhotos].forEach(item => {
-    if (item.url && !existingImageUrls.has(item.url)) {
-      existingImageUrls.add(item.url);
-      combinedPhotos.push(item as any);
+  [
+    ...mediaPhotos,
+    ...newsPhotos, 
+    ...matchPhotos,
+    ...historyPhotos,
+    ...fanPostPhotos, 
+    ...stadiumPhotos, 
+    ...productPhotos, 
+    ...adPhotos, 
+    ...albumPhotos, 
+    ...bookPhotos
+  ].forEach(item => {
+    const url = item.thumbnailUrl || item.url;
+    if (url && !existingImageUrls.has(url)) {
+      existingImageUrls.add(url);
+      combinedPhotos.push(item);
     }
   });
 
-  // Filter based on playlist selection or search query
-  const photos = (selectedPlaylistId 
-    ? mediaPhotos.filter(m => m.playlistId === selectedPlaylistId)
-    : combinedPhotos
-  ).filter(m => !searchQuery || m.title?.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Filter based on playlist selection, section category, or search query
+  const photos = combinedPhotos.filter(m => {
+    if (selectedPlaylistId && (m as any).playlistId !== selectedPlaylistId) return false;
+    if (selectedSectionFilter !== 'all' && (m as any).sectionName !== selectedSectionFilter) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchTitle = m.title?.toLowerCase().includes(q);
+      const matchSec = (m as any).sectionName?.toLowerCase().includes(q);
+      if (!matchTitle && !matchSec) return false;
+    }
+    return true;
+  });
 
   const videos = media.filter(m => 
     m.type === 'video' && 
@@ -617,6 +737,59 @@ export default function Library() {
                     </div>
                   </div>
                 )}
+
+
+
+                {/* Section Filter Pills */}
+                <div className="space-y-2 my-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-black text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                      <Sliders size={14} className="text-primary" />
+                      <span>تصفية صور التطبيق حسب القسم ({combinedPhotos.length} صورة)</span>
+                    </h3>
+                    {selectedSectionFilter !== 'all' && (
+                      <button 
+                        onClick={() => setSelectedSectionFilter('all')}
+                        className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1"
+                      >
+                        <X size={12} /> إظهار جميع الأقسام
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 pt-1 w-full">
+                    <button
+                      onClick={() => setSelectedSectionFilter('all')}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-black shrink-0 transition-all ${
+                        selectedSectionFilter === 'all' 
+                          ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md' 
+                          : 'bg-white dark:bg-card-dark text-slate-600 dark:text-slate-300 border border-border-light dark:border-border-dark hover:bg-slate-100'
+                      }`}
+                    >
+                      الكل ({combinedPhotos.length})
+                    </button>
+                    {Array.from(new Set(combinedPhotos.map(p => (p as any).sectionName || 'عام'))).map((section) => {
+                      const count = combinedPhotos.filter(p => (p as any).sectionName === section).length;
+                      return (
+                        <button
+                          key={section}
+                          onClick={() => setSelectedSectionFilter(section)}
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-black shrink-0 transition-all flex items-center gap-1.5 ${
+                            selectedSectionFilter === section
+                              ? 'bg-primary text-white shadow-md'
+                              : 'bg-white dark:bg-card-dark text-slate-600 dark:text-slate-300 border border-border-light dark:border-border-dark hover:bg-slate-100'
+                          }`}
+                        >
+                          <span>{section}</span>
+                          <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                            selectedSectionFilter === section ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-surface-dark text-slate-500 dark:text-slate-400'
+                          }`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 {/* Featured Photo Hero Card */}
                 {featuredPhoto && (
@@ -1136,7 +1309,7 @@ export default function Library() {
                         )}
                         <h3 className="text-white text-sm font-black leading-snug mb-3 line-clamp-2">{book.title}</h3>
                         <button 
-                          onClick={() => setSelectedBook(book)}
+                          onClick={() => handleOpenBook(book)}
                           className="w-full bg-white text-primary py-2.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-lg"
                         >
                           <BookIcon size={16} />
@@ -1174,7 +1347,7 @@ export default function Library() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSelectedPhoto(null)}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 cursor-pointer"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 pt-[max(2.5rem,env(safe-area-inset-top))] cursor-pointer"
           >
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
@@ -1239,7 +1412,7 @@ export default function Library() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSelectedVideo(null)}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 cursor-pointer"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 pt-[max(2.5rem,env(safe-area-inset-top))] cursor-pointer"
           >
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
@@ -1314,80 +1487,276 @@ export default function Library() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-2 md:p-6"
+            className={`fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-2 pt-[max(2.5rem,env(safe-area-inset-top))] ${
+              isFullscreenBook ? 'p-0 pt-0' : 'sm:p-4 md:p-6'
+            }`}
           >
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full h-full max-w-6xl bg-white dark:bg-background-dark rounded-3xl overflow-hidden shadow-2xl flex flex-col"
+              className={`relative w-full h-full bg-white dark:bg-background-dark overflow-hidden shadow-2xl flex flex-col ${
+                isFullscreenBook ? 'rounded-none max-w-none' : 'max-w-6xl rounded-3xl'
+              }`}
             >
-              <div className="p-4 md:p-5 border-b border-border-light dark:border-border-dark flex items-center justify-between bg-white dark:bg-surface-dark">
-                <div className="flex items-center gap-3">
+              {/* Modal Header */}
+              <div className="p-3 sm:p-4 border-b border-border-light dark:border-border-dark flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-surface-dark shrink-0">
+                <div className="flex items-center gap-3 min-w-0">
                   {selectedBook.coverUrl && selectedBook.coverUrl.trim() !== '' ? (
-                    <img src={selectedBook.coverUrl} className="w-10 h-10 rounded-xl object-cover shadow-sm" referrerPolicy="no-referrer" alt="" />
+                    <img src={selectedBook.coverUrl} className="w-10 h-10 rounded-xl object-cover shadow-sm shrink-0" referrerPolicy="no-referrer" alt="" />
                   ) : (
-                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-card-dark flex items-center justify-center shadow-sm shrink-0">
                       <BookOpen size={18} className="text-slate-400" />
                     </div>
                   )}
-                  <div>
-                    <h3 className="font-black text-sm md:text-base text-slate-800 dark:text-white">{selectedBook.title}</h3>
-                    <p className="text-xs text-slate-400 font-bold">{selectedBook.author}</p>
+                  <div className="min-w-0">
+                    <h3 className="font-black text-sm md:text-base text-slate-800 dark:text-white truncate">{selectedBook.title}</h3>
+                    <p className="text-xs text-slate-400 font-bold truncate">{selectedBook.author}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                {/* Header Actions */}
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <button 
+                    onClick={() => setIsFullscreenBook(!isFullscreenBook)}
+                    title={isFullscreenBook ? 'خروج من ملء الشاشة' : 'ملء الشاشة'}
+                    className="p-2 bg-slate-100 dark:bg-card-dark hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition-all"
+                  >
+                    {isFullscreenBook ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                  </button>
+
                   {selectedBook.pdfUrl && (
-                    <button 
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = selectedBook.pdfUrl;
-                        link.target = '_blank';
-                        link.download = `${selectedBook.title}.pdf`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
-                      className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 dark:bg-background-dark rounded-xl text-xs font-black text-slate-700 dark:text-slate-200 hover:bg-slate-200 transition-all"
-                    >
-                      <Download size={14} />
-                      <span className="hidden sm:inline">تحميل PDF</span>
-                    </button>
+                    <>
+                      <a 
+                        href={selectedBook.pdfUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="فتح في نافذة جديدة"
+                        className="p-2 bg-slate-100 dark:bg-card-dark hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition-all hidden sm:flex items-center justify-center"
+                      >
+                        <ExternalLink size={16} />
+                      </a>
+                      <button 
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = selectedBook.pdfUrl;
+                          link.target = '_blank';
+                          link.download = `${selectedBook.title}.pdf`;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl text-xs font-black transition-all"
+                      >
+                        <Download size={14} />
+                        <span className="hidden sm:inline">تحميل</span>
+                      </button>
+                    </>
                   )}
                   <button 
-                    onClick={() => { setSelectedBook(null); setIsBookLoading(true); }}
-                    className="p-2.5 bg-slate-100 dark:bg-background-dark hover:bg-red-500 hover:text-white text-slate-500 rounded-xl transition-all"
+                    onClick={() => { setSelectedBook(null); setIsBookLoading(true); setIsFullscreenBook(false); }}
+                    className="p-2 bg-slate-100 dark:bg-card-dark hover:bg-red-500 hover:text-white text-slate-500 rounded-xl transition-all"
                   >
                     <X size={18} />
                   </button>
                 </div>
               </div>
+
+              {/* Reader Controls Toolbar Bar */}
+              <div className="px-3 py-2 bg-slate-100/90 dark:bg-slate-900/90 border-b border-border-light dark:border-border-dark flex flex-wrap items-center justify-between gap-2 text-xs font-bold shrink-0">
+                {/* Page Navigation & Flip Controls */}
+                <div className="flex items-center gap-1.5 bg-white dark:bg-surface-dark px-2.5 py-1 rounded-2xl border border-border-light dark:border-border-dark shadow-sm">
+                  <button
+                    onClick={() => {
+                      const nextP = Math.max(1, bookPage - 1);
+                      setBookPage(nextP);
+                      setBookPageInput(String(nextP));
+                    }}
+                    disabled={bookPage <= 1}
+                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-card-dark disabled:opacity-30 rounded-lg text-slate-700 dark:text-slate-200 flex items-center gap-1 transition-all"
+                    title="الصفحة السابقة"
+                  >
+                    <ChevronRight size={16} />
+                    <span className="hidden md:inline text-[11px] font-black">السابقة</span>
+                  </button>
+
+                  <div className="flex items-center gap-1 px-1">
+                    <span className="text-[11px] font-black text-slate-400">صفحة</span>
+                    <input 
+                      type="number"
+                      min={1}
+                      max={999}
+                      value={bookPageInput}
+                      onChange={(e) => setBookPageInput(e.target.value)}
+                      onBlur={() => {
+                        const parsed = parseInt(bookPageInput, 10);
+                        if (!isNaN(parsed) && parsed > 0) {
+                          setBookPage(parsed);
+                        } else {
+                          setBookPageInput(String(bookPage));
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const parsed = parseInt(bookPageInput, 10);
+                          if (!isNaN(parsed) && parsed > 0) {
+                            setBookPage(parsed);
+                          }
+                        }
+                      }}
+                      className="w-12 text-center py-0.5 px-1 bg-slate-100 dark:bg-card-dark text-slate-900 dark:text-white rounded-lg border border-border-light dark:border-border-dark font-black text-xs outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                    <button 
+                      onClick={() => {
+                        const parsed = parseInt(bookPageInput, 10);
+                        if (!isNaN(parsed) && parsed > 0) setBookPage(parsed);
+                      }}
+                      className="px-2 py-1 bg-primary text-white rounded-lg text-[10px] font-black hover:bg-primary-dark transition-all"
+                    >
+                      انتقال
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const nextP = bookPage + 1;
+                      setBookPage(nextP);
+                      setBookPageInput(String(nextP));
+                    }}
+                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-card-dark rounded-lg text-slate-700 dark:text-slate-200 flex items-center gap-1 transition-all"
+                    title="الصفحة التالية"
+                  >
+                    <span className="hidden md:inline text-[11px] font-black">التالية</span>
+                    <ChevronLeft size={16} />
+                  </button>
+                </div>
+
+                {/* Zoom Controls */}
+                <div className="flex items-center gap-1.5 bg-white dark:bg-surface-dark px-2.5 py-1 rounded-2xl border border-border-light dark:border-border-dark shadow-sm">
+                  <button 
+                    onClick={() => setBookZoom(z => Math.max(50, z - 20))}
+                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-card-dark rounded-lg text-slate-700 dark:text-slate-200 transition-all"
+                    title="تصغير"
+                  >
+                    <ZoomOut size={15} />
+                  </button>
+
+                  <span className="text-[11px] font-black px-2 py-0.5 bg-slate-100 dark:bg-card-dark text-slate-800 dark:text-slate-200 rounded-lg min-w-[42px] text-center">
+                    {bookZoom}%
+                  </span>
+
+                  <button 
+                    onClick={() => setBookZoom(z => Math.min(250, z + 20))}
+                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-card-dark rounded-lg text-slate-700 dark:text-slate-200 transition-all"
+                    title="تكبير"
+                  >
+                    <ZoomIn size={15} />
+                  </button>
+
+                  <button 
+                    onClick={() => setBookZoom(100)}
+                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-card-dark rounded-lg text-slate-500 hover:text-primary transition-all"
+                    title="إعادة ضبط الحجم 100%"
+                  >
+                    <RotateCcw size={13} />
+                  </button>
+                </div>
+
+                {/* View Mode Controls */}
+                <div className="flex items-center gap-1 bg-white dark:bg-surface-dark p-1 rounded-2xl border border-border-light dark:border-border-dark shadow-sm">
+                  <button
+                    onClick={() => setBookViewMode('fit-width')}
+                    className={`px-2.5 py-1 rounded-xl text-[10px] font-black transition-all ${
+                      bookViewMode === 'fit-width' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-card-dark'
+                    }`}
+                  >
+                    احتواء العرض
+                  </button>
+                  <button
+                    onClick={() => setBookViewMode('fit-height')}
+                    className={`px-2.5 py-1 rounded-xl text-[10px] font-black transition-all ${
+                      bookViewMode === 'fit-height' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-card-dark'
+                    }`}
+                  >
+                    ملء الصفحة
+                  </button>
+                </div>
+              </div>
               
-              <div className="flex-1 bg-slate-800 relative">
+              {/* Book Viewer Canvas */}
+              <div className="flex-1 bg-slate-900 relative overflow-auto flex items-center justify-center p-2 sm:p-4">
                 {isBookLoading && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800 z-10 text-center p-4">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/95 z-20 text-center p-4 backdrop-blur-sm">
                     <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <p className="text-white font-black text-xs animate-pulse">جاري تحميل الصفحات...</p>
+                    <p className="text-white font-black text-xs animate-pulse">جاري تحميل الكتاب والصفحات...</p>
                   </div>
                 )}
-                {selectedBook.pdfUrl?.includes('drive.google.com') ? (
-                  <iframe 
-                    src={selectedBook.pdfUrl.replace('/view', '/preview') || undefined} 
-                    className="w-full h-full border-none"
-                    title="book-reader"
-                    allow="autoplay"
-                    onLoad={() => setIsBookLoading(false)}
-                    loading="lazy"
-                  />
-                ) : (
-                  <iframe 
-                    src={selectedBook.pdfUrl || undefined} 
-                    className="w-full h-full border-none"
-                    title="book-reader"
-                    onLoad={() => setIsBookLoading(false)}
-                    loading="lazy"
-                  />
-                )}
+
+                {/* Floating Side Page Flipping Controls */}
+                <button
+                  onClick={() => {
+                    const nextP = Math.max(1, bookPage - 1);
+                    setBookPage(nextP);
+                    setBookPageInput(String(nextP));
+                  }}
+                  disabled={bookPage <= 1}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-black/70 hover:bg-primary text-white flex items-center justify-center shadow-2xl backdrop-blur-md border border-white/20 transition-all disabled:opacity-20 disabled:hover:bg-black/70 active:scale-90"
+                  title="الصفحة السابقة"
+                >
+                  <ChevronRight size={24} />
+                </button>
+
+                <button
+                  onClick={() => {
+                    const nextP = bookPage + 1;
+                    setBookPage(nextP);
+                    setBookPageInput(String(nextP));
+                  }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-black/70 hover:bg-primary text-white flex items-center justify-center shadow-2xl backdrop-blur-md border border-white/20 transition-all active:scale-90"
+                  title="الصفحة التالية"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+
+                {/* Floating Bottom Page Bar */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 px-4 py-1.5 bg-black/80 backdrop-blur-md border border-white/20 rounded-full text-white text-xs font-black shadow-xl flex items-center gap-3">
+                  <span className="text-amber-400">الصفحة {bookPage}</span>
+                  <span className="text-slate-500">|</span>
+                  <span className="text-slate-300">التقريب {bookZoom}%</span>
+                </div>
+
+                {/* PDF Frame */}
+                <div 
+                  className={`w-full h-full flex justify-center transition-all duration-200 ${
+                    bookViewMode === 'fit-width' ? 'items-start' : 'items-center'
+                  }`}
+                  style={{
+                    transform: `scale(${bookZoom / 100})`,
+                    transformOrigin: 'top center'
+                  }}
+                >
+                  {selectedBook.pdfUrl ? (
+                    <iframe 
+                      key={`book-frame-p${bookPage}-z${bookZoom}-${selectedBook.id}`}
+                      src={
+                        selectedBook.pdfUrl.includes('drive.google.com')
+                          ? `${selectedBook.pdfUrl.replace('/view', '/preview')}#page=${bookPage}&zoom=${bookZoom}`
+                          : `${selectedBook.pdfUrl}#page=${bookPage}&zoom=${bookZoom}`
+                      } 
+                      className={`w-full h-full border-none rounded-xl shadow-2xl bg-white ${
+                        bookViewMode === 'fit-height' ? 'max-h-[85vh]' : 'min-h-[500px]'
+                      }`}
+                      title="book-reader"
+                      allow="autoplay"
+                      onLoad={() => setIsBookLoading(false)}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="text-center p-8 text-slate-400 font-bold">
+                      لا يتوفر رابط لمستند الكتاب
+                    </div>
+                  )}
+                </div>
               </div>
             </motion.div>
           </motion.div>
