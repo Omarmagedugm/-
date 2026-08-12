@@ -8,7 +8,8 @@ export function useFirestoreSync() {
     setNews, setMedia, setMatches, setClubs, setPolls, setPredictions, setFanPosts,
     setUsers, setSettings, setAiConfig, updateLiveStream, updateLiveStreams, updateProfile, setCityInfo, setAds, setCustomPages,
     setNewsCategories, setNewsTags, setHomeSections, setProducts, setSongs, setAlbums, setPlaylists, setMediaPlaylists, setBooks,
-    setClubStats, setClubTitles, setHistoryEvents, setStadiums, setDataLoaded, setOrders
+    setClubStats, setClubTitles, setHistoryEvents, setStadiums, setDataLoaded, setOrders,
+    setClubCommittees, setClubAnnouncements, setClubServices, setClubTrips, setClubMembersSettings
   } = useAppStore();
 
   const isFetchedRef = useRef(false);
@@ -93,6 +94,11 @@ export function useFirestoreSync() {
       unsubs.push(onSnapshot(collection(db, 'club_stats'), s => setClubStats(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Club stats sync failed', err)));
       unsubs.push(onSnapshot(collection(db, 'club_stadiums'), s => setStadiums(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Stadiums sync failed', err)));
       unsubs.push(onSnapshot(collection(db, 'club_timeline'), s => setHistoryEvents(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('History events sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'club_committees'), s => setClubCommittees(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Club committees sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'club_announcements'), s => setClubAnnouncements(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Club announcements sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'club_services'), s => setClubServices(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Club services sync failed', err)));
+      unsubs.push(onSnapshot(collection(db, 'club_trips'), s => setClubTrips(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Club trips sync failed', err)));
+      unsubs.push(onSnapshot(doc(db, 'club_members_settings', 'main'), s => { if (s.exists()) setClubMembersSettings({ id: s.id, ...(s.data() as any) }); }, err => console.warn('Club members settings sync failed', err)));
 
       // Add common unsubs
       unsubs.push(unsubLiveFootball, unsubLiveBasketball, unsubMatches, unsubNews, unsubMedia, unsubLayout);

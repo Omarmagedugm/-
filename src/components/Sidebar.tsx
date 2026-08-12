@@ -134,6 +134,14 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                 </Link>
               )}
 
+              <Link to="/club-members" onClick={onClose} className="flex items-center justify-between p-3.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-slate-800 dark:text-white transition-colors pressable border border-amber-500/30">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck size={20} className="text-amber-500" />
+                  <span className="text-sm font-black">أعضاء النادي</span>
+                </div>
+                <span className="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black rounded-full uppercase">الخدمات</span>
+              </Link>
+
               <Link to="/library" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
                 <span className="material-symbols-outlined !text-[20px]">perm_media</span>
                 <span className="text-sm font-bold">المكتبة الرقمية والوسائط</span>

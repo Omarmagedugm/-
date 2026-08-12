@@ -284,6 +284,93 @@
         "active": { "type": "boolean" },
         "createdAt": { "type": "string" }
       }
+    },
+    "ClubCommittee": {
+      "title": "Club Committee",
+      "description": "Social club committee",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "president": { "type": "string" },
+        "vicePresident": { "type": "string" },
+        "icon": { "type": "string" },
+        "image": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "order": { "type": "number" }
+      }
+    },
+    "ClubAnnouncement": {
+      "title": "Club Announcement",
+      "description": "Digital notice board announcement for club members",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "image": { "type": "string" },
+        "category": { "type": "string" },
+        "priority": { "type": "string", "enum": ["urgent", "important", "normal"] },
+        "committeeId": { "type": "string" },
+        "pinned": { "type": "boolean" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "validUntil": { "type": "string" }
+      }
+    },
+    "ClubService": {
+      "title": "Club Service",
+      "description": "Social club service for members",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "location": { "type": "string" },
+        "workingHours": { "type": "string" },
+        "phone": { "type": "string" },
+        "requirements": { "type": "string" },
+        "image": { "type": "string" },
+        "active": { "type": "boolean" },
+        "order": { "type": "number" }
+      }
+    },
+    "ClubMembersSettings": {
+      "title": "Club Members Settings",
+      "description": "General settings for club members section",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "phoneHotline": { "type": "string" },
+        "workingHours": { "type": "string" },
+        "memberNotice": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "ClubTrip": {
+      "title": "Club Trip",
+      "description": "Social club organized trip and excursion for members",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "destination": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "priceMember": { "type": "number" },
+        "priceNonMember": { "type": "number" },
+        "features": { "type": "string" },
+        "requirements": { "type": "string" },
+        "maxParticipants": { "type": "number" },
+        "image": { "type": "string" },
+        "status": { "type": "string", "enum": ["upcoming", "ongoing", "completed", "cancelled"] },
+        "active": { "type": "boolean" },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string" }
+      }
     }
   },
   "firestore": {
@@ -306,6 +393,11 @@
     "custom_pages": { "schema": "CustomPage", "description": "Custom HTML pages" },
     "jerseys": { "schema": "Jerseys", "description": "Club jerseys for AI try-on" },
     "ai_usage": { "schema": "object", "description": "AI usage quota tracking" },
-    "ai_generation_logs": { "schema": "object", "description": "AI generation history" }
+    "ai_generation_logs": { "schema": "object", "description": "AI generation history" },
+    "club_committees": { "schema": "ClubCommittee", "description": "Social club committees" },
+    "club_announcements": { "schema": "ClubAnnouncement", "description": "Member announcements and notice board" },
+    "club_services": { "schema": "ClubService", "description": "Social club services" },
+    "club_members_settings": { "schema": "ClubMembersSettings", "description": "Club member general settings" },
+    "club_trips": { "schema": "ClubTrip", "description": "Social club trips and excursions" }
   }
 }

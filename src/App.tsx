@@ -63,6 +63,7 @@ const History = safeLazy(() => import('./pages/History'));
 const Store = safeLazy(() => import('./pages/Store'));
 const Bookmarks = safeLazy(() => import('./pages/Bookmarks'));
 const Library = safeLazy(() => import('./pages/Library'));
+const ClubMembers = safeLazy(() => import('./pages/ClubMembers'));
 const CustomPage = safeLazy(() => import('./pages/CustomPage'));
 const PrivacyPolicy = safeLazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = safeLazy(() => import('./pages/TermsOfService'));
@@ -393,6 +394,7 @@ function AppContent() {
               <Route path="/store" element={<Store />} />
               <Route path="/bookmarks" element={<Bookmarks />} />
               <Route path="/library" element={<Library />} />
+              <Route path="/club-members" element={<ClubMembers />} />
               <Route path="/page/:slug" element={<CustomPage />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />

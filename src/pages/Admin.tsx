@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAppStore, AppRole } from '../store';
+import { defaultCommittees, defaultServices, defaultAnnouncements, defaultTrips, defaultMembersSettings } from '../data/defaultClubData';
 import { v4 as uuidv4 } from 'uuid';
 import { toDate, formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { db, auth, uploadImage, handleFirestoreError, OperationType } from '../lib/firebase';
@@ -357,11 +358,42 @@ export default function Admin() {
     clubTitles, clubStats, historyEvents, stadiums, newsCategories,
     products, orders, ads, homeSections, undoStack,
     songs, albums, playlists, mediaPlaylists, books, cityInfo,
+    clubCommittees, clubAnnouncements, clubServices, clubTrips, clubMembersSettings,
     setClubTitles, setClubStats, setHistoryEvents, setStadiums, setNewsCategories,
     setProducts, setOrders, setAds, setHomeSections, pushToUndoStack, popFromUndoStack,
     setSongs, setAlbums, setPlaylists, setMediaPlaylists, setBooks, setCityInfo,
     setSettings
   } = useAppStore();
+
+  const committeesList = clubCommittees.length > 0 ? clubCommittees : defaultCommittees;
+  const announcementsList = clubAnnouncements.length > 0 ? clubAnnouncements : defaultAnnouncements;
+  const servicesList = clubServices.length > 0 ? clubServices : defaultServices;
+  const tripsList = clubTrips.length > 0 ? clubTrips : defaultTrips;
+
+  const cleanPayload = (obj: any) => JSON.parse(JSON.stringify(obj));
+
+  const seedDefaultClubData = async () => {
+    try {
+      toast.loading('جاري تهيئة بيانات قسم الأعضاء...', { id: 'seed' });
+      for (const item of defaultCommittees) {
+        await setDoc(doc(db, 'club_committees', item.id), cleanPayload(item));
+      }
+      for (const item of defaultAnnouncements) {
+        await setDoc(doc(db, 'club_announcements', item.id), cleanPayload(item));
+      }
+      for (const item of defaultServices) {
+        await setDoc(doc(db, 'club_services', item.id), cleanPayload(item));
+      }
+      for (const item of defaultTrips) {
+        await setDoc(doc(db, 'club_trips', item.id), cleanPayload(item));
+      }
+      await setDoc(doc(db, 'club_members_settings', 'main'), cleanPayload(defaultMembersSettings));
+      toast.success('تم تهيئة كامل بيانات قسم الأعضاء بنجاح!', { id: 'seed' });
+    } catch (err) {
+      console.error(err);
+      toast.error('حدث خطأ أثناء تهيئة البيانات', { id: 'seed' });
+    }
+  };
 
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = (searchParams.get('tab') as any) || 'overview';
@@ -384,6 +416,7 @@ export default function Admin() {
   const [mediaSubTab, setMediaSubTab] = useState<'items' | 'playlists' | 'banner'>('items');
   const [musicSubTab, setMusicSubTab] = useState<'songs' | 'albums' | 'playlists'>('songs');
   const [liveSportSubTab, setLiveSportSubTab] = useState<'football' | 'basketball'>('football');
+  const [clubSubTab, setClubSubTab] = useState<'committees' | 'announcements' | 'services' | 'trips' | 'settings'>('committees');
   const [isExporting, setIsExporting] = useState(false);
   const [aiUsage, setAiUsage] = useState<any[]>([]);
 
@@ -1304,6 +1337,90 @@ export default function Admin() {
           } catch (err) {
             handleFirestoreError(err, OperationType.CREATE, 'jerseys');
           }
+        }
+      } else if (activeTab === 'club_members') {
+        if (clubSubTab === 'committees') {
+          const payload = {
+            name: formData.name || '',
+            description: formData.description || '',
+            president: formData.president || '',
+            vicePresident: formData.vicePresident || '',
+            icon: formData.icon || 'groups',
+            image: formData.image || '',
+            status: formData.status || 'active',
+            order: Number(formData.order || 0)
+          };
+          if (isEditing && editingId) {
+            await setDoc(doc(db, 'club_committees', editingId), cleanPayload(payload));
+          } else {
+            await addDoc(collection(db, 'club_committees'), cleanPayload(payload));
+          }
+        } else if (clubSubTab === 'announcements') {
+          const payload = {
+            title: formData.title || '',
+            content: formData.content || '',
+            image: formData.image || '',
+            category: formData.category || 'عام',
+            priority: formData.priority || 'normal',
+            committeeId: formData.committeeId || '',
+            pinned: formData.pinned ?? false,
+            active: formData.active ?? true,
+            createdAt: isEditing ? (formData.createdAt || new Date().toISOString()) : new Date().toISOString()
+          };
+          if (isEditing && editingId) {
+            await setDoc(doc(db, 'club_announcements', editingId), cleanPayload(payload));
+          } else {
+            await addDoc(collection(db, 'club_announcements'), cleanPayload(payload));
+          }
+        } else if (clubSubTab === 'services') {
+          const payload = {
+            title: formData.title || '',
+            description: formData.description || '',
+            category: formData.category || 'الخدمات الحكومية',
+            location: formData.location || '',
+            workingHours: formData.workingHours || '',
+            phone: formData.phone || '',
+            requirements: formData.requirements || '',
+            image: formData.image || '',
+            active: formData.active ?? true,
+            order: Number(formData.order || 0)
+          };
+          if (isEditing && editingId) {
+            await setDoc(doc(db, 'club_services', editingId), cleanPayload(payload));
+          } else {
+            await addDoc(collection(db, 'club_services'), cleanPayload(payload));
+          }
+        } else if (clubSubTab === 'trips') {
+          const payload = {
+            title: formData.title || '',
+            description: formData.description || '',
+            destination: formData.destination || '',
+            startDate: formData.startDate || '',
+            endDate: formData.endDate || '',
+            priceMember: Number(formData.priceMember || 0),
+            priceNonMember: Number(formData.priceNonMember || 0),
+            features: formData.features || '',
+            requirements: formData.requirements || '',
+            maxParticipants: Number(formData.maxParticipants || 0),
+            image: formData.image || '',
+            status: formData.status || 'upcoming',
+            active: formData.active ?? true,
+            order: Number(formData.order || 0),
+            createdAt: isEditing ? (formData.createdAt || new Date().toISOString()) : new Date().toISOString()
+          };
+          if (isEditing && editingId) {
+            await setDoc(doc(db, 'club_trips', editingId), cleanPayload(payload));
+          } else {
+            await addDoc(collection(db, 'club_trips'), cleanPayload(payload));
+          }
+        } else if (clubSubTab === 'settings') {
+          const payload = {
+            phoneHotline: formData.phoneHotline || '',
+            workingHours: formData.workingHours || '',
+            memberNotice: formData.memberNotice || '',
+            updatedAt: new Date().toISOString()
+          };
+          await setDoc(doc(db, 'club_members_settings', 'main'), cleanPayload(payload));
         }
       }
 
@@ -3245,6 +3362,344 @@ export default function Admin() {
             </div>
           )}
 
+          {activeTab === 'club_members' && (
+            <div className="flex flex-col gap-6">
+              {/* Header Banner */}
+              <div className="bg-gradient-to-r from-emerald-900 via-primary to-primary-dark p-6 rounded-3xl text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck size={24} className="text-amber-300" />
+                    <h2 className="text-xl font-black">إدارة قسم أعضاء النادي</h2>
+                  </div>
+                  <p className="text-xs font-medium text-amber-200/90">إدارة اللجان العاملة، لوحة الإعلانات الرقمية، ودليل الخدمات الحكومية والاجتماعية للأعضاء</p>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={seedDefaultClubData}
+                    className="bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-2xl text-xs font-black shadow-md flex items-center gap-2 transition-transform active:scale-95 border border-white/20"
+                    title="حفظ واستعادة كامل البيانات الافتراضية لقاعدة البيانات"
+                  >
+                    <Sparkles size={16} className="text-amber-300" />
+                    <span>تهيئة البيانات الافتراضية</span>
+                  </button>
+                  {clubSubTab !== 'settings' && (
+                    <button
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditingId(null);
+                        setFormData(
+                          clubSubTab === 'committees' ? { status: 'active', order: (committeesList.length || 0) + 1 } :
+                          clubSubTab === 'announcements' ? { priority: 'normal', active: true, pinned: false } :
+                          clubSubTab === 'services' ? { active: true, order: (servicesList.length || 0) + 1 } :
+                          { status: 'upcoming', active: true, priceMember: 0, priceNonMember: 0, order: (tripsList.length || 0) + 1 }
+                        );
+                        setShowModal(true);
+                      }}
+                      className="bg-amber-400 hover:bg-amber-300 text-slate-900 px-5 py-3 rounded-2xl text-xs font-black shadow-md flex items-center gap-2 transition-transform active:scale-95 shrink-0"
+                    >
+                      <Plus size={16} />
+                      <span>إضافة {clubSubTab === 'committees' ? 'لجنة جديدة' : clubSubTab === 'announcements' ? 'إعلان جديد' : clubSubTab === 'services' ? 'خدمة جديدة' : 'رحلة جديدة'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Sub-tabs Navigation */}
+              <div className="flex items-center gap-2 bg-white dark:bg-card-dark p-1.5 rounded-2xl border border-border-light dark:border-border-dark w-fit flex-wrap">
+                {[
+                  { id: 'committees', label: 'اللجان العاملة', count: committeesList.length },
+                  { id: 'announcements', label: 'لوحة الإعلانات', count: announcementsList.length },
+                  { id: 'services', label: 'دليل الخدمات', count: servicesList.length },
+                  { id: 'trips', label: 'رحلات النادي', count: tripsList.length },
+                  { id: 'settings', label: 'إعدادات قسم الأعضاء', count: null },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setClubSubTab(tab.id as any)}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+                      clubSubTab === tab.id 
+                        ? 'bg-primary text-white shadow-md' 
+                        : 'text-slate-600 dark:text-slate-400 hover:text-primary'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    {tab.count !== null && (
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] ${clubSubTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-surface-dark text-slate-500'}`}>
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* TAB 1: COMMITTEES LIST */}
+              {clubSubTab === 'committees' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {committeesList.map((comm) => (
+                    <div key={comm.id} className="bg-white dark:bg-card-dark p-4 rounded-2xl border border-border-light dark:border-border-dark shadow-sm flex flex-col justify-between gap-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <h3 className="font-black text-sm text-slate-800 dark:text-white">{comm.name}</h3>
+                          </div>
+                          {comm.president && <p className="text-[11px] font-bold text-primary">رئيس اللجنة: {comm.president}</p>}
+                          {comm.vicePresident && <p className="text-[11px] font-medium text-slate-500">نائب رئيس اللجنة: {comm.vicePresident}</p>}
+                          <p className="text-xs text-slate-500 line-clamp-2">{comm.description}</p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => {
+                              setIsEditing(true);
+                              setEditingId(comm.id);
+                              setFormData({ ...comm });
+                              setShowModal(true);
+                            }}
+                            className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-xl transition-colors"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete('club_committees', comm.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                      {comm.image && (
+                        <div className="h-24 rounded-xl overflow-hidden bg-slate-100">
+                          <img src={comm.image} alt={comm.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {committeesList.length === 0 && (
+                    <div className="col-span-full py-12 text-center text-slate-400 font-bold bg-white dark:bg-card-dark rounded-2xl border border-dashed border-slate-200 dark:border-border-dark">
+                      لا توجد لجان مسجلة حالياً
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 2: ANNOUNCEMENTS LIST */}
+              {clubSubTab === 'announcements' && (
+                <div className="space-y-3">
+                  {announcementsList.map((ann) => (
+                    <div key={ann.id} className="bg-white dark:bg-card-dark p-4 rounded-2xl border border-border-light dark:border-border-dark shadow-sm flex items-start justify-between gap-4">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {ann.priority === 'urgent' && <span className="px-2 py-0.5 rounded text-[9px] font-black bg-red-500 text-white">🚨 عاجل</span>}
+                          {ann.priority === 'important' && <span className="px-2 py-0.5 rounded text-[9px] font-black bg-amber-500/20 text-amber-600">⭐ هام</span>}
+                          {ann.pinned && <span className="px-2 py-0.5 rounded text-[9px] font-black bg-primary/10 text-primary">📌 مثبت</span>}
+                          <span className="text-[10px] text-slate-400 font-bold">{new Date(ann.createdAt).toLocaleDateString('ar-EG')}</span>
+                        </div>
+                        <h3 className="font-black text-sm text-slate-800 dark:text-white">{ann.title}</h3>
+                        <p className="text-xs text-slate-500 line-clamp-2">{ann.content}</p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => {
+                            setIsEditing(true);
+                            setEditingId(ann.id);
+                            setFormData({ ...ann });
+                            setShowModal(true);
+                          }}
+                          className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-xl transition-colors"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete('club_announcements', ann.id)}
+                          className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {announcementsList.length === 0 && (
+                    <div className="py-12 text-center text-slate-400 font-bold bg-white dark:bg-card-dark rounded-2xl border border-dashed border-slate-200 dark:border-border-dark">
+                      لا توجد إعلانات مسجلة حالياً
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 3: SERVICES LIST */}
+              {clubSubTab === 'services' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {servicesList.map((serv) => (
+                    <div key={serv.id} className="bg-white dark:bg-card-dark p-4 rounded-2xl border border-border-light dark:border-border-dark shadow-sm space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <span className="px-2 py-0.5 rounded text-[9px] font-black bg-primary/10 text-primary">{serv.category}</span>
+                          <h3 className="font-black text-sm text-slate-800 dark:text-white">{serv.title}</h3>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => {
+                              setIsEditing(true);
+                              setEditingId(serv.id);
+                              setFormData({ ...serv });
+                              setShowModal(true);
+                            }}
+                            className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-xl transition-colors"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete('club_services', serv.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500 line-clamp-2">{serv.description}</p>
+                      <div className="text-[11px] font-semibold text-slate-400 space-y-1 border-t border-slate-100 dark:border-border-dark pt-2">
+                        <div>📍 {serv.location}</div>
+                        <div>⏰ {serv.workingHours}</div>
+                        {serv.phone && <div>📞 {serv.phone}</div>}
+                      </div>
+                    </div>
+                  ))}
+                  {servicesList.length === 0 && (
+                    <div className="col-span-full py-12 text-center text-slate-400 font-bold bg-white dark:bg-card-dark rounded-2xl border border-dashed border-slate-200 dark:border-border-dark">
+                      لا توجد خدمات مسجلة حالياً
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 4: TRIPS LIST */}
+              {clubSubTab === 'trips' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {tripsList.map((trip) => (
+                    <div key={trip.id} className="bg-white dark:bg-card-dark p-4 rounded-2xl border border-border-light dark:border-border-dark shadow-sm space-y-3">
+                      {trip.image && (
+                        <div className="h-32 rounded-xl overflow-hidden bg-slate-100">
+                          <img src={trip.image} alt={trip.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        </div>
+                      )}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-black ${
+                              trip.status === 'upcoming' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                              trip.status === 'ongoing' ? 'bg-amber-500/10 text-amber-600' :
+                              trip.status === 'completed' ? 'bg-slate-200 text-slate-600' : 'bg-red-500/10 text-red-600'
+                            }`}>
+                              {trip.status === 'upcoming' ? '🚌 متاحة للحجز' : trip.status === 'ongoing' ? '⏳ جارية حالياً' : trip.status === 'completed' ? '✅ منتهية' : '❌ ملغاة'}
+                            </span>
+                            {trip.destination && <span className="text-[10px] font-bold text-slate-400">📍 {trip.destination}</span>}
+                          </div>
+                          <h3 className="font-black text-sm text-slate-800 dark:text-white">{trip.title}</h3>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => {
+                              setIsEditing(true);
+                              setEditingId(trip.id);
+                              setFormData({ ...trip });
+                              setShowModal(true);
+                            }}
+                            className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-xl transition-colors"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete('club_trips', trip.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500 line-clamp-2">{trip.description}</p>
+                      <div className="grid grid-cols-2 gap-2 p-2 bg-slate-50 dark:bg-surface-dark rounded-xl text-xs font-bold border border-slate-100 dark:border-border-dark">
+                        <div>
+                          <span className="text-[10px] text-slate-400 block font-normal">سعر العضو</span>
+                          <span className="text-primary font-black">{trip.priceMember} ج.م</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block font-normal">سعر المرافق</span>
+                          <span className="text-slate-700 dark:text-slate-200 font-black">{trip.priceNonMember} ج.م</span>
+                        </div>
+                      </div>
+                      {(trip.startDate || trip.endDate) && (
+                        <div className="text-[11px] font-semibold text-slate-400 flex items-center justify-between pt-1">
+                          <span>📅 {trip.startDate} {trip.endDate ? `إلى ${trip.endDate}` : ''}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {tripsList.length === 0 && (
+                    <div className="col-span-full py-12 text-center text-slate-400 font-bold bg-white dark:bg-card-dark rounded-2xl border border-dashed border-slate-200 dark:border-border-dark">
+                      لا توجد رحلات مسجلة حالياً
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 4: SETTINGS FORM */}
+              {clubSubTab === 'settings' && (
+                <div className="bg-white dark:bg-card-dark p-6 rounded-3xl border border-border-light dark:border-border-dark shadow-sm space-y-4 max-w-xl">
+                  <h3 className="font-black text-base text-slate-800 dark:text-white">إعدادات قسم الأعضاء الترحيبية والتواصل</h3>
+                  
+                  <div>
+                    <label className="text-xs font-black text-slate-500 mb-1 block">رقم الخط الساخن / الهاتف</label>
+                    <input
+                      type="text"
+                      className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-sm font-bold"
+                      value={formData.phoneHotline !== undefined ? formData.phoneHotline : (clubMembersSettings?.phoneHotline || '1914 / 03-4802201')}
+                      onChange={(e) => setFormData({ ...formData, phoneHotline: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-black text-slate-500 mb-1 block">ساعات ومواعيد العمل الرسمية</label>
+                    <input
+                      type="text"
+                      className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-sm font-bold"
+                      value={formData.workingHours !== undefined ? formData.workingHours : (clubMembersSettings?.workingHours || 'يومياً من ٩ صباحاً حتى ١٠ مساءً')}
+                      onChange={(e) => setFormData({ ...formData, workingHours: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-black text-slate-500 mb-1 block">الرسالة الترحيبية / التنويه الرئيسي للرأسية</label>
+                    <textarea
+                      className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark text-sm min-h-[90px]"
+                      value={formData.memberNotice !== undefined ? formData.memberNotice : (clubMembersSettings?.memberNotice || 'مرحباً بأعضاء نادي الاتحاد السكندري - نعتز بملاحظتكم وخدمتكم عبر بوابتنا الرقمية')}
+                      onChange={(e) => setFormData({ ...formData, memberNotice: e.target.value })}
+                    />
+                  </div>
+
+                  <button
+                    onClick={async () => {
+                      const payload = {
+                        phoneHotline: formData.phoneHotline !== undefined ? formData.phoneHotline : (clubMembersSettings?.phoneHotline || '1914 / 03-4802201'),
+                        workingHours: formData.workingHours !== undefined ? formData.workingHours : (clubMembersSettings?.workingHours || 'يومياً من ٩ صباحاً حتى ١٠ مساءً'),
+                        memberNotice: formData.memberNotice !== undefined ? formData.memberNotice : (clubMembersSettings?.memberNotice || 'مرحباً بأعضاء نادي الاتحاد السكندري - نعتز بملاحظتكم وخدمتكم عبر بوابتنا الرقمية'),
+                        updatedAt: new Date().toISOString()
+                      };
+                      try {
+                        await setDoc(doc(db, 'club_members_settings', 'main'), payload);
+                        toast.success('تم حفظ إعدادات قسم الأعضاء بنجاح');
+                      } catch (err) {
+                        handleFirestoreError(err, OperationType.WRITE, 'club_members_settings/main');
+                      }
+                    }}
+                    className="w-full py-3.5 bg-primary text-white rounded-2xl font-black text-sm shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all"
+                  >
+                    حفظ التغييرات
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'matches' && (
             <div className="flex flex-col gap-3">
               <div className="bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
@@ -4339,6 +4794,7 @@ export default function Admin() {
             <div className="flex items-center justify-between mb-6 sticky top-0 bg-white dark:bg-card-dark z-20 py-2 -mt-2">
               <h3 className="text-lg font-bold">
                 {isEditing ? 'تعديل' : 'إضافة'} {
+                  activeTab === 'club_members' ? (clubSubTab === 'committees' ? 'لجنة' : clubSubTab === 'announcements' ? 'إعلان' : clubSubTab === 'services' ? 'خدمة' : 'رحلة') :
                   activeTab === 'news' ? 'خبر' : 
                   activeTab === 'media' ? 'ميديا' : 
                   activeTab === 'matches' ? 'مباراة' : 
@@ -4346,7 +4802,7 @@ export default function Admin() {
                   activeTab === 'clubs' ? 'نادي' : 
                   activeTab === 'products' ? 'منتج' :
                   activeTab === 'history' ? (historySubTab === 'stats' ? 'رقم' : historySubTab === 'titles' ? 'بطولة' : historySubTab === 'timeline' ? 'حدث' : 'ملعب') :
-                  'استطلاع'
+                  'عنصر'
                 }
               </h3>
               <div className="flex items-center gap-2">
@@ -5234,6 +5690,183 @@ export default function Admin() {
                        </div>
                     </div>
                    </div>
+                  </>
+                )}
+
+                {activeTab === 'club_members' && (
+                  <>
+                    {clubSubTab === 'committees' && (
+                      <>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">اسم اللجنة</label>
+                          <input type="text" placeholder="مثلاً: اللجنة الثقافية والاجتماعية" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">رئيس اللجنة</label>
+                            <input type="text" placeholder="اسم رئيس اللجنة" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.president || ''} onChange={(e) => setFormData({...formData, president: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">نائب رئيس اللجنة</label>
+                            <input type="text" placeholder="اسم نائب رئيس اللجنة" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.vicePresident || ''} onChange={(e) => setFormData({...formData, vicePresident: e.target.value})} />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">وصف اللجنة وأنشطتها</label>
+                          <textarea placeholder="توضيح لأهداف وااختصاصات اللجنة..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold min-h-[100px]" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                        </div>
+                        <UploadOrUrlField label="صورة اللجنة / الهيدر" fieldName="image" currentUrl={formData.image} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">الترتيب</label>
+                            <input type="number" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.order || 1} onChange={(e) => setFormData({...formData, order: Number(e.target.value)})} />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">الحالة</label>
+                            <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.status || 'active'} onChange={(e) => setFormData({...formData, status: e.target.value})}>
+                              <option value="active">نشطة</option>
+                              <option value="inactive">غير نشطة</option>
+                            </select>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {clubSubTab === 'announcements' && (
+                      <>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">عنوان الإعلان</label>
+                          <input type="text" placeholder="عنوان الإعلان أو التنويه" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">نص الإعلان</label>
+                          <textarea placeholder="اكتب التفاصيل الكاملة للإعلان..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm min-h-[120px]" value={formData.content || ''} onChange={(e) => setFormData({...formData, content: e.target.value})} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">اللجنة التابعة (اختياري)</label>
+                            <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.committeeId || ''} onChange={(e) => setFormData({...formData, committeeId: e.target.value})}>
+                              <option value="">إعلان عام للأعضاء</option>
+                              {clubCommittees.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">الأهمية</label>
+                            <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.priority || 'normal'} onChange={(e) => setFormData({...formData, priority: e.target.value})}>
+                              <option value="normal">عادي</option>
+                              <option value="important">هام ⭐</option>
+                              <option value="urgent">عاجل 🚨</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">التصنيف / الوسم</label>
+                          <input type="text" placeholder="مثلاً: تنويه مهم، نشاط صيفي..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.category || ''} onChange={(e) => setFormData({...formData, category: e.target.value})} />
+                        </div>
+                        <UploadOrUrlField label="صورة مرفقة بالإعلان" fieldName="image" currentUrl={formData.image} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                        <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark">
+                          <input type="checkbox" id="annPinned" checked={formData.pinned || false} onChange={(e) => setFormData({...formData, pinned: e.target.checked})} />
+                          <label htmlFor="annPinned" className="text-xs font-bold cursor-pointer">تثبيت الإعلان في أعلى القائمة 📌</label>
+                        </div>
+                      </>
+                    )}
+
+                    {clubSubTab === 'services' && (
+                      <>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">اسم الخدمة</label>
+                          <input type="text" placeholder="مثلاً: استخراج الفيش الجنائي" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">تصنيف الخدمة</label>
+                            <input type="text" placeholder="خدمات حكومية، رياضة، ترفيه..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.category || ''} onChange={(e) => setFormData({...formData, category: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">رقم التليفون / الاستفسار</label>
+                            <input type="text" placeholder="01200000000" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.phone || ''} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">موقع تقديم الخدمة</label>
+                            <input type="text" placeholder="مقر الشاطبي - المبنى الإداري" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.location || ''} onChange={(e) => setFormData({...formData, location: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">مواعيد العمل</label>
+                            <input type="text" placeholder="يومياً من 9 ص إلى 3 م" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.workingHours || ''} onChange={(e) => setFormData({...formData, workingHours: e.target.value})} />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">وصف الخدمة</label>
+                          <textarea placeholder="شرح مبسط للخدمة..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold min-h-[80px]" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">المستندات والأوراق المطلوبة</label>
+                          <textarea placeholder="• بطاقة الرقم القومي&#10;• صورة شخصية..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm min-h-[90px]" value={formData.requirements || ''} onChange={(e) => setFormData({...formData, requirements: e.target.value})} />
+                        </div>
+                        <UploadOrUrlField label="صورة تظهر للخدمة" fieldName="image" currentUrl={formData.image} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                      </>
+                    )}
+
+                    {clubSubTab === 'trips' && (
+                      <>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">عنوان الرحلة</label>
+                          <input type="text" placeholder="مثلاً: رحلة الأقصر وأسوان الشتوية" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">الوجهة / المدينة</label>
+                            <input type="text" placeholder="الأقصر وأسوان، شرم الشيخ..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.destination || ''} onChange={(e) => setFormData({...formData, destination: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">حالة الحجز والرحلة</label>
+                            <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.status || 'upcoming'} onChange={(e) => setFormData({...formData, status: e.target.value})}>
+                              <option value="upcoming">🚌 متاحة للحجز</option>
+                              <option value="ongoing">⏳ جارية حالياً</option>
+                              <option value="completed">✅ منتهية</option>
+                              <option value="cancelled">❌ ملغاة</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">تاريخ بداية الرحلة</label>
+                            <input type="date" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.startDate || ''} onChange={(e) => setFormData({...formData, startDate: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">تاريخ العودة</label>
+                            <input type="date" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.endDate || ''} onChange={(e) => setFormData({...formData, endDate: e.target.value})} />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">سعر الاشتراك للعضو (ج.م)</label>
+                            <input type="number" placeholder="4500" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-black text-primary" value={formData.priceMember ?? ''} onChange={(e) => setFormData({...formData, priceMember: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">سعر الاشتراك للمرافق (ج.م)</label>
+                            <input type="number" placeholder="5200" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-black" value={formData.priceNonMember ?? ''} onChange={(e) => setFormData({...formData, priceNonMember: e.target.value})} />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">وصف وتفاصيل الرحلة</label>
+                          <textarea placeholder="برنامج ونظام الإقامة والانتقالات..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-medium min-h-[90px]" value={formData.description || ''} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">مميزات وبرنامج الرحلة</label>
+                          <textarea placeholder="• إقامة فندقية 5 نجوم&#10;• وجبات بوفيه مفتوح&#10;• مزارات سياحية..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-medium min-h-[90px]" value={formData.features || ''} onChange={(e) => setFormData({...formData, features: e.target.value})} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">الشروط والأوراق المطلوبة للحجز</label>
+                          <textarea placeholder="• صورة بطاقة الرقم القومي&#10;• صورة كارنيه العضوية مجدد..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-medium min-h-[90px]" value={formData.requirements || ''} onChange={(e) => setFormData({...formData, requirements: e.target.value})} />
+                        </div>
+                        <UploadOrUrlField label="صورة غلاف للرحلة" fieldName="image" currentUrl={formData.image} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                      </>
+                    )}
                   </>
                 )}
 

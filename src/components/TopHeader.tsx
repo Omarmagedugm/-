@@ -91,6 +91,7 @@ export default function TopHeader() {
     if (path === '/matches') return 'مباريات كرة القدم';
     if (path === '/profile') return 'ملفي الشخصي';
     if (path === '/fan-zone' || path === '/feed') return 'منطقة المشجعين';
+    if (path === '/club-members') return 'أعضاء النادي';
     if (path === '/history') return 'تاريخ النادي';
     if (path === '/store') return 'متجر النادي';
     if (path === '/bookmarks') return 'المحفوظات';

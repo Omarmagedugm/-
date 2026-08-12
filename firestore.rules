@@ -320,6 +320,32 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Club Members Section
+    match /club_committees/{committeeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /club_announcements/{announcementId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /club_services/{serviceId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /club_members_settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /club_trips/{tripId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Global Admin Override
     match /{document=**} {
       allow read, write: if isAdmin();

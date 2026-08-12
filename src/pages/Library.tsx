@@ -253,8 +253,8 @@ export default function Library() {
   const mediaPhotos = media
     .filter(m => m.type === 'photo')
     .sort((a, b) => {
-      const timeA = a.date ? new Date(a.date).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
-      const timeB = b.date ? new Date(b.date).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+      const timeA = a.date ? new Date(a.date).getTime() : ((a as any).createdAt ? new Date((a as any).createdAt).getTime() : 0);
+      const timeB = b.date ? new Date(b.date).getTime() : ((b as any).createdAt ? new Date((b as any).createdAt).getTime() : 0);
       return timeB - timeA;
     });
 

@@ -24,7 +24,9 @@ import {
   CloudSun,
   Bell,
   Database,
-  Sparkles
+  Sparkles,
+  Shield,
+  ShieldCheck
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -75,6 +77,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
       { id: 'live', icon: <Radio size={18} />, label: 'البث المباشر', show: isAdmin || hasRole('matches_editor') },
     ]},
     { title: 'محتوى المنصة', items: [
+      { id: 'club_members', icon: <ShieldCheck size={18} />, label: 'أعضاء النادي', show: isAdmin || hasRole('layout_editor') },
       { id: 'media', icon: <PlayCircle size={18} />, label: 'المالتيميديا والفيديو', show: isAdmin || hasRole('media_editor') },
       { id: 'music', icon: <Music size={18} />, label: 'المكتبة الموسيقية', show: isAdmin || hasRole('media_editor') },
       { id: 'books', icon: <BookOpen size={18} />, label: 'الكتب والمجلات', show: isAdmin || hasRole('media_editor') },

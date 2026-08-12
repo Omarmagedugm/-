@@ -251,6 +251,73 @@ export interface Product {
   stock: number;
 }
 
+export interface ClubCommittee {
+  id: string;
+  name: string;
+  description: string;
+  president?: string;
+  vicePresident?: string;
+  icon?: string;
+  image?: string;
+  status: 'active' | 'inactive';
+  order: number;
+}
+
+export interface ClubAnnouncement {
+  id: string;
+  title: string;
+  content: string;
+  image?: string;
+  category?: string;
+  priority: 'urgent' | 'important' | 'normal';
+  committeeId?: string;
+  pinned?: boolean;
+  active: boolean;
+  createdAt: string;
+  validUntil?: string;
+}
+
+export interface ClubService {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  location: string;
+  workingHours: string;
+  phone?: string;
+  requirements?: string;
+  image?: string;
+  active: boolean;
+  order: number;
+}
+
+export interface ClubTrip {
+  id: string;
+  title: string;
+  description: string;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  priceMember: number;
+  priceNonMember: number;
+  features?: string;
+  requirements?: string;
+  maxParticipants?: number;
+  image?: string;
+  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  active: boolean;
+  order: number;
+  createdAt?: string;
+}
+
+export interface ClubMembersSettings {
+  id?: string;
+  phoneHotline?: string;
+  workingHours?: string;
+  memberNotice?: string;
+  updatedAt?: string;
+}
+
 export interface StoreOrder {
   id: string;
   userId: string;
@@ -328,6 +395,11 @@ interface AppState {
   orders: StoreOrder[];
   ads: AdBanner[];
   customPages: any[];
+  clubCommittees: ClubCommittee[];
+  clubAnnouncements: ClubAnnouncement[];
+  clubServices: ClubService[];
+  clubTrips: ClubTrip[];
+  clubMembersSettings: ClubMembersSettings | null;
   homeSections: HomeSection[];
   songs: Song[];
   albums: Album[];
@@ -377,6 +449,11 @@ interface AppState {
   setOrders: (orders: StoreOrder[]) => void;
   setAds: (ads: AdBanner[]) => void;
   setCustomPages: (pages: any[]) => void;
+  setClubCommittees: (committees: ClubCommittee[]) => void;
+  setClubAnnouncements: (announcements: ClubAnnouncement[]) => void;
+  setClubServices: (services: ClubService[]) => void;
+  setClubTrips: (trips: ClubTrip[]) => void;
+  setClubMembersSettings: (settings: ClubMembersSettings | null) => void;
   setHomeSections: (sections: HomeSection[]) => void;
   setSongs: (songs: Song[]) => void;
   setAlbums: (albums: Album[]) => void;
@@ -570,6 +647,11 @@ export const useAppStore = create<AppState>()(
       orders: [],
       ads: [],
       customPages: [],
+      clubCommittees: [],
+      clubAnnouncements: [],
+      clubServices: [],
+      clubTrips: [],
+      clubMembersSettings: null,
       homeSections: [
         { id: 'hero', type: 'hero', active: true, order: 0 },
         { id: 'matches', type: 'matches', active: true, order: 1 },
@@ -646,6 +728,11 @@ export const useAppStore = create<AppState>()(
       setOrders: (orders) => set({ orders }),
       setAds: (ads) => set({ ads }),
       setCustomPages: (customPages) => set({ customPages }),
+      setClubCommittees: (clubCommittees) => set({ clubCommittees }),
+      setClubAnnouncements: (clubAnnouncements) => set({ clubAnnouncements }),
+      setClubServices: (clubServices) => set({ clubServices }),
+      setClubTrips: (clubTrips) => set({ clubTrips }),
+      setClubMembersSettings: (clubMembersSettings) => set({ clubMembersSettings }),
       setHomeSections: (homeSections) => set({ homeSections }),
       setSongs: (songs) => set({ songs }),
       setAlbums: (albums) => set({ albums }),
