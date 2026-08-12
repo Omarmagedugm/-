@@ -45,6 +45,7 @@ import Sidebar from "../components/Sidebar";
 import AdvertiseWidget from "../components/AdvertiseWidget";
 import TicketsWidget from "../components/TicketsWidget";
 import HtmlWidget from "../components/HtmlWidget";
+import ClubMembersWidget from "../components/ClubMembersWidget";
 import { SafeImage } from "../components/SafeImage";
 import { getOptimizedImage } from "../lib/cloudinary";
 
@@ -1222,6 +1223,15 @@ export default function Home() {
           </motion.section>
         );
 
+      case "club_members":
+      case "club_members_ad":
+      case "club_members_banner":
+        return (
+          <motion.section key={section.id} variants={itemVariants}>
+            <ClubMembersWidget />
+          </motion.section>
+        );
+
       case "tickets":
         return (
           <motion.section key={section.id} variants={itemVariants}>
@@ -1242,23 +1252,32 @@ export default function Home() {
               viewport={{ once: true }}
               className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#064e3b] to-primary p-4 shadow-xl shadow-primary/10 group cursor-pointer"
               onClick={() => navigate('/jersey-tryon')}
-              style={aiConfig.bannerImage ? { backgroundImage: `url(${aiConfig.bannerImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
             >
-              <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors duration-500"></div>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl -translate-y-1/2 translate-x-1/2 rounded-full"></div>
+              {/* Background Image with custom opacity */}
+              {aiConfig.bannerImage && (
+                <div 
+                  className="absolute inset-0 bg-cover bg-center transition-opacity duration-300"
+                  style={{ 
+                    backgroundImage: `url(${aiConfig.bannerImage})`,
+                    opacity: (aiConfig.bannerOpacity !== undefined ? aiConfig.bannerOpacity : 70) / 100
+                  }}
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent pointer-events-none"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl -translate-y-1/2 translate-x-1/2 rounded-full pointer-events-none"></div>
               
               <div className="relative z-10 flex items-center justify-between gap-4">
                 <div className="text-right flex-1">
-                  <h3 className="text-sm sm:text-base font-black text-white italic">
+                  <h3 className="text-sm sm:text-base font-black text-white italic drop-shadow">
                     {aiConfig.bannerTitle || "صورتك بتيشيرت الاتحاد"}
                   </h3>
-                  <div className="mt-1 inline-flex items-center gap-1.5 text-[9px] font-bold text-white/80">
-                    <span className="h-1 w-1 rounded-full bg-accent animate-pulse"></span>
+                  <div className="mt-1 inline-flex items-center gap-1.5 text-[9px] font-bold text-white/90">
+                    <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"></span>
                     جرب الآن مجاناً
                   </div>
                 </div>
                 <div className="h-10 w-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-xl group-hover:rotate-12 transition-transform duration-500 shrink-0">
-                  <Sparkles size={20} className="animate-pulse" />
+                  <Sparkles size={20} className="animate-pulse text-amber-300" />
                 </div>
               </div>
             </motion.div>
@@ -1812,7 +1831,12 @@ export default function Home() {
     }
   };
 
-  const sortedSections = [...homeSections].sort((a, b) => {
+  const hasClubMembersSection = homeSections.some(s => s.type === 'club_members' || s.type === 'club_members_ad' || s.type === 'club_members_banner');
+  const baseSections: typeof homeSections = hasClubMembersSection 
+    ? homeSections 
+    : [...homeSections, { id: 'club_members_auto', type: 'club_members', active: true, order: 1.2, title: 'بوابة الأعضاء والأنشطة', pinned: false, spacing: 16 }];
+
+  const sortedSections = [...baseSections].sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
     return a.order - b.order;

@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export interface HomeSection {
   id: string;
-  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget' | 'city' | 'ads' | 'advertise' | 'image' | 'ai_banner' | 'tickets';
+  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget' | 'city' | 'ads' | 'advertise' | 'image' | 'ai_banner' | 'tickets' | 'club_members' | 'club_members_ad' | 'club_members_banner';
   title?: string;
   active: boolean;
   order: number;
@@ -366,7 +366,7 @@ interface AppState {
   predictions: PredictionItem[];
   fanPosts: FanPostItem[];
   users: UserProfile[];
-  aiConfig: { enabled: boolean; bannerTitle?: string; bannerDescription?: string; bannerImage?: string; clubLogo?: string; userDailyLimit?: number };
+  aiConfig: { enabled: boolean; bannerTitle?: string; bannerDescription?: string; bannerImage?: string; bannerOpacity?: number; clubLogo?: string; userDailyLimit?: number };
   appSettings: {
     appName: string;
     appLogo: string;
@@ -655,6 +655,7 @@ export const useAppStore = create<AppState>()(
       homeSections: [
         { id: 'hero', type: 'hero', active: true, order: 0 },
         { id: 'matches', type: 'matches', active: true, order: 1 },
+        { id: 'club_members', type: 'club_members', active: true, order: 1.2, title: 'بوابة الأعضاء والأنشطة' },
         { id: 'city', type: 'city', active: true, order: 1.5, title: 'عروس البحر المتوسط' },
         { id: 'news', type: 'news', active: true, order: 2 },
         { id: 'media', type: 'media', active: true, order: 3 },

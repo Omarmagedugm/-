@@ -2036,6 +2036,7 @@ export default function Admin() {
                           <div className="flex items-center gap-2">
                              <span className="text-[10px] font-black uppercase text-slate-400">
                                {section.type === 'ai_banner' ? 'بانر الذكاء الاصطناعي' : 
+                                section.type === 'club_members' ? 'بوابة الأعضاء والأنشطة' :
                                 section.type === 'tickets' ? 'تذاكر المباريات' :
                                 section.type}
                              </span>
@@ -2200,6 +2201,7 @@ export default function Admin() {
                         <option value="widget">برمجية HTML مخصصة</option>
                         <option value="image">صورة بانر </option>
                         <option value="city">طقس وتاريخ الإسكندرية</option>
+                        <option value="club_members">بوابة الأعضاء والأنشطة (قسم الأعضاء)</option>
                         <option value="advertise">أعلن معنا (Widget)</option>
                         <option value="ai_banner">بانر استوديو الذكاء الاصطناعي</option>
                       </select>
@@ -2397,11 +2399,11 @@ export default function Admin() {
                   </div>
 
                   <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">صورة البانر واللوجو</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">صورة البانر، الشفافية واللوجو</label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 bg-slate-50 dark:bg-surface-dark rounded-2xl border border-dashed border-slate-200 dark:border-border-dark">
+                      <div className="p-4 bg-slate-50 dark:bg-surface-dark rounded-2xl border border-dashed border-slate-200 dark:border-border-dark space-y-4">
                         <UploadOrUrlField 
-                          label="صورة البانر" 
+                          label="صورة خلفية اعلان منطقة المشجعين" 
                           fieldName="bannerImage" 
                           currentUrl={aiConfig.bannerImage} 
                           formData={aiConfig} 
@@ -2409,7 +2411,32 @@ export default function Admin() {
                           uploading={uploading} 
                           handleFileUpload={handleFileUpload} 
                         />
+
+                        {/* Background Image Opacity Control */}
+                        <div className="pt-2 border-t border-slate-200 dark:border-border-dark space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-black text-slate-600 dark:text-slate-300">
+                              درجة وضوح/شفافية خلفية الإعلان (Opacity)
+                            </label>
+                            <span className="text-xs font-black text-primary font-mono px-2 py-0.5 rounded bg-primary/10">
+                              {aiConfig.bannerOpacity !== undefined ? aiConfig.bannerOpacity : 70}%
+                            </span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="0" 
+                            max="100" 
+                            step="5"
+                            value={aiConfig.bannerOpacity !== undefined ? aiConfig.bannerOpacity : 70}
+                            onChange={(e) => setAiConfig({ ...aiConfig, bannerOpacity: Number(e.target.value) })}
+                            className="w-full accent-primary cursor-pointer h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none"
+                          />
+                          <p className="text-[9px] text-slate-400 font-bold">
+                            التحكم في نسبة ظهور صورة الخلفية مع التدرج الداكن لتوضيح النصوص.
+                          </p>
+                        </div>
                       </div>
+
                       <div className="p-4 bg-slate-50 dark:bg-surface-dark rounded-2xl border border-dashed border-slate-200 dark:border-border-dark">
                         <UploadOrUrlField 
                           label="لوجو النادي (AI)" 

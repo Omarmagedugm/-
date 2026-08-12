@@ -705,25 +705,36 @@ export default function FanZone() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-[32px] bg-[#072418] border border-primary/20 p-6 md:p-8"
-            style={aiConfig.bannerImage ? { backgroundImage: `url(${aiConfig.bannerImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+            className="relative overflow-hidden rounded-[32px] bg-[#072418] border border-primary/20 p-6 md:p-8 group shadow-xl"
           >
-            {aiConfig.bannerImage && <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+            {/* Background Image with custom opacity */}
+            {aiConfig.bannerImage && (
+              <div 
+                className="absolute inset-0 bg-cover bg-center transition-opacity duration-300"
+                style={{ 
+                  backgroundImage: `url(${aiConfig.bannerImage})`,
+                  opacity: (aiConfig.bannerOpacity !== undefined ? aiConfig.bannerOpacity : 70) / 100
+                }}
+              />
+            )}
+            {/* Dark overlay for contrast */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/30 pointer-events-none"></div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 text-center md:text-right">
-              <div className="h-24 w-24 md:h-32 md:w-32 rounded-3xl bg-primary/10 flex items-center justify-center border border-primary/30 flex-shrink-0 animate-pulse relative">
-                <Sparkles className="text-primary" size={48} />
-                <div className="absolute inset-0 bg-primary/5 rounded-3xl animate-ping opacity-20"></div>
+              <div className="h-24 w-24 md:h-32 md:w-32 rounded-3xl bg-primary/20 backdrop-blur-md flex items-center justify-center border border-primary/40 flex-shrink-0 animate-pulse relative shadow-inner">
+                <Sparkles className="text-amber-400" size={48} />
+                <div className="absolute inset-0 bg-primary/10 rounded-3xl animate-ping opacity-20"></div>
               </div>
               <div className="flex-1 space-y-2">
-                <h2 className="text-2xl md:text-4xl font-black text-white italic">{aiConfig.bannerTitle || 'استوديو المشجع الاتحادي'}</h2>
-                <p className="text-slate-400 text-sm md:text-base font-bold leading-relaxed">
+                <h2 className="text-2xl md:text-4xl font-black text-white italic drop-shadow-md">{aiConfig.bannerTitle || 'استوديو المشجع الاتحادي'}</h2>
+                <p className="text-slate-200 text-sm md:text-base font-bold leading-relaxed drop-shadow-sm">
                   {aiConfig.bannerDescription || 'حول صورتك بالذكاء الاصطناعي وارتدي تيشيرت نادي الاتحاد في معقل زعيم الثغر'}
                 </p>
               </div>
               <Link 
                 to="/jersey-tryon" 
-                className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-lg shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:scale-105 transition-all flex items-center gap-3"
+                className="bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-2xl font-black text-lg shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:scale-105 transition-all flex items-center gap-3 shrink-0 cursor-pointer"
               >
                 <Sparkles size={24} />
                 <span>جرب الآن</span>
