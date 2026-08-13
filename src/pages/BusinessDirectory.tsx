@@ -188,14 +188,25 @@ export default function BusinessDirectory() {
       return;
     }
 
-    if (!formData.businessName.trim() || !formData.description.trim() || !formData.phone.trim()) {
-      toast.error('يرجى ملء البيانات الأساسية (اسم المشروع، الوصف، رقم الهاتف)');
+    if (!formData.businessName.trim()) {
+      toast.error('يرجى كتابة اسم المشروع *');
       return;
     }
 
-    // Default cover image if none was uploaded
-    const defaultCover = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1000';
-    const finalCoverImage = formData.coverImage.trim() || defaultCover;
+    if (!formData.phone.trim()) {
+      toast.error('يرجى كتابة رقم الهاتف للاتصال *');
+      return;
+    }
+
+    // Require at least one image (cover image or gallery image)
+    const effectiveCoverImage = formData.coverImage.trim() || (formData.gallery.length > 0 ? formData.gallery[0] : '');
+
+    if (!effectiveCoverImage) {
+      toast.error('يرجى إضافة صورة واحدة على الأقل للمشروع (صورة الغلاف أو صور المعرض) 📸');
+      return;
+    }
+
+    const finalCoverImage = effectiveCoverImage;
 
     // Normalize URLs
     const cleanedMapsUrl = normalizeUrl(formData.mapsUrl);
@@ -214,6 +225,8 @@ export default function BusinessDirectory() {
           previousData: editingBusiness,
           requestedData: {
             ...formData,
+            description: formData.description.trim() || 'لا يوجد وصف مضاف حالياً.',
+            address: formData.address.trim() || 'الإسكندرية',
             mapsUrl: cleanedMapsUrl,
             instagramUrl: cleanedInstagramUrl,
             facebookUrl: cleanedFacebookUrl,
@@ -236,8 +249,8 @@ export default function BusinessDirectory() {
           ownerId: currentUid,
           ownerName: formData.ownerName.trim() || profile?.name || 'عضو مجتمع الاتحاد',
           businessName: formData.businessName.trim(),
-          category: formData.category,
-          description: formData.description.trim(),
+          category: formData.category || 'خدمات أُخرى',
+          description: formData.description.trim() || 'لا يوجد وصف مضاف حالياً.',
           phone: formData.phone.trim(),
           whatsapp: formData.whatsapp.trim(),
           address: formData.address.trim() || 'الإسكندرية',
@@ -718,7 +731,7 @@ export default function BusinessDirectory() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">التصنيف *</label>
+                  <label className="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">التصنيف (اختياري)</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -733,9 +746,8 @@ export default function BusinessDirectory() {
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">وصف كامل للمشروع والخدمات *</label>
+                <label className="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">وصف للمشروع والخدمات (اختياري)</label>
                 <textarea
-                  required
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -773,10 +785,9 @@ export default function BusinessDirectory() {
               {/* Address and Map Link */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">العنوان بالتفصيل *</label>
+                  <label className="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">العنوان بالتفصيل (اختياري)</label>
                   <input
                     type="text"
-                    required
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     placeholder="مثال: سموحة، شارع النصر، الإسكندرية"
@@ -848,7 +859,7 @@ export default function BusinessDirectory() {
 
               {/* Cover Image Upload */}
               <div>
-                <label className="block text-xs font-black text-slate-600 dark:text-slate-300 mb-2">صورة الغلاف / الشعار الرئيسية (اختياري)</label>
+                <label className="block text-xs font-black text-slate-600 dark:text-slate-300 mb-2">صورة الغلاف / الشعار الرئيسية * (أو إضافة صورة في المعرض أدناه)</label>
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark flex flex-col items-center justify-center text-center">
                   {formData.coverImage ? (
                     <div className="relative w-full h-40 rounded-xl overflow-hidden mb-3">
