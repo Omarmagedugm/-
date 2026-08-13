@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore, BusinessItem } from '../store';
-import { db, auth } from '../lib/firebase';
+import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { 
   Building2, 
@@ -33,7 +33,8 @@ import {
   Dumbbell, 
   GraduationCap, 
   Plane, 
-  Grid
+  Grid,
+  Loader2
 } from 'lucide-react';
 import ImageUploader from '../components/ImageUploader';
 import toast from 'react-hot-toast';
@@ -113,9 +114,10 @@ export default function BusinessDirectory() {
 
   // User's own submissions
   const myBusinesses = useMemo(() => {
-    if (!profile?.uid) return [];
-    return businesses.filter(b => b.ownerId === profile.uid);
-  }, [businesses, profile?.uid]);
+    const currentUid = auth.currentUser?.uid || profile?.uid;
+    if (!currentUid) return [];
+    return businesses.filter(b => b.ownerId === currentUid || (profile?.uid && b.ownerId === profile.uid));
+  }, [businesses, profile?.uid, auth.currentUser?.uid]);
 
   const resetForm = () => {
     setFormData({
@@ -137,7 +139,8 @@ export default function BusinessDirectory() {
   };
 
   const handleOpenAddModal = () => {
-    if (!profile?.uid) {
+    const currentUid = auth.currentUser?.uid || profile?.uid;
+    if (!currentUid) {
       toast.error('يرجى تسجيل الدخول أولاً لإضافة مشروعك 💚');
       navigate('/auth');
       return;
@@ -168,32 +171,42 @@ export default function BusinessDirectory() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile?.uid) {
-      toast.error('يرجى تسجيل الدخول أولاً');
+    const currentUid = auth.currentUser?.uid || profile?.uid;
+
+    if (!currentUid) {
+      toast.error('يرجى تسجيل الدخول أولاً لإضافة مشروعك 💚');
+      navigate('/auth');
       return;
     }
 
-    if (!formData.businessName.trim() || !formData.description.trim() || !formData.phone.trim() || !formData.coverImage) {
-      toast.error('يرجى ملء كافة البيانات الأساسية وإضافة صورة الغلاف');
+    if (!formData.businessName.trim() || !formData.description.trim() || !formData.phone.trim()) {
+      toast.error('يرجى ملء البيانات الأساسية (اسم المشروع، الوصف، رقم الهاتف)');
       return;
     }
+
+    // Default cover image if none was uploaded
+    const defaultCover = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1000';
+    const finalCoverImage = formData.coverImage.trim() || defaultCover;
 
     setIsSubmitting(true);
 
     try {
       if (editingBusiness) {
         // Submit Edit Request to business_updates
-        await addDoc(collection(db, 'business_updates'), {
+        const updatePayload = {
           businessId: editingBusiness.id,
-          ownerId: profile.uid,
+          ownerId: currentUid,
           previousData: editingBusiness,
           requestedData: {
             ...formData,
+            coverImage: finalCoverImage,
             updatedAt: new Date().toISOString()
           },
           status: 'pending',
           createdAt: new Date().toISOString()
-        });
+        };
+
+        await addDoc(collection(db, 'business_updates'), updatePayload);
 
         toast.success('تم إرسال طلب التعديل للإدارة للمراجعة 💚');
         setShowAddModal(false);
@@ -201,19 +214,19 @@ export default function BusinessDirectory() {
       } else {
         // Create new business submission (pending status)
         const newDoc = {
-          ownerId: profile.uid,
-          ownerName: formData.ownerName.trim() || profile.name || 'عضو مجتمع الاتحاد',
+          ownerId: currentUid,
+          ownerName: formData.ownerName.trim() || profile?.name || 'عضو مجتمع الاتحاد',
           businessName: formData.businessName.trim(),
           category: formData.category,
           description: formData.description.trim(),
           phone: formData.phone.trim(),
           whatsapp: formData.whatsapp.trim(),
-          address: formData.address.trim(),
+          address: formData.address.trim() || 'الإسكندرية',
           mapsUrl: formData.mapsUrl.trim(),
           instagramUrl: formData.instagramUrl.trim(),
           facebookUrl: formData.facebookUrl.trim(),
           websiteUrl: formData.websiteUrl.trim(),
-          coverImage: formData.coverImage,
+          coverImage: finalCoverImage,
           gallery: formData.gallery,
           status: 'pending',
           featured: false,
@@ -233,10 +246,14 @@ export default function BusinessDirectory() {
         setShowAddModal(false);
         resetForm();
         setShowSuccessCard(true);
+        setActiveTab('my_businesses');
       }
-    } catch (err) {
-      console.error(err);
-      toast.error('حدث خطأ أثناء حفظ البيانات. يرجى المحاولة لاحقاً');
+    } catch (err: any) {
+      console.error('Business submission error:', err);
+      try {
+        handleFirestoreError(err, OperationType.CREATE, 'businesses');
+      } catch (e) {}
+      toast.error('حدث خطأ أثناء إرسال بيانات المشروع. يرجى التأكد من اتصالك بالإنترنت والمحاولة مجدداً.');
     } finally {
       setIsSubmitting(false);
     }
@@ -604,7 +621,7 @@ export default function BusinessDirectory() {
 
       {/* Success Modal Card after Submission */}
       {showSuccessCard && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-card-dark rounded-3xl p-8 max-w-md w-full text-center border border-slate-200 dark:border-border-dark shadow-2xl space-y-4">
             <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-10 h-10" />
@@ -633,13 +650,13 @@ export default function BusinessDirectory() {
 
       {/* Add / Edit Business Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-card-dark rounded-3xl p-6 max-w-2xl w-full border border-slate-200 dark:border-border-dark shadow-2xl my-8 space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar">
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-card-dark rounded-3xl max-w-2xl w-full border border-slate-200 dark:border-border-dark shadow-2xl my-auto space-y-0 max-h-[90vh] flex flex-col relative overflow-hidden">
             
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-border-dark pb-4">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-border-dark p-5 bg-white dark:bg-card-dark sticky top-0 z-20">
               <div>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <Building2 className="w-6 h-6 text-primary" />
                   <span>{editingBusiness ? 'تعديل بيانات المشروع' : 'إضافة مشروع جديد إلى الدليل'}</span>
                 </h3>
@@ -649,6 +666,7 @@ export default function BusinessDirectory() {
               </div>
 
               <button
+                type="button"
                 onClick={() => setShowAddModal(false)}
                 className="p-2 text-slate-400 hover:text-slate-600 rounded-full"
               >
@@ -656,8 +674,8 @@ export default function BusinessDirectory() {
               </button>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Modal Form Scrollable Area */}
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 no-scrollbar">
               
               {/* Basic Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -804,7 +822,7 @@ export default function BusinessDirectory() {
 
               {/* Cover Image Upload */}
               <div>
-                <label className="block text-xs font-black text-slate-600 dark:text-slate-300 mb-2">صورة الغلاف / الشعار الرئيسية *</label>
+                <label className="block text-xs font-black text-slate-600 dark:text-slate-300 mb-2">صورة الغلاف / الشعار الرئيسية (اختياري)</label>
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark flex flex-col items-center justify-center text-center">
                   {formData.coverImage ? (
                     <div className="relative w-full h-40 rounded-xl overflow-hidden mb-3">
@@ -862,21 +880,30 @@ export default function BusinessDirectory() {
                 </div>
               </div>
 
-              {/* Submit Button */}
-              <div className="pt-4 flex items-center gap-3">
+              {/* Sticky Modal Action Footer */}
+              <div className="sticky bottom-0 bg-white dark:bg-card-dark pt-3 pb-2 border-t border-slate-100 dark:border-border-dark z-30 flex items-center gap-3 mt-4">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-3.5 bg-primary text-white font-black text-sm rounded-2xl shadow-xl hover:bg-primary-dark transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-3.5 bg-primary text-white font-black text-sm rounded-2xl shadow-xl hover:bg-primary-dark transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
                 >
-                  <Send className="w-4 h-4" />
-                  <span>{editingBusiness ? 'إرسال طلب التعديل' : 'إرسال المشروع للمراجعة'}</span>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>جاري الإرسال للمراجعة...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>{editingBusiness ? 'إرسال طلب التعديل 💚' : 'إرسال المشروع للمراجعة 💚'}</span>
+                    </>
+                  )}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-6 py-3.5 bg-slate-100 dark:bg-surface-dark text-slate-600 dark:text-slate-300 font-bold text-sm rounded-2xl"
+                  className="px-5 py-3.5 bg-slate-100 dark:bg-surface-dark text-slate-600 dark:text-slate-300 font-bold text-sm rounded-2xl hover:bg-slate-200 transition-colors"
                 >
                   إلغاء
                 </button>
