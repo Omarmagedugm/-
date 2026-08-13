@@ -93,6 +93,8 @@ export default function TopHeader() {
     if (path === '/fan-zone' || path === '/feed') return 'منطقة المشجعين';
     if (path === '/club-members') return 'أعضاء النادي';
     if (path === '/history') return 'تاريخ النادي';
+    if (path === '/social' || path === '/social-media' || path === '/facebook') return 'سوشيال ميديا';
+    if (path === '/business' || path.startsWith('/business/')) return 'اتحاداوي بيزنس';
     if (path === '/store') return 'متجر النادي';
     if (path === '/bookmarks') return 'المحفوظات';
     if (path === '/admin') return 'لوحة التحكم';

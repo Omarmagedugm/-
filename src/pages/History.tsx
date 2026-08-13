@@ -2,8 +2,7 @@ import { motion, useInView, useMotionValue, useTransform, animate } from 'motion
 import { useEffect, useRef, useState } from 'react';
 import { Trophy, History as HistoryIcon, MapPin, Calendar, Star, Award, Shield, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { useAppStore } from '../store';
 
 const AnimatedCounter = ({ value, duration = 2 }: { value: number; duration?: number }) => {
   const count = useMotionValue(0);
@@ -25,40 +24,31 @@ export default function History() {
   const [activeTab, setActiveTab] = useState<'titles' | 'timeline' | 'stadiums'>('titles');
   const navigate = useNavigate();
   
-  const [clubStats, setClubStats] = useState<any[]>([]);
-  const [clubTitles, setClubTitles] = useState<any[]>([]);
-  const [historyEvents, setHistoryEvents] = useState<any[]>([]);
-  const [stadiums, setStadiums] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { 
+    clubStats: storeStats, 
+    clubTitles: storeTitles, 
+    historyEvents: storeEvents, 
+    stadiums: storeStadiums,
+    dataLoaded 
+  } = useAppStore();
 
-  useEffect(() => {
-    const unsubStats = onSnapshot(collection(db, 'club_stats'), (snap) => {
-      setClubStats(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)).filter(i => !i.hidden));
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'club_stats'));
-
-    const unsubTitles = onSnapshot(collection(db, 'club_titles'), (snap) => {
-      setClubTitles(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)).filter(i => !i.hidden));
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'club_titles'));
-
-    const unsubTimeline = onSnapshot(query(collection(db, 'club_timeline'), orderBy('year', 'asc')), (snap) => {
-      setHistoryEvents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)).filter(i => !i.hidden));
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'club_timeline'));
-
-    const unsubStadiums = onSnapshot(collection(db, 'club_stadiums'), (snap) => {
-      setStadiums(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)).filter(i => !i.hidden));
-      setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'club_stadiums');
-      setLoading(false);
+  const sortHistoryItems = <T extends { order?: number }>(items: T[], fallbackSort?: (a: T, b: T) => number): T[] => {
+    return [...items].sort((a, b) => {
+      const hasA = typeof a.order === 'number';
+      const hasB = typeof b.order === 'number';
+      if (hasA && hasB) return (a.order as number) - (b.order as number);
+      if (hasA) return -1;
+      if (hasB) return 1;
+      if (fallbackSort) return fallbackSort(a, b);
+      return 0;
     });
+  };
 
-    return () => {
-      unsubStats();
-      unsubTitles();
-      unsubTimeline();
-      unsubStadiums();
-    };
-  }, []);
+  const clubStats = sortHistoryItems((storeStats || []).filter(i => !i.hidden));
+  const clubTitles = sortHistoryItems((storeTitles || []).filter(i => !i.hidden), (a, b) => b.count - a.count);
+  const historyEvents = sortHistoryItems((storeEvents || []).filter(i => !i.hidden), (a, b) => (a.year || '').localeCompare(b.year || ''));
+  const stadiums = sortHistoryItems((storeStadiums || []).filter(i => !i.hidden));
+  const loading = !dataLoaded && clubTitles.length === 0 && historyEvents.length === 0;
   
   const getStatIcon = (label: string) => {
     if (label.includes('سنة')) return <Calendar className="text-blue-500" />;

@@ -27,7 +27,8 @@ import {
   Sparkles,
   Shield,
   ShieldCheck,
-  Building2
+  Building2,
+  Menu
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -69,6 +70,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
     { title: 'الرئيسية', items: [
       { id: 'overview', icon: <LayoutDashboard size={18} />, label: 'لوحة القيادة', show: true },
       { id: 'layout', icon: <LayoutDashboard size={18} />, label: 'إدارة الصفحة الرئيسية', show: isAdmin || hasRole('layout_editor') },
+      { id: 'sidebar-menu', icon: <Menu size={18} />, label: 'ترتيب القائمة الجانبية', show: isAdmin || hasRole('layout_editor') },
     ]},
     { title: 'إدارة الأخبار', items: [
       { id: 'news', icon: <Newspaper size={18} />, label: 'الأخبار والمقالات', show: isAdmin || hasRole('news_editor') },

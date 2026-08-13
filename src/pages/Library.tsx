@@ -209,46 +209,6 @@ export default function Library() {
     }
   };
 
-  useEffect(() => {
-    const unsubSongs = onSnapshot(collection(db, 'songs'), (snap) => {
-      setSongs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
-    }, (error) => {
-      if (error.code !== 'permission-denied') console.error('Songs sync error:', error);
-    });
-
-    const unsubBooks = onSnapshot(collection(db, 'books'), (snap) => {
-      setBooks(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
-    }, (error) => {
-      if (error.code !== 'permission-denied') console.error('Books sync error:', error);
-    });
-
-    const unsubAlbums = onSnapshot(collection(db, 'albums'), (snap) => {
-      setAlbums(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
-    }, (error) => {
-      if (error.code !== 'permission-denied') console.error('Albums sync error:', error);
-    });
-
-    const unsubMedia = onSnapshot(collection(db, 'media'), (snap) => {
-      setMedia(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
-    }, (error) => {
-      if (error.code !== 'permission-denied') console.error('Media sync error:', error);
-    });
-
-    const unsubPlaylists = onSnapshot(collection(db, 'media_playlists'), (snap) => {
-      setMediaPlaylists(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
-    }, (error) => {
-      if (error.code !== 'permission-denied') console.error('Playlists sync error:', error);
-    });
-
-    return () => {
-      unsubSongs();
-      unsubBooks();
-      unsubAlbums();
-      unsubMedia();
-      unsubPlaylists();
-    };
-  }, []);
-
   // Photos strictly from Media section, sorted newest first
   const mediaPhotos = media
     .filter(m => m.type === 'photo')

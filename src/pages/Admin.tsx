@@ -58,6 +58,9 @@ import {
   Disc,
   ListMusic,
   ChevronDown,
+  ChevronUp,
+  ArrowUp,
+  ArrowDown,
   CloudSun,
   MapPin,
   Sunrise,
@@ -86,6 +89,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import AdminSidebar from '../components/AdminSidebar';
+import AdminSidebarManager from '../components/AdminSidebarManager';
 import AdminBusiness from '../components/AdminBusiness';
 import ScoreSelector from '../components/ScoreSelector';
 import ImageUploader from '../components/ImageUploader';
@@ -718,6 +722,7 @@ export default function Admin() {
       'products': ['store_editor'],
       'orders': ['store_editor'],
       'layout': ['layout_editor'],
+      'sidebar-menu': ['layout_editor'],
       'city': ['layout_editor'],
       'history': ['layout_editor'],
       'polls': ['layout_editor', 'user_manager'],
@@ -754,7 +759,7 @@ export default function Admin() {
   // Redirection logic based on role permissions
   useEffect(() => {
     if (!isTabAllowed(activeTab)) {
-      const allowedTabs = ['overview', 'news', 'media', 'matches', 'live', 'users', 'settings', 'clubs', 'polls', 'comments', 'posts', 'predictions', 'fanzone', 'history', 'news-categories', 'news-tags', 'products', 'orders', 'layout', 'music', 'books', 'city', 'notifications', 'backup'];
+      const allowedTabs = ['overview', 'news', 'media', 'matches', 'live', 'users', 'settings', 'clubs', 'polls', 'comments', 'posts', 'predictions', 'fanzone', 'history', 'news-categories', 'news-tags', 'products', 'orders', 'layout', 'sidebar-menu', 'music', 'books', 'city', 'notifications', 'backup'];
       const firstAllowed = allowedTabs.find(tab => isTabAllowed(tab));
       if (firstAllowed) {
         setActiveTab(firstAllowed as any);
@@ -986,6 +991,7 @@ export default function Admin() {
           handleFirestoreError(err, OperationType.WRITE, 'city_info/alexandria');
         }
       } else if (activeTab === 'settings') {
+        const facebookUrl = formData.socialFacebook !== undefined ? formData.socialFacebook : (formData.facebookPageUrl !== undefined ? formData.facebookPageUrl : (appSettings.socialLinks?.facebook || appSettings.facebookPageUrl || 'https://www.facebook.com/Itthadalexchannel'));
         const payload = {
           appName: formData.appName || appSettings.appName || '',
           appLogo: formData.appLogo || appSettings.appLogo || '',
@@ -995,12 +1001,22 @@ export default function Admin() {
           logoText: formData.logoText || appSettings.logoText || '',
           defaultSport: formData.defaultSport || appSettings.defaultSport || 'auto',
           liveViewMode: formData.liveViewMode || appSettings.liveViewMode || 'both',
-          libraryBanner: formData.libraryBanner !== undefined ? formData.libraryBanner : (appSettings.libraryBanner || '')
+          libraryBanner: formData.libraryBanner !== undefined ? formData.libraryBanner : (appSettings.libraryBanner || ''),
+          facebookPageUrl: facebookUrl,
+          socialLinks: {
+            facebook: facebookUrl,
+            youtube: formData.socialYoutube !== undefined ? formData.socialYoutube : (appSettings.socialLinks?.youtube || 'https://youtube.com/@itthadalexchannel'),
+            instagram: formData.socialInstagram !== undefined ? formData.socialInstagram : (appSettings.socialLinks?.instagram || 'https://instagram.com/itthadalexchannel'),
+            tiktok: formData.socialTiktok !== undefined ? formData.socialTiktok : (appSettings.socialLinks?.tiktok || 'https://tiktok.com/@itthadalexchannel'),
+            twitter: formData.socialTwitter !== undefined ? formData.socialTwitter : (appSettings.socialLinks?.twitter || 'https://x.com/itthadalexchannel'),
+            whatsapp: formData.socialWhatsapp !== undefined ? formData.socialWhatsapp : (appSettings.socialLinks?.whatsapp || 'https://wa.me/itthadalexchannel')
+          }
         };
         try {
           await setDoc(doc(db, 'settings', 'global'), payload);
           const { setSettings } = useAppStore.getState();
           setSettings(payload);
+          toast.success('تم حفظ كافة الإعدادات وروابط منصات التواصل بنجاح');
         } catch (err) {
           handleFirestoreError(err, OperationType.WRITE, 'settings/global');
         }
@@ -1132,6 +1148,7 @@ export default function Admin() {
             label: formData.label || '',
             value: Number(formData.value || 0),
             icon: formData.icon || 'star',
+            order: formData.order !== undefined && formData.order !== '' ? Number(formData.order) : (isEditing ? (clubStats.find(s => s.id === editingId)?.order ?? 0) : clubStats.length),
             hidden: formData.hidden ?? false
           };
           if (isEditing && editingId) {
@@ -1156,6 +1173,7 @@ export default function Admin() {
             count: Number(formData.count || 0),
             icon: formData.icon || 'trophy',
             category: formData.category || 'football',
+            order: formData.order !== undefined && formData.order !== '' ? Number(formData.order) : (isEditing ? (clubTitles.find(t => t.id === editingId)?.order ?? 0) : clubTitles.length),
             hidden: formData.hidden ?? false
           };
           if (isEditing && editingId) {
@@ -1179,6 +1197,7 @@ export default function Admin() {
             year: formData.year || '',
             title: formData.title || '',
             desc: formData.desc || '',
+            order: formData.order !== undefined && formData.order !== '' ? Number(formData.order) : (isEditing ? (historyEvents.find(e => e.id === editingId)?.order ?? 0) : historyEvents.length),
             hidden: formData.hidden ?? false
           };
           if (isEditing && editingId) {
@@ -1203,6 +1222,7 @@ export default function Admin() {
             type: formData.type || '',
             desc: formData.desc || '',
             imageUrl: formData.imageUrl || '',
+            order: formData.order !== undefined && formData.order !== '' ? Number(formData.order) : (isEditing ? (stadiums.find(s => s.id === editingId)?.order ?? 0) : stadiums.length),
             hidden: formData.hidden ?? false
           };
           if (isEditing && editingId) {
@@ -1710,6 +1730,66 @@ export default function Admin() {
     return Number(match.timerBaseMinute || 0) + elapsed;
   };
 
+  const sortHistoryList = <T extends { order?: number }>(items: T[], fallbackSort?: (a: T, b: T) => number): T[] => {
+    return [...items].sort((a, b) => {
+      const hasA = typeof a.order === 'number';
+      const hasB = typeof b.order === 'number';
+      if (hasA && hasB) return (a.order as number) - (b.order as number);
+      if (hasA) return -1;
+      if (hasB) return 1;
+      if (fallbackSort) return fallbackSort(a, b);
+      return 0;
+    });
+  };
+
+  const handleReorderHistory = async (sub: 'stats' | 'titles' | 'timeline' | 'stadiums', index: number, direction: 'up' | 'down') => {
+    let list: any[] = [];
+    let colName = '';
+    let setter: ((d: any[]) => void) | null = null;
+
+    if (sub === 'stats') {
+      list = sortHistoryList(clubStats);
+      colName = 'club_stats';
+      setter = setClubStats;
+    } else if (sub === 'titles') {
+      list = sortHistoryList(clubTitles, (a, b) => b.count - a.count);
+      colName = 'club_titles';
+      setter = setClubTitles;
+    } else if (sub === 'timeline') {
+      list = sortHistoryList(historyEvents, (a, b) => (a.year || '').localeCompare(b.year || ''));
+      colName = 'club_timeline';
+      setter = setHistoryEvents;
+    } else if (sub === 'stadiums') {
+      list = sortHistoryList(stadiums);
+      colName = 'club_stadiums';
+      setter = setStadiums;
+    }
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= list.length) return;
+
+    const newList = [...list];
+    const temp = newList[index];
+    newList[index] = newList[targetIndex];
+    newList[targetIndex] = temp;
+
+    const updatedList = newList.map((item, idx) => ({ ...item, order: idx }));
+    if (setter) setter(updatedList);
+
+    try {
+      const item1 = updatedList[index];
+      const item2 = updatedList[targetIndex];
+      await Promise.all([
+        updateDoc(doc(db, colName, item1.id), { order: index }),
+        updateDoc(doc(db, colName, item2.id), { order: targetIndex })
+      ]);
+      toast.success('تم حفظ الترتيب الجديد بنجاح');
+    } catch (err) {
+      console.error('Error reordering history items:', err);
+      toast.error('حدث خطأ أثناء حفظ الترتيب');
+    }
+  };
+
   const openEditModal = (data: any, id: string) => {
     const freshData = { ...data };
     setFormData(freshData);
@@ -1811,6 +1891,7 @@ export default function Admin() {
              activeTab === 'orders' ? 'إدارة المشتريات' :
              activeTab === 'polls' ? 'إدارة الاستطلاعات' : 
              activeTab === 'layout' ? 'تعديل الصفحة الرئيسية' :
+             activeTab === 'sidebar-menu' ? 'ترتيب القائمة الجانبية' :
              activeTab === 'history' ? 'تاريخ النادي' :
              activeTab === 'city' ? 'طقس الإسكندرية' :
              activeTab === 'live' ? 'البث المباشر' :
@@ -2361,6 +2442,10 @@ export default function Admin() {
                 )}
               </div>
             </div>
+          )}
+
+          {activeTab === 'sidebar-menu' && (
+            <AdminSidebarManager />
           )}
 
           {activeTab === 'ai-studio' && (
@@ -4420,6 +4505,132 @@ export default function Admin() {
                   )}
                 </div>
 
+                <div className="pt-4 border-t border-border-light dark:border-border-dark mt-4 mb-4 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-black mb-1">منصات التواصل الرسمية لقناة الاتحاد السكندري</h3>
+                    <p className="text-[10px] text-slate-500 font-bold">
+                      تحكم في جميع روابط الحسابات الرسمية لقناة الاتحاد السكندري المعروضة في قسم السوشيال ميديا بالتطبيق
+                    </p>
+                  </div>
+
+                  {/* Facebook */}
+                  <div className="p-3 bg-slate-50 dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                        صفحة فيسبوك الرسمية (Facebook)
+                      </label>
+                      <span className="text-[9px] font-black text-blue-600 dark:text-blue-400" dir="ltr">@itthadalexchannel</span>
+                    </div>
+                    <input 
+                      type="url" 
+                      value={formData.socialFacebook !== undefined ? formData.socialFacebook : (formData.facebookPageUrl !== undefined ? formData.facebookPageUrl : (appSettings.socialLinks?.facebook || appSettings.facebookPageUrl || 'https://www.facebook.com/Itthadalexchannel'))} 
+                      onChange={(e) => setFormData({...formData, socialFacebook: e.target.value, facebookPageUrl: e.target.value})}
+                      placeholder="https://www.facebook.com/Itthadalexchannel"
+                      className="w-full p-2.5 rounded-xl border border-border-light bg-white dark:bg-card-dark dark:border-border-dark text-xs font-bold focus:border-primary outline-none transition-colors"
+                      dir="ltr"
+                    />
+                  </div>
+
+                  {/* YouTube */}
+                  <div className="p-3 bg-slate-50 dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-red-600"></span>
+                        قناة اليوتيوب الرسمية (YouTube)
+                      </label>
+                      <span className="text-[9px] font-black text-red-600 dark:text-red-400" dir="ltr">@itthadalexchannel</span>
+                    </div>
+                    <input 
+                      type="url" 
+                      value={formData.socialYoutube !== undefined ? formData.socialYoutube : (appSettings.socialLinks?.youtube || 'https://youtube.com/@itthadalexchannel')} 
+                      onChange={(e) => setFormData({...formData, socialYoutube: e.target.value})}
+                      placeholder="https://youtube.com/@itthadalexchannel"
+                      className="w-full p-2.5 rounded-xl border border-border-light bg-white dark:bg-card-dark dark:border-border-dark text-xs font-bold focus:border-primary outline-none transition-colors"
+                      dir="ltr"
+                    />
+                  </div>
+
+                  {/* Instagram */}
+                  <div className="p-3 bg-slate-50 dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-pink-600"></span>
+                        حساب إنستجرام الرسمي (Instagram)
+                      </label>
+                      <span className="text-[9px] font-black text-pink-600 dark:text-pink-400" dir="ltr">@itthadalexchannel</span>
+                    </div>
+                    <input 
+                      type="url" 
+                      value={formData.socialInstagram !== undefined ? formData.socialInstagram : (appSettings.socialLinks?.instagram || 'https://instagram.com/itthadalexchannel')} 
+                      onChange={(e) => setFormData({...formData, socialInstagram: e.target.value})}
+                      placeholder="https://instagram.com/itthadalexchannel"
+                      className="w-full p-2.5 rounded-xl border border-border-light bg-white dark:bg-card-dark dark:border-border-dark text-xs font-bold focus:border-primary outline-none transition-colors"
+                      dir="ltr"
+                    />
+                  </div>
+
+                  {/* TikTok */}
+                  <div className="p-3 bg-slate-50 dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-slate-800 dark:bg-slate-300"></span>
+                        حساب تيك توك الرسمي (TikTok)
+                      </label>
+                      <span className="text-[9px] font-black text-slate-600 dark:text-slate-300" dir="ltr">@itthadalexchannel</span>
+                    </div>
+                    <input 
+                      type="url" 
+                      value={formData.socialTiktok !== undefined ? formData.socialTiktok : (appSettings.socialLinks?.tiktok || 'https://tiktok.com/@itthadalexchannel')} 
+                      onChange={(e) => setFormData({...formData, socialTiktok: e.target.value})}
+                      placeholder="https://tiktok.com/@itthadalexchannel"
+                      className="w-full p-2.5 rounded-xl border border-border-light bg-white dark:bg-card-dark dark:border-border-dark text-xs font-bold focus:border-primary outline-none transition-colors"
+                      dir="ltr"
+                    />
+                  </div>
+
+                  {/* X / Twitter */}
+                  <div className="p-3 bg-slate-50 dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+                        حساب إكس الرسمي (X / Twitter)
+                      </label>
+                      <span className="text-[9px] font-black text-sky-600 dark:text-sky-400" dir="ltr">@itthadalexchannel</span>
+                    </div>
+                    <input 
+                      type="url" 
+                      value={formData.socialTwitter !== undefined ? formData.socialTwitter : (appSettings.socialLinks?.twitter || 'https://x.com/itthadalexchannel')} 
+                      onChange={(e) => setFormData({...formData, socialTwitter: e.target.value})}
+                      placeholder="https://x.com/itthadalexchannel"
+                      className="w-full p-2.5 rounded-xl border border-border-light bg-white dark:bg-card-dark dark:border-border-dark text-xs font-bold focus:border-primary outline-none transition-colors"
+                      dir="ltr"
+                    />
+                  </div>
+
+                  {/* WhatsApp Chat Account */}
+                  <div className="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-black text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        حساب واتساب الرسمي للدردشة (WhatsApp Chat)
+                      </label>
+                      <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400" dir="ltr">@itthadalexchannel</span>
+                    </div>
+                    <input 
+                      type="text" 
+                      value={formData.socialWhatsapp !== undefined ? formData.socialWhatsapp : (appSettings.socialLinks?.whatsapp || 'https://wa.me/itthadalexchannel')} 
+                      onChange={(e) => setFormData({...formData, socialWhatsapp: e.target.value})}
+                      placeholder="https://wa.me/itthadalexchannel"
+                      className="w-full p-2.5 rounded-xl border border-emerald-200 bg-white dark:bg-card-dark dark:border-emerald-900/60 text-xs font-bold focus:border-emerald-500 outline-none transition-colors"
+                      dir="ltr"
+                    />
+                    <p className="text-[9px] text-emerald-700/80 dark:text-emerald-400/80 font-bold">
+                      حساب الدردشة الرسمي المعتمد: @itthadalexchannel (الرابط: https://wa.me/itthadalexchannel)
+                    </p>
+                  </div>
+                </div>
+
               <button 
                 onClick={handleAdd} 
                 disabled={loading}
@@ -4559,16 +4770,48 @@ export default function Admin() {
                     onClick={() => setHistorySubTab(sub as any)}
                     className={`flex-1 py-1.5 text-[10px] font-black rounded-xl transition-all ${historySubTab === sub ? 'bg-white dark:bg-card-dark text-primary shadow-sm' : 'text-slate-500'}`}
                   >
-                    {sub === 'stats' ? 'أرقام' : sub === 'titles' ? 'كؤوس' : sub === 'timeline' ? 'أحداث' : 'ملاعب'}
+                    {sub === 'stats' ? 'أرقام قياسية' : sub === 'titles' ? 'كؤوس وبطولات' : sub === 'timeline' ? 'أحداث تاريخية' : 'ملاعب النادي'}
                   </button>
                 ))}
               </div>
 
+              <div className="flex items-center justify-between bg-primary/10 dark:bg-primary/5 p-3 rounded-2xl border border-primary/20">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-black text-xs">
+                    ↕
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-slate-800 dark:text-slate-100">إعادة ترتيب العناصر بسهولة</p>
+                    <p className="text-[10px] text-slate-500 font-bold">اضغط على أزرار الأسهم (⬆️ ⬇️) بجانب أي عنصر لتغيير ترتيب ظهوره المباشر في صفحات الموقع وتطبيق النادي.</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex flex-col gap-3">
-                {historySubTab === 'stats' && clubStats.map((item) => (
-                  <div key={item.id} className={`bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between ${item.hidden ? 'opacity-50 grayscale' : ''}`}>
+                {historySubTab === 'stats' && sortHistoryList(clubStats).map((item, idx, arr) => (
+                  <div key={item.id} className={`bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between gap-2 ${item.hidden ? 'opacity-50 grayscale' : ''}`}>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-surface-dark flex items-center justify-center text-primary">
+                      <div className="flex items-center gap-1 bg-slate-50 dark:bg-surface-dark px-2 py-1 rounded-xl border border-border-light dark:border-border-dark">
+                        <span className="text-[10px] font-black text-primary font-mono ml-1">#{idx + 1}</span>
+                        <button 
+                          onClick={() => handleReorderHistory('stats', idx, 'up')}
+                          disabled={idx === 0}
+                          title="تحريك لأعلى"
+                          className="p-1 rounded-lg text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-card-dark disabled:opacity-20 disabled:pointer-events-none transition-all"
+                        >
+                          <ChevronUp size={14} />
+                        </button>
+                        <button 
+                          onClick={() => handleReorderHistory('stats', idx, 'down')}
+                          disabled={idx === arr.length - 1}
+                          title="تحريك لأسفل"
+                          className="p-1 rounded-lg text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-card-dark disabled:opacity-20 disabled:pointer-events-none transition-all"
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                      </div>
+
+                      <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-surface-dark flex items-center justify-center text-primary flex-shrink-0">
                         <Star size={14} />
                       </div>
                       <div>
@@ -4583,16 +4826,36 @@ export default function Admin() {
                       <button onClick={() => handleToggleVisibility('club_stats', item)} className="p-2 text-slate-400 hover:text-primary transition-all">
                         {item.hidden ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
-                      <button onClick={() => handleEditItem(item)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
+                      <button onClick={() => openEditModal(item, item.id)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
                       <button onClick={() => handleDelete('club_stats', item.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
                     </div>
                   </div>
                 ))}
 
-                {historySubTab === 'titles' && clubTitles.map((item) => (
-                  <div key={item.id} className={`bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between ${item.hidden ? 'opacity-50 grayscale' : ''}`}>
+                {historySubTab === 'titles' && sortHistoryList(clubTitles, (a, b) => b.count - a.count).map((item, idx, arr) => (
+                  <div key={item.id} className={`bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between gap-2 ${item.hidden ? 'opacity-50 grayscale' : ''}`}>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-surface-dark flex items-center justify-center text-primary">
+                      <div className="flex items-center gap-1 bg-slate-50 dark:bg-surface-dark px-2 py-1 rounded-xl border border-border-light dark:border-border-dark">
+                        <span className="text-[10px] font-black text-primary font-mono ml-1">#{idx + 1}</span>
+                        <button 
+                          onClick={() => handleReorderHistory('titles', idx, 'up')}
+                          disabled={idx === 0}
+                          title="تحريك لأعلى"
+                          className="p-1 rounded-lg text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-card-dark disabled:opacity-20 disabled:pointer-events-none transition-all"
+                        >
+                          <ChevronUp size={14} />
+                        </button>
+                        <button 
+                          onClick={() => handleReorderHistory('titles', idx, 'down')}
+                          disabled={idx === arr.length - 1}
+                          title="تحريك لأسفل"
+                          className="p-1 rounded-lg text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-card-dark disabled:opacity-20 disabled:pointer-events-none transition-all"
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                      </div>
+
+                      <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-surface-dark flex items-center justify-center text-primary flex-shrink-0">
                         <Trophy size={14} />
                       </div>
                       <div>
@@ -4613,9 +4876,29 @@ export default function Admin() {
                   </div>
                 ))}
 
-                {historySubTab === 'timeline' && historyEvents.map((item) => (
-                  <div key={item.id} className={`bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between ${item.hidden ? 'opacity-50 grayscale' : ''}`}>
+                {historySubTab === 'timeline' && sortHistoryList(historyEvents, (a, b) => (a.year || '').localeCompare(b.year || '')).map((item, idx, arr) => (
+                  <div key={item.id} className={`bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between gap-2 ${item.hidden ? 'opacity-50 grayscale' : ''}`}>
                     <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="flex items-center gap-1 bg-slate-50 dark:bg-surface-dark px-2 py-1 rounded-xl border border-border-light dark:border-border-dark flex-shrink-0">
+                        <span className="text-[10px] font-black text-primary font-mono ml-1">#{idx + 1}</span>
+                        <button 
+                          onClick={() => handleReorderHistory('timeline', idx, 'up')}
+                          disabled={idx === 0}
+                          title="تحريك لأعلى"
+                          className="p-1 rounded-lg text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-card-dark disabled:opacity-20 disabled:pointer-events-none transition-all"
+                        >
+                          <ChevronUp size={14} />
+                        </button>
+                        <button 
+                          onClick={() => handleReorderHistory('timeline', idx, 'down')}
+                          disabled={idx === arr.length - 1}
+                          title="تحريك لأسفل"
+                          className="p-1 rounded-lg text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-card-dark disabled:opacity-20 disabled:pointer-events-none transition-all"
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                      </div>
+
                       <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-surface-dark flex items-center justify-center text-primary flex-shrink-0">
                         <HistoryIcon size={14} />
                       </div>
@@ -4637,13 +4920,33 @@ export default function Admin() {
                   </div>
                 ))}
 
-                {historySubTab === 'stadiums' && stadiums.map((item) => (
-                  <div key={item.id} className={`bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between ${item.hidden ? 'opacity-50 grayscale' : ''}`}>
+                {historySubTab === 'stadiums' && sortHistoryList(stadiums).map((item, idx, arr) => (
+                  <div key={item.id} className={`bg-white dark:bg-card-dark p-3 rounded-xl border border-border-light dark:border-border-dark flex items-center justify-between gap-2 ${item.hidden ? 'opacity-50 grayscale' : ''}`}>
                     <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 bg-slate-50 dark:bg-surface-dark px-2 py-1 rounded-xl border border-border-light dark:border-border-dark flex-shrink-0">
+                        <span className="text-[10px] font-black text-primary font-mono ml-1">#{idx + 1}</span>
+                        <button 
+                          onClick={() => handleReorderHistory('stadiums', idx, 'up')}
+                          disabled={idx === 0}
+                          title="تحريك لأعلى"
+                          className="p-1 rounded-lg text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-card-dark disabled:opacity-20 disabled:pointer-events-none transition-all"
+                        >
+                          <ChevronUp size={14} />
+                        </button>
+                        <button 
+                          onClick={() => handleReorderHistory('stadiums', idx, 'down')}
+                          disabled={idx === arr.length - 1}
+                          title="تحريك لأسفل"
+                          className="p-1 rounded-lg text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-card-dark disabled:opacity-20 disabled:pointer-events-none transition-all"
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                      </div>
+
                       {item.imageUrl && item.imageUrl.trim() !== '' ? (
-                        <img src={item.imageUrl} className="w-10 h-10 rounded-lg object-cover" referrerPolicy="no-referrer" />
+                        <img src={item.imageUrl} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" referrerPolicy="no-referrer" />
                       ) : (
-                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
                            <Activity size={20} className="text-slate-300" />
                         </div>
                       )}
@@ -5038,6 +5341,16 @@ export default function Admin() {
                         <UploadOrUrlField label="صورة الملعب" fieldName="imageUrl" currentUrl={formData.imageUrl} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                      </>
                    )}
+                   <div className="mt-2">
+                     <label className="text-[10px] font-black text-slate-500 mb-1 block">رقم الترتيب (اختياري - يحدد أولوية الظهور)</label>
+                     <input 
+                       type="number" 
+                       placeholder="مثال: 0, 1, 2..." 
+                       className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-sm" 
+                       value={formData.order ?? ''} 
+                       onChange={(e) => setFormData({...formData, order: e.target.value === '' ? undefined : Number(e.target.value)})} 
+                     />
+                   </div>
                    <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark mt-2">
                      <input 
                        type="checkbox" 

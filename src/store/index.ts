@@ -5,7 +5,7 @@ import { defaultMemberDiscounts } from '../data/defaultMemberDiscounts';
 
 export interface HomeSection {
   id: string;
-  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget' | 'city' | 'ads' | 'advertise' | 'image' | 'ai_banner' | 'tickets' | 'club_members' | 'club_members_ad' | 'club_members_banner' | 'business' | 'business_directory' | 'ittihad_business';
+  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget' | 'city' | 'ads' | 'advertise' | 'image' | 'ai_banner' | 'tickets' | 'club_members' | 'club_members_ad' | 'club_members_banner' | 'business' | 'business_directory' | 'ittihad_business' | 'social' | 'social_media';
   title?: string;
   active: boolean;
   order: number;
@@ -15,6 +15,37 @@ export interface HomeSection {
   spacing?: number;
   pinned?: boolean;
 }
+
+export interface SidebarMenuItem {
+  id: string;
+  title: string;
+  path: string;
+  icon: string;
+  iconType?: 'material' | 'lucide' | 'facebook';
+  active: boolean;
+  order: number;
+  badge?: string;
+  badgeColor?: string;
+  isCustom?: boolean;
+  group?: 'main' | 'more' | 'legal';
+}
+
+export const DEFAULT_SIDEBAR_ITEMS: SidebarMenuItem[] = [
+  { id: 'home', title: 'الرئيسية', path: '/', icon: 'home', iconType: 'material', active: true, order: 0, group: 'main' },
+  { id: 'news', title: 'الأخبار والتغطيات', path: '/news', icon: 'newspaper', iconType: 'material', active: true, order: 1, group: 'main' },
+  { id: 'matches', title: 'جدول المباريات', path: '/matches', icon: 'sports_soccer', iconType: 'material', active: true, order: 2, group: 'main' },
+  { id: 'live', title: 'البث المباشر', path: '/live', icon: 'live_tv', iconType: 'material', active: true, order: 3, group: 'main' },
+  { id: 'fan-zone', title: 'منطقة الجماهير', path: '/fan-zone', icon: 'stadium', iconType: 'material', active: true, order: 4, group: 'main' },
+  { id: 'jersey-tryon', title: 'استوديو المشجع (AI)', path: '/jersey-tryon', icon: 'bolt', iconType: 'material', active: true, order: 5, badge: 'جديد', badgeColor: 'bg-red-500 text-white', group: 'main' },
+  { id: 'club-members', title: 'أعضاء النادي', path: '/club-members', icon: 'ShieldCheck', iconType: 'lucide', active: true, order: 6, badge: 'الخدمات', badgeColor: 'bg-amber-500 text-white', group: 'main' },
+  { id: 'library', title: 'المكتبة الرقمية والوسائط', path: '/library', icon: 'perm_media', iconType: 'material', active: true, order: 7, group: 'main' },
+  { id: 'social', title: 'سوشيال ميديا', path: '/social', icon: 'facebook', iconType: 'facebook', active: true, order: 8, badge: 'فيسبوك', badgeColor: 'bg-blue-600 text-white', group: 'main' },
+  { id: 'history', title: 'تاريخ النادي', path: '/history', icon: 'history_edu', iconType: 'material', active: true, order: 9, group: 'main' },
+  { id: 'business', title: 'اتحاداوي بيزنس', path: '/business', icon: 'Building2', iconType: 'lucide', active: true, order: 10, badge: 'دليل الأعمال', badgeColor: 'bg-emerald-600 text-white', group: 'main' },
+  { id: 'store', title: 'متجر الجماهير', path: '/store', icon: 'shopping_bag', iconType: 'material', active: true, order: 11, group: 'main' },
+  { id: 'profile', title: 'حسابي', path: '/profile', icon: 'person', iconType: 'material', active: true, order: 12, group: 'more' },
+  { id: 'bookmarks', title: 'محفوظاتي', path: '/bookmarks', icon: 'bookmark', iconType: 'material', active: true, order: 13, group: 'more' },
+];
 
 export interface NewsTag {
   id: string;
@@ -222,6 +253,7 @@ export interface ClubTitle {
   count: number;
   icon: string;
   category: 'football' | 'basketball';
+  order?: number;
   hidden?: boolean;
 }
 
@@ -230,6 +262,7 @@ export interface ClubStat {
   label: string;
   value: number;
   icon: string;
+  order?: number;
   hidden?: boolean;
 }
 
@@ -238,6 +271,7 @@ export interface HistoryEvent {
   year: string;
   title: string;
   desc: string;
+  order?: number;
   hidden?: boolean;
 }
 
@@ -299,6 +333,7 @@ export interface StadiumItem {
   type: string;
   desc: string;
   imageUrl: string;
+  order?: number;
   hidden?: boolean;
 }
 
@@ -456,6 +491,15 @@ interface AppState {
     defaultSport?: 'football' | 'basketball' | 'auto';
     liveViewMode?: 'both' | 'football' | 'basketball';
     libraryBanner?: string;
+    facebookPageUrl?: string;
+    socialLinks?: {
+      facebook?: string;
+      youtube?: string;
+      instagram?: string;
+      tiktok?: string;
+      twitter?: string;
+      whatsapp?: string;
+    };
   };
   liveStream: LiveStream;
   liveStreams: {
@@ -484,6 +528,7 @@ interface AppState {
   businessUpdates: BusinessUpdate[];
   businessReports: BusinessReport[];
   homeSections: HomeSection[];
+  sidebarMenuItems: SidebarMenuItem[];
   songs: Song[];
   albums: Album[];
   playlists: Playlist[];
@@ -542,6 +587,7 @@ interface AppState {
   setBusinessUpdates: (updates: BusinessUpdate[]) => void;
   setBusinessReports: (reports: BusinessReport[]) => void;
   setHomeSections: (sections: HomeSection[]) => void;
+  setSidebarMenuItems: (items: SidebarMenuItem[]) => void;
   setSongs: (songs: Song[]) => void;
   setAlbums: (albums: Album[]) => void;
   setPlaylists: (playlists: Playlist[]) => void;
@@ -678,7 +724,16 @@ export const useAppStore = create<AppState>()(
         logoType: 'image',
         logoText: 'الاتحاد السكندري',
         defaultSport: 'auto',
-        liveViewMode: 'both'
+        liveViewMode: 'both',
+        facebookPageUrl: 'https://www.facebook.com/Itthadalexchannel',
+        socialLinks: {
+          facebook: 'https://www.facebook.com/Itthadalexchannel',
+          youtube: 'https://youtube.com/@itthadalexchannel',
+          instagram: 'https://instagram.com/itthadalexchannel',
+          tiktok: 'https://tiktok.com/@itthadalexchannel',
+          twitter: 'https://x.com/itthadalexchannel',
+          whatsapp: 'https://wa.me/itthadalexchannel'
+        }
       },
       liveStream: defaultLiveStream,
       liveStreams: defaultLiveStreams,
@@ -754,6 +809,7 @@ export const useAppStore = create<AppState>()(
         { id: 'history', type: 'history', active: true, order: 5 },
         { id: 'advertise', type: 'advertise', active: true, order: 10 },
       ],
+      sidebarMenuItems: DEFAULT_SIDEBAR_ITEMS,
       songs: [],
       albums: [],
       playlists: [],
@@ -830,6 +886,7 @@ export const useAppStore = create<AppState>()(
       setBusinessUpdates: (businessUpdates) => set({ businessUpdates }),
       setBusinessReports: (businessReports) => set({ businessReports }),
       setHomeSections: (homeSections) => set({ homeSections }),
+      setSidebarMenuItems: (sidebarMenuItems) => set({ sidebarMenuItems }),
       setSongs: (songs) => set({ songs }),
       setAlbums: (albums) => set({ albums }),
       setPlaylists: (playlists) => set({ playlists }),

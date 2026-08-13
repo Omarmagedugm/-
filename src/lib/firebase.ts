@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, doc, getDoc, getDocFromServer, setDoc, serverTimestamp } from 'firebase/firestore';
+import { initializeFirestore, doc, getDoc, getDocFromServer, setDoc, serverTimestamp, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import firebaseConfigJson from '../../firebase-applet-config.json';
@@ -102,9 +102,12 @@ console.log('Firebase Configuration Check:', {
 
 const app = initializeApp(firebaseConfig);
 
-// Using initializeFirestore with experimental settings to improve connectivity in restricted environments
+// Using initializeFirestore with persistent local cache to drastically reduce read quota
 export const db = initializeFirestore(app, {
   experimentalAutoDetectLongPolling: true,
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
 }, firebaseConfig.firestoreDatabaseId || '(default)');
 
 export const auth = getAuth(app);

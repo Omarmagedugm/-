@@ -4,9 +4,9 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
-import { X, LayoutDashboard, Flag, MessageSquare, Info, Mail, Home, LogOut, ShieldCheck, FileText, Building2 } from 'lucide-react';
+import { X, LayoutDashboard, Flag, MessageSquare, Info, Mail, Home, LogOut, ShieldCheck, FileText, Building2, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useAppStore, UserProfile } from '../store';
+import { useAppStore, UserProfile, SidebarMenuItem, DEFAULT_SIDEBAR_ITEMS } from '../store';
 import { getOptimizedImage } from '../lib/cloudinary';
 
 interface SidebarProps {
@@ -16,10 +16,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
-  const { appSettings, customPages, aiConfig } = useAppStore();
+  const { appSettings, customPages, aiConfig, sidebarMenuItems } = useAppStore();
   const navigate = useNavigate();
-  
-  // No longer needing local fetch as it's synced in useFirestoreSync
   
   // High-level admin check
   const isOmar = auth.currentUser?.email === 'omarmagedugm@ittihad.club';
@@ -42,6 +40,89 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
       console.error('Logout error:', error);
       navigate('/auth', { replace: true });
     }
+  };
+
+  // Merge items with fallback to defaults if store items are empty
+  const rawItems = (sidebarMenuItems && sidebarMenuItems.length > 0) ? sidebarMenuItems : DEFAULT_SIDEBAR_ITEMS;
+  
+  // Filter active and sort by order
+  const sortedItems = [...rawItems]
+    .filter(item => item.active !== false)
+    .filter(item => {
+      if (item.id === 'jersey-tryon' && aiConfig?.enabled === false) return false;
+      return true;
+    })
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  const mainMenuItems = sortedItems.filter(item => item.group !== 'more' && item.group !== 'legal');
+  const moreMenuItems = sortedItems.filter(item => item.group === 'more');
+
+  const renderSidebarIcon = (item: SidebarMenuItem) => {
+    if (item.iconType === 'facebook' || item.id === 'social') {
+      return (
+        <div className="w-5 h-5 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+          <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+        </div>
+      );
+    }
+    if (item.icon === 'ShieldCheck' || item.id === 'club-members') {
+      return <ShieldCheck size={20} className="text-amber-500 shrink-0" />;
+    }
+    if (item.icon === 'Building2' || item.id === 'business') {
+      return <Building2 size={20} className="text-emerald-600 dark:text-emerald-400 shrink-0" />;
+    }
+    if (item.icon === 'live_tv' || item.id === 'live') {
+      return <span className="material-symbols-outlined !text-[20px] text-red-500 animate-pulse shrink-0">live_tv</span>;
+    }
+    if (item.icon === 'stadium' || item.id === 'fan-zone') {
+      return <span className="material-symbols-outlined !text-[20px] text-accent shrink-0">stadium</span>;
+    }
+    if (item.icon === 'home' || item.id === 'home') {
+      return <span className="material-symbols-outlined !text-[20px] text-primary shrink-0">home</span>;
+    }
+    if (item.icon === 'bolt' || item.id === 'jersey-tryon') {
+      return <span className="material-symbols-outlined !text-[20px] text-primary shrink-0">bolt</span>;
+    }
+    if (item.icon === 'newspaper') {
+      return <span className="material-symbols-outlined !text-[20px] shrink-0">newspaper</span>;
+    }
+    if (item.icon === 'sports_soccer') {
+      return <span className="material-symbols-outlined !text-[20px] shrink-0">sports_soccer</span>;
+    }
+    if (item.icon === 'perm_media') {
+      return <span className="material-symbols-outlined !text-[20px] shrink-0">perm_media</span>;
+    }
+    if (item.icon === 'history_edu') {
+      return <span className="material-symbols-outlined !text-[20px] shrink-0">history_edu</span>;
+    }
+    if (item.icon === 'shopping_bag') {
+      return <span className="material-symbols-outlined !text-[20px] shrink-0">shopping_bag</span>;
+    }
+    if (item.icon === 'person') {
+      return <span className="material-symbols-outlined !text-[20px] shrink-0">person</span>;
+    }
+    if (item.icon === 'bookmark') {
+      return <span className="material-symbols-outlined !text-[20px] shrink-0">bookmark</span>;
+    }
+    return <span className="material-symbols-outlined !text-[20px] shrink-0">{item.icon || 'link'}</span>;
+  };
+
+  const getItemCardClasses = (item: SidebarMenuItem) => {
+    if (item.id === 'club-members') {
+      return 'bg-amber-500/10 hover:bg-amber-500/20 text-slate-800 dark:text-white border border-amber-500/30';
+    }
+    if (item.id === 'business') {
+      return 'bg-emerald-500/10 hover:bg-emerald-500/20 text-slate-800 dark:text-white border border-emerald-500/30';
+    }
+    if (item.id === 'social') {
+      return 'bg-blue-500/10 hover:bg-blue-500/20 text-slate-800 dark:text-white border border-blue-500/30';
+    }
+    if (item.id === 'jersey-tryon') {
+      return 'bg-primary/5 hover:bg-primary/10 text-slate-700 dark:text-slate-300 border border-primary/10';
+    }
+    return 'hover:bg-slate-50 dark:hover:bg-surface-dark text-slate-700 dark:text-slate-300';
   };
 
   return (
@@ -84,7 +165,7 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
             </div>
 
             {/* Sidebar Links */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar">
               {isAdmin && (
                 <Link to="/admin" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light border border-primary/20 pressable mb-4">
                   <LayoutDashboard size={20} />
@@ -99,109 +180,94 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                  <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest">الأقسام الرئيسية</p>
               </div>
               
-              <Link to="/" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <span className="material-symbols-outlined !text-[20px] text-primary">home</span>
-                <span className="text-sm font-bold">الرئيسية</span>
-              </Link>
+              {mainMenuItems.map((item) => {
+                const isExternal = item.path.startsWith('http://') || item.path.startsWith('https://');
+                if (isExternal) {
+                  return (
+                    <a
+                      key={item.id}
+                      href={item.path}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex items-center justify-between p-3.5 rounded-2xl transition-colors pressable ${getItemCardClasses(item)}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {renderSidebarIcon(item)}
+                        <span className="text-sm font-bold">{item.title}</span>
+                      </div>
+                      {item.badge && (
+                        <span className={`px-2 py-0.5 text-[8px] font-black rounded-full uppercase ${item.badgeColor || 'bg-primary text-white'}`}>
+                          {item.badge}
+                        </span>
+                      )}
+                    </a>
+                  );
+                }
 
-              <Link to="/news" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <span className="material-symbols-outlined !text-[20px]">newspaper</span>
-                <span className="text-sm font-bold">الأخبار والتغطيات</span>
-              </Link>
-
-              <Link to="/matches" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <span className="material-symbols-outlined !text-[20px]">sports_soccer</span>
-                <span className="text-sm font-bold">جدول المباريات</span>
-              </Link>
-
-              <Link to="/live" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <span className="material-symbols-outlined !text-[20px] text-red-500 animate-pulse">live_tv</span>
-                <span className="text-sm font-bold">البث المباشر</span>
-              </Link>
-
-              <Link to="/fan-zone" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <span className="material-symbols-outlined !text-[20px] text-accent">stadium</span>
-                <span className="text-sm font-black">منطقة الجماهير</span>
-              </Link>
-
-              { (aiConfig?.enabled ?? true) && (
-                <Link to="/jersey-tryon" onClick={onClose} className="flex items-center justify-between p-3.5 rounded-2xl bg-primary/5 hover:bg-primary/10 transition-colors text-slate-700 dark:text-slate-300 pressable group border border-primary/10">
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined !text-[20px] text-primary group-hover:rotate-12 transition-transform">bolt</span>
-                    <span className="text-sm font-black">استوديو المشجع (AI)</span>
-                  </div>
-                  <span className="px-2 py-0.5 bg-red-500 text-white text-[8px] font-black rounded-full animate-pulse uppercase">جديد</span>
-                </Link>
-              )}
-
-              <Link to="/club-members" onClick={onClose} className="flex items-center justify-between p-3.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-slate-800 dark:text-white transition-colors pressable border border-amber-500/30">
-                <div className="flex items-center gap-3">
-                  <ShieldCheck size={20} className="text-amber-500" />
-                  <span className="text-sm font-black">أعضاء النادي</span>
-                </div>
-                <span className="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black rounded-full uppercase">الخدمات</span>
-              </Link>
-
-              <Link to="/library" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <span className="material-symbols-outlined !text-[20px]">perm_media</span>
-                <span className="text-sm font-bold">المكتبة الرقمية والوسائط</span>
-              </Link>
-
-              <Link to="/history" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable uppercase">
-                <span className="material-symbols-outlined !text-[20px]">history_edu</span>
-                <span className="text-sm font-bold">تاريخ النادي</span>
-              </Link>
-
-              <Link to="/business" onClick={onClose} className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-slate-800 dark:text-white transition-colors pressable border border-emerald-500/30">
-                <div className="flex items-center gap-3">
-                  <Building2 size={20} className="text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-sm font-black">اتحاداوي بيزنس</span>
-                </div>
-                <span className="px-2 py-0.5 bg-emerald-600 text-white text-[8px] font-black rounded-full uppercase">دليل الأعمال</span>
-              </Link>
-
-              <Link to="/store" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable uppercase">
-                <span className="material-symbols-outlined !text-[20px]">shopping_bag</span>
-                <span className="text-sm font-bold">متجر الجماهير</span>
-              </Link>
+                return (
+                  <Link
+                    key={item.id}
+                    to={item.path}
+                    onClick={onClose}
+                    className={`flex items-center justify-between p-3.5 rounded-2xl transition-colors pressable ${getItemCardClasses(item)}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {renderSidebarIcon(item)}
+                      <span className="text-sm font-bold">{item.title}</span>
+                    </div>
+                    {item.badge && (
+                      <span className={`px-2 py-0.5 text-[8px] font-black rounded-full uppercase ${item.badgeColor || 'bg-primary text-white'}`}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
 
               {customPages.length > 0 && (
-                <div className="pt-2 pb-1 px-4 mt-2 border-t border-slate-100 dark:border-border-dark">
-                  <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest mt-2">صفحات إضافية</p>
-                </div>
+                <>
+                  <div className="pt-2 pb-1 px-4 mt-2 border-t border-slate-100 dark:border-border-dark">
+                    <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest mt-2">صفحات إضافية</p>
+                  </div>
+                  {customPages.map(page => (
+                    <Link key={page.id} to={`/page/${page.slug}`} onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
+                      <FileText size={20} className="text-slate-400 shrink-0" />
+                      <span className="text-sm font-bold">{page.title}</span>
+                    </Link>
+                  ))}
+                </>
               )}
-              {customPages.map(page => (
-                <Link key={page.id} to={`/page/${page.slug}`} onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                  <FileText size={20} className="text-slate-400" />
-                  <span className="text-sm font-bold">{page.title}</span>
-                </Link>
-              ))}
 
-              <div className="pt-2 pb-1 px-4 border-t border-slate-100 dark:border-border-dark mt-2">
-                 <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest mt-2">استكشف المزيد</p>
-              </div>
-
-              <Link to="/profile" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <span className="material-symbols-outlined !text-[20px]">person</span>
-                <span className="text-sm font-bold">حسابي</span>
-              </Link>
-
-              <Link to="/bookmarks" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable uppercase">
-                <span className="material-symbols-outlined !text-[20px]">bookmark</span>
-                <span className="text-sm font-bold">محفوظاتي</span>
-              </Link>
+              {moreMenuItems.length > 0 && (
+                <>
+                  <div className="pt-2 pb-1 px-4 border-t border-slate-100 dark:border-border-dark mt-2">
+                    <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest mt-2">استكشف المزيد</p>
+                  </div>
+                  {moreMenuItems.map((item) => (
+                    <Link
+                      key={item.id}
+                      to={item.path}
+                      onClick={onClose}
+                      className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable"
+                    >
+                      {renderSidebarIcon(item)}
+                      <span className="text-sm font-bold">{item.title}</span>
+                    </Link>
+                  ))}
+                </>
+              )}
 
               <div className="pt-2 pb-1 px-4 border-t border-slate-100 dark:border-border-dark mt-2">
                  <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest mt-2">قانوني / Legal</p>
               </div>
 
               <a href="https://itthadalextv.com/privacy" className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <ShieldCheck size={20} className="text-slate-400" />
+                <ShieldCheck size={20} className="text-slate-400 shrink-0" />
                 <span className="text-sm font-bold">سياسة الخصوصية</span>
               </a>
               
               <a href="https://itthadalextv.com/terms" className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable">
-                <FileText size={20} className="text-slate-400" />
+                <FileText size={20} className="text-slate-400 shrink-0" />
                 <span className="text-sm font-bold">شروط الاستخدام</span>
               </a>
 
@@ -221,7 +287,7 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                 ), { duration: 6000 });
                 onClose(); 
               }} className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable text-right">
-                <Mail size={20} />
+                <Mail size={20} className="shrink-0" />
                 <span className="text-sm font-bold">اتصل بنا</span>
               </button>
               
@@ -230,7 +296,7 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-red-50 text-red-500 dark:hover:bg-red-500/10 transition-colors pressable text-right mt-4"
                 >
-                  <LogOut size={20} />
+                  <LogOut size={20} className="shrink-0" />
                   <span className="text-sm font-black">تسجيل الخروج</span>
                 </button>
               ) : (
@@ -239,7 +305,7 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
                   onClick={onClose}
                   className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-primary text-white hover:bg-primary-dark transition-colors pressable text-right mt-4"
                 >
-                  <span className="material-symbols-outlined !text-[20px]">login</span>
+                  <span className="material-symbols-outlined !text-[20px] shrink-0">login</span>
                   <span className="text-sm font-black">تسجيل الدخول</span>
                 </Link>
               )}

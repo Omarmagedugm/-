@@ -69,6 +69,7 @@ const DiscountDetailPage = safeLazy(() => import('./pages/DiscountDetailPage'));
 const BusinessDirectory = safeLazy(() => import('./pages/BusinessDirectory'));
 const BusinessDetail = safeLazy(() => import('./pages/BusinessDetail'));
 const CustomPage = safeLazy(() => import('./pages/CustomPage'));
+const SocialMedia = safeLazy(() => import('./pages/SocialMedia'));
 const PrivacyPolicy = safeLazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = safeLazy(() => import('./pages/TermsOfService'));
 
@@ -405,6 +406,9 @@ function AppContent() {
               <Route path="/discounts/:id" element={<DiscountDetailPage />} />
               <Route path="/business" element={<BusinessDirectory />} />
               <Route path="/business/:id" element={<BusinessDetail />} />
+              <Route path="/social" element={<SocialMedia />} />
+              <Route path="/social-media" element={<SocialMedia />} />
+              <Route path="/facebook" element={<SocialMedia />} />
               <Route path="/page/:slug" element={<CustomPage />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />

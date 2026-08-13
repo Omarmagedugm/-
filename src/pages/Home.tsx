@@ -68,22 +68,17 @@ export default function Home() {
     stadiumOpacity,
     setStadiumOpacity,
     dataLoaded,
+    aiConfig: storeAiConfig
   } = useAppStore();
   const [tick, setTick] = useState(0);
   const [clarityOpen, setClarityOpen] = useState(false);
-  const [aiConfig, setAiConfig] = useState<any>({ 
+  
+  const aiConfig = storeAiConfig || { 
     enabled: true, 
     bannerTitle: 'استوديو المشجع الاتحادي', 
     bannerDescription: 'حول صورتك بالذكاء الاصطناعي وارتدي تيشيرت نادي الاتحاد في معقل زعيم الثغر',
     bannerImage: ''
-  });
-
-  useEffect(() => {
-    const unsubAiConfig = onSnapshot(doc(db, 'settings', 'ai_config'), (snap) => {
-      if (snap.exists()) setAiConfig(snap.data());
-    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/ai_config'));
-    return () => unsubAiConfig();
-  }, []);
+  };
 
   const isOmar = auth.currentUser?.email?.toLowerCase() === "omarmagedugm@ittihad.club";
   const isDev = auth.currentUser?.email?.toLowerCase() === "copyrightofficialco@gmail.com";
