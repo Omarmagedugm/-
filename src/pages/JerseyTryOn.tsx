@@ -16,46 +16,10 @@ import {
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db, auth, handleFirestoreError } from '../lib/firebase';
+import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAppStore } from '../store';
 
 import Sidebar from '../components/Sidebar';
-
-enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string | null;
-    email?: string | null;
-    emailVerified?: boolean | null;
-  }
-}
-
-const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-    },
-    operationType,
-    path
-  };
-  console.error('Firestore Error Path:', path);
-  console.error('Firestore Error Info:', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
-};
 
 const JerseyTryOn: React.FC = () => {
   const navigate = useNavigate();

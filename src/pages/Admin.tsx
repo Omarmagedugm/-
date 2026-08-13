@@ -361,6 +361,7 @@ export default function Admin() {
     products, orders, ads, homeSections, undoStack,
     songs, albums, playlists, mediaPlaylists, books, cityInfo,
     clubCommittees, clubAnnouncements, clubServices, clubTrips, clubMembersSettings,
+    businesses, businessUpdates,
     setClubTitles, setClubStats, setHistoryEvents, setStadiums, setNewsCategories,
     setProducts, setOrders, setAds, setHomeSections, pushToUndoStack, popFromUndoStack,
     setSongs, setAlbums, setPlaylists, setMediaPlaylists, setBooks, setCityInfo,
@@ -2716,7 +2717,30 @@ export default function Admin() {
 
           {activeTab === 'overview' && (
             <div className="space-y-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {/* Pending Alert Banner for Businesses */}
+              {(businesses.filter(b => b.status === 'pending').length > 0 || businessUpdates.filter(u => u.status === 'pending').length > 0) && (
+                <div 
+                  onClick={() => setActiveTab('business')}
+                  className="cursor-pointer bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 text-white p-5 rounded-[28px] shadow-lg flex items-center justify-between hover:opacity-95 transition-all group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center font-black text-xl">
+                      <Building2 className="w-6 h-6 animate-pulse" />
+                    </div>
+                    <div>
+                      <h4 className="font-black text-base">يوجد طلبات بانتظار المراجعة في "اتحاداوي بيزنس"! 🏢</h4>
+                      <p className="text-xs font-bold text-white/90 mt-0.5">
+                        هناك {businesses.filter(b => b.status === 'pending').length} مشروع جديد و {businessUpdates.filter(u => u.status === 'pending').length} طلب تعديل بحاجة لموافقتك.
+                      </p>
+                    </div>
+                  </div>
+                  <button className="px-5 py-2.5 bg-white text-amber-700 rounded-xl font-black text-xs shadow-md shrink-0 group-hover:bg-amber-50 transition-all">
+                    مراجعة الآن
+                  </button>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
                  <div className="bg-white dark:bg-card-dark p-6 rounded-[32px] border border-border-light dark:border-border-dark flex flex-col gap-2 shadow-sm hover:shadow-xl transition-all duration-300">
                     <div className="bg-primary/10 w-12 h-12 rounded-2xl flex items-center justify-center text-primary mb-2">
                        <UsersIcon size={24} />
@@ -2744,6 +2768,16 @@ export default function Admin() {
                     </div>
                     <span className="text-3xl font-black">{predictions.length}</span>
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">توقعات مباريات</span>
+                 </div>
+                 <div 
+                  onClick={() => setActiveTab('business')}
+                  className="cursor-pointer bg-white dark:bg-card-dark p-6 rounded-[32px] border border-border-light dark:border-border-dark flex flex-col gap-2 shadow-sm hover:shadow-xl transition-all duration-300"
+                 >
+                    <div className="bg-emerald-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-emerald-600 mb-2">
+                       <Building2 size={24} />
+                    </div>
+                    <span className="text-3xl font-black">{businesses.length}</span>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">مشروع بيزنس</span>
                  </div>
               </div>
 

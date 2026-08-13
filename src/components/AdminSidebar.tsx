@@ -37,7 +37,10 @@ interface AdminSidebarProps {
 }
 
 export default function AdminSidebar({ activeTab, setActiveTab, onClose }: AdminSidebarProps) {
-  const { profile } = useAppStore();
+  const { profile, businesses, businessUpdates, orders } = useAppStore();
+
+  const pendingBusinessesCount = businesses.filter(b => b.status === 'pending').length + businessUpdates.filter(u => u.status === 'pending').length;
+  const pendingOrdersCount = orders.filter(o => o.status === 'pending').length;
   const navigate = useNavigate();
   const Shield = ({ size }: { size: number }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -96,8 +99,8 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
     ]},
     { title: 'المتجر والتجارة', items: [
       { id: 'products', icon: <ShoppingBag size={18} />, label: 'إدارة المتجر والمنتجات', show: isAdmin || hasRole('store_editor') },
-      { id: 'orders', icon: <ShoppingCart size={18} />, label: 'طلبات الشراء', show: isAdmin || hasRole('store_editor') },
-      { id: 'business', icon: <Building2 size={18} />, label: 'اتحاداوي بيزنس', show: isAdmin || hasRole(['store_editor', 'layout_editor', 'user_manager']) },
+      { id: 'orders', icon: <ShoppingCart size={18} />, label: 'طلبات الشراء', show: isAdmin || hasRole('store_editor'), badge: pendingOrdersCount },
+      { id: 'business', icon: <Building2 size={18} />, label: 'اتحاداوي بيزنس', show: isAdmin || hasRole(['store_editor', 'layout_editor', 'user_manager']), badge: pendingBusinessesCount },
     ]},
     { title: 'النظام والإدارة', items: [
       { id: 'users', icon: <UsersIcon size={18} />, label: 'إدارة الأعضاء', show: isAdmin || hasRole('user_manager') },
@@ -147,8 +150,13 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
                   <span className={activeTab === item.id ? 'text-primary' : 'text-slate-400'}>
                     {item.icon}
                   </span>
-                  {item.label}
-                  {activeTab === item.id && (
+                  <span className="truncate">{item.label}</span>
+                  {item.badge !== undefined && item.badge > 0 && (
+                    <span className="mr-auto px-2 py-0.5 text-[10px] font-black rounded-full bg-amber-500 text-white animate-pulse">
+                      {item.badge}
+                    </span>
+                  )}
+                  {activeTab === item.id && (!item.badge || item.badge === 0) && (
                     <div className="mr-auto w-1.5 h-1.5 rounded-full bg-primary shadow-glow"></div>
                   )}
                 </button>

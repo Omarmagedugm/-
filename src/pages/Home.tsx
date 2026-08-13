@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { updateDoc, serverTimestamp } from "firebase/firestore";
 import { useAppStore } from "../store";
-import { auth, db } from "../lib/firebase";
+import { auth, db, handleFirestoreError, OperationType } from "../lib/firebase";
 import toast from "react-hot-toast";
 import { formatDistanceToNow, format } from "date-fns";
 import { ar } from "date-fns/locale";
