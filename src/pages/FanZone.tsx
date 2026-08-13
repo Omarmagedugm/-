@@ -1126,13 +1126,15 @@ export default function FanZone() {
                         {post.content}
                       </p>
                     )}
-                    <div className="flex flex-wrap gap-2">
-                       {['الاتحاد', 'سكندري', 'العميد'].map(tag => (
-                         <span key={tag} className="text-[10px] font-black text-primary px-2.5 py-1 bg-primary/5 rounded-lg flex items-center gap-1 transition-all hover:bg-primary/10 cursor-pointer">
-                           #{tag}
-                         </span>
-                       ))}
-                    </div>
+                    {post.tags && post.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {post.tags.map(tag => (
+                          <span key={tag} className="text-[10px] font-black text-primary px-2.5 py-1 bg-primary/5 rounded-lg flex items-center gap-1 transition-all hover:bg-primary/10 cursor-pointer">
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     {post.poll && (
                       <div className="mt-6 space-y-3">

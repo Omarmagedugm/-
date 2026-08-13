@@ -204,6 +204,7 @@ export interface FanPostItem {
   likes: number;
   likedBy?: string[];
   commentsCount?: number;
+  tags?: string[];
   createdAt: string;
 }
 

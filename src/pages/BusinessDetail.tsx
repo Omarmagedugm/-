@@ -36,7 +36,11 @@ export default function BusinessDetail() {
   const navigate = useNavigate();
   const { businesses, profile } = useAppStore();
   
-  const [business, setBusiness] = useState<BusinessItem | null>(null);
+  const business = useMemo(() => {
+    if (!id) return null;
+    return businesses.find(b => b.id === id) || null;
+  }, [id, businesses]);
+
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
@@ -47,14 +51,6 @@ export default function BusinessDetail() {
   const isOwner = profile?.uid && business?.ownerId === profile.uid;
 
   const viewedRef = React.useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!id) return;
-    const found = businesses.find(b => b.id === id);
-    if (found) {
-      setBusiness(found);
-    }
-  }, [id, businesses]);
 
   // Combine cover image and gallery into one array of unique images
   const allImages = useMemo(() => {
@@ -303,7 +299,7 @@ export default function BusinessDetail() {
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-surface-dark border border-slate-200/80 dark:border-border-dark space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-slate-500 flex items-center gap-1.5">
-                    <Eye className="w-4 h-4 text-primary" /> إحصائيات التفاعل لمشروعك (حقيقية):
+                    <Eye className="w-4 h-4 text-primary" /> إحصائيات التفاعل لمشروعك:
                   </span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center pt-2">

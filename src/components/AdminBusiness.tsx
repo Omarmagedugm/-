@@ -445,7 +445,7 @@ export default function AdminBusiness() {
                       </span>
                       <span className="flex items-center gap-1 text-primary bg-primary/10 px-2 py-0.5 rounded-md font-black">
                         <Eye className="w-3.5 h-3.5" />
-                        {bus.stats?.views ?? 0} مشاهدة حقيقية
+                        {bus.stats?.views ?? 0} مشاهدة
                       </span>
                       {bus.ownerName && <span>صاحب المشروع: {bus.ownerName}</span>}
                       <span>تاريخ الإرسال: {new Date(bus.createdAt).toLocaleDateString('ar-EG')}</span>

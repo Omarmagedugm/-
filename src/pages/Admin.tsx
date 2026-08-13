@@ -48,6 +48,7 @@ import {
   Star,
   History as HistoryIcon,
   ShoppingCart,
+  Building2,
   Undo,
   Eye,
   EyeOff,
@@ -646,10 +647,21 @@ export default function Admin() {
   }, [showModal]);
 
   const handleEditItem = (item: any) => {
-    let extraData = {};
-    if (activeTab === 'media' && mediaSubTab === 'playlists') {
-      const selectedMediaIds = media.filter(m => m.playlistId === item.id).map(m => m.id);
-      extraData = { selectedMediaIds };
+    let extraData: any = {};
+    if (activeTab === 'media') {
+      if (mediaSubTab === 'playlists') {
+        const selectedMediaIds = media.filter(m => m.playlistId === item.id).map(m => m.id);
+        extraData = { selectedMediaIds };
+      } else {
+        const vUrl = item.url || item.videoUrl || '';
+        const src = item.source || (vUrl.includes('youtube.com') || vUrl.includes('youtu.be') ? 'youtube' : 'upload');
+        extraData = {
+          type: item.type || 'video',
+          source: src,
+          url: vUrl,
+          videoUrl: vUrl
+        };
+      }
     }
     setFormData({ ...item, ...extraData });
     setBaseData({ ...item, ...extraData });
@@ -1727,9 +1739,11 @@ export default function Admin() {
   };
 
   const openAddModal = () => {
-    let initialData = {};
+    let initialData: any = {};
     if (activeTab === 'polls') {
       initialData = { options: ['', ''], active: true };
+    } else if (activeTab === 'media') {
+      initialData = { type: 'video', source: 'youtube', url: '', videoUrl: '', date: new Date().toISOString() };
     }
     setFormData(initialData);
     setBaseData(initialData);
@@ -5316,7 +5330,7 @@ export default function Admin() {
                         <div className="grid grid-cols-2 gap-2">
                          <div>
                            <label className="text-[10px] font-black text-slate-500 mb-1 block">النوع</label>
-                           <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.type || 'video'} onChange={(e) => setFormData({...formData, type: e.target.value})}>
+                           <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.type || 'video'} onChange={(e) => setFormData({...formData, type: e.target.value, source: formData.source || 'youtube'})}>
                               <option value="video">فيديو</option>
                               <option value="photo">صورة</option>
                            </select>
@@ -5332,7 +5346,7 @@ export default function Admin() {
                           </div>
                         </div>
 
-                        {formData.type === 'video' && (
+                        {(formData.type || 'video') === 'video' && (
                           <div className="grid grid-cols-1 gap-2">
                             <label className="text-[10px] font-black text-slate-500 mb-1 block">المصدر</label>
                             <select className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.source || 'upload'} onChange={(e) => setFormData({...formData, source: e.target.value})}>
@@ -5343,7 +5357,7 @@ export default function Admin() {
                           </div>
                         )}
 
-                        {formData.type === 'video' && formData.source === 'youtube' && (
+                        {(formData.type || 'video') === 'video' && (formData.source || 'youtube') === 'youtube' && (
                           <div>
                             <label className="text-[10px] font-black text-slate-500 mb-1 block">رابط يوتيوب</label>
                             <input 
@@ -5367,11 +5381,11 @@ export default function Admin() {
                           </div>
                         )}
 
-                        {formData.type === 'video' && formData.source === 'upload' && (
-                          <UploadOrUrlField label="ملف الفيديو" fieldName="url" currentUrl={formData.url} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} type="video" />
+                        {(formData.type || 'video') === 'video' && (formData.source || 'youtube') === 'upload' && (
+                          <UploadOrUrlField label="ملف الفيديو" fieldName="url" currentUrl={formData.url || formData.videoUrl} formData={formData} setFormData={(val) => setFormData({...val, videoUrl: val.url})} uploading={uploading} handleFileUpload={handleFileUpload} type="video" />
                         )}
 
-                        {formData.type === 'video' && formData.source === 'embed' && (
+                        {(formData.type || 'video') === 'video' && (formData.source || 'youtube') === 'embed' && (
                           <div>
                             <label className="text-[10px] font-black text-slate-500 mb-1 block">رابط التضمين (Embed URL)</label>
                             <input 
@@ -5392,7 +5406,7 @@ export default function Admin() {
                           <UploadOrUrlField label="الصورة المصغرة" fieldName="thumbnailUrl" currentUrl={formData.thumbnailUrl} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
                         </div>
 
-                        {formData.type === 'video' && (
+                        {(formData.type || 'video') === 'video' && (
                           <div className="grid grid-cols-2 gap-2">
                             <div>
                               <label className="text-[10px] font-black text-slate-500 mb-1 block">المدة (مثلاً 04:30)</label>
