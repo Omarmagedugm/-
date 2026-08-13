@@ -41,13 +41,23 @@ export default function BusinessDetail() {
   const isAdmin = profile?.role === 'admin' || (profile?.roles && profile.roles.includes('admin')) || auth.currentUser?.email === 'copyrightofficialco@gmail.com' || auth.currentUser?.email === 'omarmagedugm@ittihad.club';
   const isOwner = profile?.uid && business?.ownerId === profile.uid;
 
+  const viewedRef = React.useRef<string | null>(null);
+
   useEffect(() => {
     if (!id) return;
     const found = businesses.find(b => b.id === id);
     if (found) {
       setBusiness(found);
-      
-      // Increment view count in firestore safely
+    }
+  }, [id, businesses]);
+
+  // Increment view count in firestore safely ONCE per session per business ID
+  useEffect(() => {
+    if (!id) return;
+    const sessionKey = `viewed_biz_${id}`;
+    if (!sessionStorage.getItem(sessionKey) && viewedRef.current !== id) {
+      viewedRef.current = id;
+      sessionStorage.setItem(sessionKey, 'true');
       try {
         const busRef = doc(db, 'businesses', id);
         updateDoc(busRef, {
@@ -55,7 +65,7 @@ export default function BusinessDetail() {
         }).catch(() => {});
       } catch (e) {}
     }
-  }, [id, businesses]);
+  }, [id]);
 
   const handleStatClick = (statKey: string, actionFn: () => void) => {
     if (business?.id) {

@@ -169,6 +169,15 @@ export default function BusinessDirectory() {
     setShowAddModal(true);
   };
 
+  const normalizeUrl = (url: string): string => {
+    const trimmed = url.trim();
+    if (!trimmed) return '';
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    return `https://${trimmed}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const currentUid = auth.currentUser?.uid || profile?.uid;
@@ -188,6 +197,12 @@ export default function BusinessDirectory() {
     const defaultCover = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1000';
     const finalCoverImage = formData.coverImage.trim() || defaultCover;
 
+    // Normalize URLs
+    const cleanedMapsUrl = normalizeUrl(formData.mapsUrl);
+    const cleanedInstagramUrl = normalizeUrl(formData.instagramUrl);
+    const cleanedFacebookUrl = normalizeUrl(formData.facebookUrl);
+    const cleanedWebsiteUrl = normalizeUrl(formData.websiteUrl);
+
     setIsSubmitting(true);
 
     try {
@@ -199,6 +214,10 @@ export default function BusinessDirectory() {
           previousData: editingBusiness,
           requestedData: {
             ...formData,
+            mapsUrl: cleanedMapsUrl,
+            instagramUrl: cleanedInstagramUrl,
+            facebookUrl: cleanedFacebookUrl,
+            websiteUrl: cleanedWebsiteUrl,
             coverImage: finalCoverImage,
             updatedAt: new Date().toISOString()
           },
@@ -222,10 +241,10 @@ export default function BusinessDirectory() {
           phone: formData.phone.trim(),
           whatsapp: formData.whatsapp.trim(),
           address: formData.address.trim() || 'الإسكندرية',
-          mapsUrl: formData.mapsUrl.trim(),
-          instagramUrl: formData.instagramUrl.trim(),
-          facebookUrl: formData.facebookUrl.trim(),
-          websiteUrl: formData.websiteUrl.trim(),
+          mapsUrl: cleanedMapsUrl,
+          instagramUrl: cleanedInstagramUrl,
+          facebookUrl: cleanedFacebookUrl,
+          websiteUrl: cleanedWebsiteUrl,
           coverImage: finalCoverImage,
           gallery: formData.gallery,
           status: 'pending',
@@ -761,10 +780,10 @@ export default function BusinessDirectory() {
                 <div>
                   <label className="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">رابط خرائط جوجل (Google Maps) (اختياري)</label>
                   <input
-                    type="url"
+                    type="text"
                     value={formData.mapsUrl}
                     onChange={(e) => setFormData({ ...formData, mapsUrl: e.target.value })}
-                    placeholder="https://maps.app.goo.gl/..."
+                    placeholder="maps.app.goo.gl/... أو https://maps.app.goo.gl/..."
                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark text-sm font-bold"
                   />
                 </div>
@@ -786,10 +805,10 @@ export default function BusinessDirectory() {
                 <div>
                   <label className="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">رابط إنستغرام (اختياري)</label>
                   <input
-                    type="url"
+                    type="text"
                     value={formData.instagramUrl}
                     onChange={(e) => setFormData({ ...formData, instagramUrl: e.target.value })}
-                    placeholder="https://instagram.com/..."
+                    placeholder="instagram.com/... أو https://instagram.com/..."
                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark text-sm font-bold"
                   />
                 </div>
@@ -800,10 +819,10 @@ export default function BusinessDirectory() {
                 <div>
                   <label className="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">رابط صفحة الفيسبوك (اختياري)</label>
                   <input
-                    type="url"
+                    type="text"
                     value={formData.facebookUrl}
                     onChange={(e) => setFormData({ ...formData, facebookUrl: e.target.value })}
-                    placeholder="https://facebook.com/..."
+                    placeholder="facebook.com/... أو https://facebook.com/..."
                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark text-sm font-bold"
                   />
                 </div>
@@ -811,10 +830,10 @@ export default function BusinessDirectory() {
                 <div>
                   <label className="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">رابط الموقع الإلكتروني (اختياري)</label>
                   <input
-                    type="url"
+                    type="text"
                     value={formData.websiteUrl}
                     onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
-                    placeholder="https://mybusiness.com"
+                    placeholder="mybusiness.com أو https://mybusiness.com"
                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark text-sm font-bold"
                   />
                 </div>
