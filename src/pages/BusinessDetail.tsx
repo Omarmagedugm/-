@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore, BusinessItem } from '../store';
 import { db, auth } from '../lib/firebase';
@@ -22,7 +22,12 @@ import {
   User,
   AlertCircle,
   X,
-  Send
+  Send,
+  ZoomIn,
+  Maximize2,
+  ChevronLeft,
+  ChevronRight,
+  Image as ImageIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -36,7 +41,7 @@ export default function BusinessDetail() {
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
-  const [selectedGalleryImage, setSelectedGalleryImage] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const isAdmin = profile?.role === 'admin' || (profile?.roles && profile.roles.includes('admin')) || auth.currentUser?.email === 'copyrightofficialco@gmail.com' || auth.currentUser?.email === 'omarmagedugm@ittihad.club';
   const isOwner = profile?.uid && business?.ownerId === profile.uid;
@@ -50,6 +55,29 @@ export default function BusinessDetail() {
       setBusiness(found);
     }
   }, [id, businesses]);
+
+  // Combine cover image and gallery into one array of unique images
+  const allImages = useMemo(() => {
+    if (!business) return [];
+    const list = [business.coverImage, ...(business.gallery || [])].filter(Boolean);
+    return Array.from(new Set(list));
+  }, [business]);
+
+  // Keyboard navigation for Lightbox (ESC to exit, Arrow keys to navigate)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (lightboxIndex === null || allImages.length === 0) return;
+      if (e.key === 'Escape') {
+        setLightboxIndex(null);
+      } else if (e.key === 'ArrowLeft') {
+        setLightboxIndex((prev) => (prev !== null ? (prev + 1) % allImages.length : 0));
+      } else if (e.key === 'ArrowRight') {
+        setLightboxIndex((prev) => (prev !== null ? (prev - 1 + allImages.length) % allImages.length : 0));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex, allImages.length]);
 
   // Increment view count in firestore safely ONCE per session per business ID
   useEffect(() => {
@@ -215,16 +243,25 @@ export default function BusinessDetail() {
 
         {/* Cover Image & Header Card */}
         <div className="bg-white dark:bg-card-dark rounded-3xl overflow-hidden shadow-xl border border-slate-200/80 dark:border-border-dark">
-          <div className="relative h-64 sm:h-80 w-full bg-slate-900">
+          <div 
+            className="relative h-64 sm:h-80 w-full bg-slate-900 group cursor-pointer"
+            onClick={() => setLightboxIndex(0)}
+            title="انقر لتكبير صورة الغلاف"
+          >
             <img 
               src={business.coverImage} 
               alt={business.businessName}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
             
+            <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 z-10">
+              <Maximize2 className="w-3.5 h-3.5" />
+              <span>تكبير صورة الغلاف</span>
+            </div>
+
             {business.featured && (
-              <div className="absolute top-4 right-4 bg-amber-400 text-slate-950 text-xs font-black px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+              <div className="absolute top-4 right-4 bg-amber-400 text-slate-950 text-xs font-black px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 z-10">
                 <span>⭐ مشروع مميز</span>
               </div>
             )}
@@ -266,24 +303,24 @@ export default function BusinessDetail() {
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-surface-dark border border-slate-200/80 dark:border-border-dark space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-slate-500 flex items-center gap-1.5">
-                    <Eye className="w-4 h-4 text-primary" /> إحصائيات التفاعل لمشروعك:
+                    <Eye className="w-4 h-4 text-primary" /> إحصائيات التفاعل لمشروعك (حقيقية):
                   </span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center pt-2">
                   <div className="bg-white dark:bg-card-dark p-2.5 rounded-xl border border-slate-100 dark:border-border-dark">
-                    <span className="block text-lg font-black text-primary">{business.stats?.views || 0}</span>
+                    <span className="block text-lg font-black text-primary">{business.stats?.views ?? 0}</span>
                     <span className="text-[10px] text-slate-400 font-bold">المشاهدات</span>
                   </div>
                   <div className="bg-white dark:bg-card-dark p-2.5 rounded-xl border border-slate-100 dark:border-border-dark">
-                    <span className="block text-lg font-black text-emerald-500">{business.stats?.phoneClicks || 0}</span>
+                    <span className="block text-lg font-black text-emerald-500">{business.stats?.phoneClicks ?? 0}</span>
                     <span className="text-[10px] text-slate-400 font-bold">نقرات الاتصال</span>
                   </div>
                   <div className="bg-white dark:bg-card-dark p-2.5 rounded-xl border border-slate-100 dark:border-border-dark">
-                    <span className="block text-lg font-black text-green-500">{business.stats?.whatsappClicks || 0}</span>
+                    <span className="block text-lg font-black text-green-500">{business.stats?.whatsappClicks ?? 0}</span>
                     <span className="text-[10px] text-slate-400 font-bold">نقرات الواتساب</span>
                   </div>
                   <div className="bg-white dark:bg-card-dark p-2.5 rounded-xl border border-slate-100 dark:border-border-dark">
-                    <span className="block text-lg font-black text-blue-500">{business.stats?.mapClicks || 0}</span>
+                    <span className="block text-lg font-black text-blue-500">{business.stats?.mapClicks ?? 0}</span>
                     <span className="text-[10px] text-slate-400 font-bold">نقرات الخريطة</span>
                   </div>
                 </div>
@@ -298,18 +335,43 @@ export default function BusinessDetail() {
               </p>
             </div>
 
-            {/* Photo Gallery */}
-            {business.gallery && business.gallery.length > 0 && (
+            {/* Photo Gallery Grid */}
+            {allImages.length > 0 && (
               <div>
-                <h3 className="text-sm font-black text-slate-400 uppercase tracking-wider mb-3">معرض الصور</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {business.gallery.map((imgUrl, idx) => (
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-primary" />
+                    <span>معرض الصور</span>
+                    <span className="text-xs bg-primary/10 text-primary px-2.5 py-0.5 rounded-full font-bold">
+                      {allImages.length} صور
+                    </span>
+                  </h3>
+                  <span className="text-[11px] font-bold text-slate-400">انقر لتكبير أي صورة</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {allImages.map((imgUrl, idx) => (
                     <button 
                       key={idx}
-                      onClick={() => setSelectedGalleryImage(imgUrl)}
-                      className="relative h-32 rounded-2xl overflow-hidden border border-slate-200 dark:border-border-dark hover:opacity-90 transition-all cursor-pointer group"
+                      onClick={() => setLightboxIndex(idx)}
+                      className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-slate-200/80 dark:border-border-dark hover:border-primary/50 transition-all cursor-pointer group shadow-sm hover:shadow-md"
                     >
-                      <img src={imgUrl} alt={`Gallery ${idx}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <img 
+                        src={imgUrl} 
+                        alt={`Gallery ${idx + 1}`} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                        <span className="p-2.5 rounded-full bg-black/60 backdrop-blur-md text-white font-bold text-xs flex items-center gap-1.5 shadow-lg">
+                          <ZoomIn className="w-4 h-4" />
+                          <span>توسيع</span>
+                        </span>
+                      </div>
+                      {idx === 0 && (
+                        <span className="absolute bottom-2 right-2 bg-black/75 text-white text-[9px] font-bold px-2 py-0.5 rounded-md backdrop-blur-sm">
+                          الصورة الرئيسية
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -419,22 +481,82 @@ export default function BusinessDetail() {
       </div>
 
       {/* Lightbox Modal for Gallery */}
-      {selectedGalleryImage && (
+      {lightboxIndex !== null && allImages.length > 0 && (
         <div 
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setSelectedGalleryImage(null)}
+          className="fixed inset-0 z-[200] bg-slate-950/95 backdrop-blur-2xl flex flex-col justify-between p-4 sm:p-6 select-none animate-in fade-in duration-200"
+          onClick={() => setLightboxIndex(null)}
         >
-          <button 
-            className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full text-sm font-bold"
-            onClick={() => setSelectedGalleryImage(null)}
+          {/* Top Bar */}
+          <div className="flex items-center justify-between z-10 w-full max-w-5xl mx-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setLightboxIndex(null)}
+                className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm rounded-full shadow-xl flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+                <span>إغلاق المعرض (ESC)</span>
+              </button>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md text-white text-xs sm:text-sm font-black px-4 py-2 rounded-full border border-white/10">
+              صورة {lightboxIndex + 1} من {allImages.length}
+            </div>
+          </div>
+
+          {/* Center Image Stage with Next/Prev Arrows */}
+          <div 
+            className="relative flex-1 flex items-center justify-center my-4 w-full max-w-5xl mx-auto min-h-0"
+            onClick={(e) => e.stopPropagation()}
           >
-            <X className="w-6 h-6" />
-          </button>
-          <img 
-            src={selectedGalleryImage} 
-            alt="Expanded view" 
-            className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
-          />
+            {allImages.length > 1 && (
+              <>
+                <button 
+                  onClick={() => setLightboxIndex((prev) => (prev !== null ? (prev - 1 + allImages.length) % allImages.length : 0))}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 p-3 sm:p-4 bg-white/15 hover:bg-white/30 text-white rounded-full backdrop-blur-md transition-all z-20 active:scale-90 border border-white/20 shadow-2xl cursor-pointer"
+                  title="الصورة السابقة"
+                >
+                  <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8" />
+                </button>
+
+                <button 
+                  onClick={() => setLightboxIndex((prev) => (prev !== null ? (prev + 1) % allImages.length : 0))}
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 p-3 sm:p-4 bg-white/15 hover:bg-white/30 text-white rounded-full backdrop-blur-md transition-all z-20 active:scale-90 border border-white/20 shadow-2xl cursor-pointer"
+                  title="الصورة التالية"
+                >
+                  <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8" />
+                </button>
+              </>
+            )}
+
+            <img 
+              src={allImages[lightboxIndex]} 
+              alt={`Gallery view ${lightboxIndex + 1}`} 
+              className="max-w-full max-h-[70vh] rounded-3xl object-contain shadow-2xl border border-white/10 transition-all duration-300"
+            />
+          </div>
+
+          {/* Bottom Bar Thumbnails & Dismiss Hint */}
+          <div className="w-full max-w-5xl mx-auto space-y-2 z-10" onClick={(e) => e.stopPropagation()}>
+            {allImages.length > 1 && (
+              <div className="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar py-1">
+                {allImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setLightboxIndex(idx)}
+                    className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 transition-all border-2 cursor-pointer ${
+                      lightboxIndex === idx ? 'border-primary scale-105 shadow-lg ring-2 ring-primary/50' : 'border-transparent opacity-50 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <p className="text-center text-[11px] font-bold text-slate-400">
+              انقر في أي مكان خارج الصورة أو اضغط زر ESC أو انقر على زر إغلاق المعرض في الأعلى للخروج
+            </p>
+          </div>
         </div>
       )}
 

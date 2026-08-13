@@ -484,14 +484,21 @@ export default function BusinessDirectory() {
 
                     {/* Card Footer */}
                     <div className="px-4 pb-4 pt-2 border-t border-slate-100 dark:border-border-dark/60 flex items-center justify-between text-xs font-bold">
-                      <span className="text-slate-400 flex items-center gap-1 truncate max-w-[150px]">
+                      <span className="text-slate-400 flex items-center gap-1 truncate max-w-[140px]">
                         <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
                         <span className="truncate">{bus.address}</span>
                       </span>
 
-                      <span className="text-primary font-black flex items-center gap-1 group-hover:translate-x-[-2px] transition-transform">
-                        عرض التفاصيل ⬅️
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-black text-slate-400 flex items-center gap-1 bg-slate-100 dark:bg-surface-dark px-2 py-0.5 rounded-lg">
+                          <Eye className="w-3 h-3 text-primary" />
+                          <span>{bus.stats?.views ?? 0}</span>
+                        </span>
+                        
+                        <span className="text-primary font-black flex items-center gap-1 group-hover:translate-x-[-2px] transition-transform">
+                          التفاصيل ⬅️
+                        </span>
+                      </div>
                     </div>
 
                   </div>
