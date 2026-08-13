@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-do
 import toast from 'react-hot-toast';
 import { useAppStore, AppRole } from '../store';
 import { defaultCommittees, defaultServices, defaultAnnouncements, defaultTrips, defaultMembersSettings } from '../data/defaultClubData';
+import { defaultMemberDiscounts } from '../data/defaultMemberDiscounts';
 import { v4 as uuidv4 } from 'uuid';
 import { toDate, formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { db, auth, uploadImage, handleFirestoreError, OperationType } from '../lib/firebase';
@@ -84,6 +85,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import AdminSidebar from '../components/AdminSidebar';
+import AdminBusiness from '../components/AdminBusiness';
 import ScoreSelector from '../components/ScoreSelector';
 import ImageUploader from '../components/ImageUploader';
 import CsvMatchesImporter from '../components/CsvMatchesImporter';
@@ -416,7 +418,7 @@ export default function Admin() {
   const [mediaSubTab, setMediaSubTab] = useState<'items' | 'playlists' | 'banner'>('items');
   const [musicSubTab, setMusicSubTab] = useState<'songs' | 'albums' | 'playlists'>('songs');
   const [liveSportSubTab, setLiveSportSubTab] = useState<'football' | 'basketball'>('football');
-  const [clubSubTab, setClubSubTab] = useState<'committees' | 'announcements' | 'services' | 'trips' | 'settings'>('committees');
+  const [clubSubTab, setClubSubTab] = useState<'committees' | 'announcements' | 'services' | 'trips' | 'discounts' | 'settings'>('committees');
   const [isExporting, setIsExporting] = useState(false);
   const [aiUsage, setAiUsage] = useState<any[]>([]);
 
@@ -1421,6 +1423,24 @@ export default function Admin() {
             updatedAt: new Date().toISOString()
           };
           await setDoc(doc(db, 'club_members_settings', 'main'), cleanPayload(payload));
+        } else if (clubSubTab === 'discounts') {
+          const payload = {
+            name: formData.name || '',
+            category: formData.category || 'مستشفيات',
+            address: formData.address || '',
+            location: formData.location || 'سموحة',
+            discountDetails: formData.discountDetails || '',
+            phoneNumbers: formData.phoneNumbers || '',
+            mapsUrl: formData.mapsUrl || '',
+            active: formData.active !== undefined ? formData.active : true,
+            featured: formData.featured !== undefined ? formData.featured : false,
+            updatedAt: new Date().toISOString()
+          };
+          if (isEditing && editingId) {
+            await updateDoc(doc(db, 'member_discounts', editingId), cleanPayload(payload));
+          } else {
+            await addDoc(collection(db, 'member_discounts'), cleanPayload(payload));
+          }
         }
       }
 
@@ -4811,6 +4831,8 @@ export default function Admin() {
                 {books.length === 0 && <div className="col-span-full py-10 text-center bg-white dark:bg-card-dark rounded-xl border border-dashed border-slate-200 text-slate-400 font-bold text-sm">لا توجد كتب مضافة</div>}
              </div>
            )}
+
+           {activeTab === 'business' && <AdminBusiness />}
         </div>
       </main>
 
@@ -5892,6 +5914,43 @@ export default function Admin() {
                           <textarea placeholder="• صورة بطاقة الرقم القومي&#10;• صورة كارنيه العضوية مجدد..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-medium min-h-[90px]" value={formData.requirements || ''} onChange={(e) => setFormData({...formData, requirements: e.target.value})} />
                         </div>
                         <UploadOrUrlField label="صورة غلاف للرحلة" fieldName="image" currentUrl={formData.image} formData={formData} setFormData={setFormData} uploading={uploading} handleFileUpload={handleFileUpload} />
+                      </>
+                    )}
+
+                    {clubSubTab === 'discounts' && (
+                      <>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">اسم مقدم الخدمة / الجهة</label>
+                          <input type="text" placeholder="مثلاً: مستشفى السلامة بالأسكندرية" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">التصنيف الرئيسي</label>
+                            <input type="text" placeholder="مستشفيات، معامل، أسنان، صيدليات..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold" value={formData.category || ''} onChange={(e) => setFormData({...formData, category: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">المنطقة / الفرع</label>
+                            <input type="text" placeholder="سموحة، الشاطبي، محرم بك..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.location || ''} onChange={(e) => setFormData({...formData, location: e.target.value})} />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">العنوان التفصيلي</label>
+                          <input type="text" placeholder="شارع فوزي معاذ - سموحة" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.address || ''} onChange={(e) => setFormData({...formData, address: e.target.value})} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 mb-1 block">تفاصيل الخصم ونسب الخصم</label>
+                          <textarea placeholder="خصم 20% على الكشف والمعامل..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm font-bold min-h-[90px]" value={formData.discountDetails || ''} onChange={(e) => setFormData({...formData, discountDetails: e.target.value})} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">أرقام التواصل والتليفون</label>
+                            <input type="text" placeholder="03-1234567 / 01200000000" className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.phoneNumbers || ''} onChange={(e) => setFormData({...formData, phoneNumbers: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-500 mb-1 block">رابط خرائط جوجل (Google Maps URL)</label>
+                            <input type="text" placeholder="https://maps.google.com/..." className="w-full p-3 rounded-xl border border-border-light bg-slate-50 dark:bg-surface-dark dark:border-border-dark text-slate-800 dark:text-white text-sm" value={formData.mapsUrl || ''} onChange={(e) => setFormData({...formData, mapsUrl: e.target.value})} />
+                          </div>
+                        </div>
                       </>
                     )}
                   </>

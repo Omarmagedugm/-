@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
-import { X, LayoutDashboard, Flag, MessageSquare, Info, Mail, Home, LogOut, ShieldCheck, FileText } from 'lucide-react';
+import { X, LayoutDashboard, Flag, MessageSquare, Info, Mail, Home, LogOut, ShieldCheck, FileText, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAppStore, UserProfile } from '../store';
 import { getOptimizedImage } from '../lib/cloudinary';
@@ -150,6 +150,14 @@ export default function Sidebar({ isOpen, onClose, profile }: SidebarProps) {
               <Link to="/history" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable uppercase">
                 <span className="material-symbols-outlined !text-[20px]">history_edu</span>
                 <span className="text-sm font-bold">تاريخ النادي</span>
+              </Link>
+
+              <Link to="/business" onClick={onClose} className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-slate-800 dark:text-white transition-colors pressable border border-emerald-500/30">
+                <div className="flex items-center gap-3">
+                  <Building2 size={20} className="text-emerald-600 dark:text-emerald-400" />
+                  <span className="text-sm font-black">اتحاداوي بيزنس</span>
+                </div>
+                <span className="px-2 py-0.5 bg-emerald-600 text-white text-[8px] font-black rounded-full uppercase">دليل الأعمال</span>
               </Link>
 
               <Link to="/store" onClick={onClose} className="flex items-center gap-3 p-3.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors text-slate-700 dark:text-slate-300 pressable uppercase">

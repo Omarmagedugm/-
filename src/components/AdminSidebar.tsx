@@ -26,7 +26,8 @@ import {
   Database,
   Sparkles,
   Shield,
-  ShieldCheck
+  ShieldCheck,
+  Building2
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -96,6 +97,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, onClose }: Admin
     { title: 'المتجر والتجارة', items: [
       { id: 'products', icon: <ShoppingBag size={18} />, label: 'إدارة المتجر والمنتجات', show: isAdmin || hasRole('store_editor') },
       { id: 'orders', icon: <ShoppingCart size={18} />, label: 'طلبات الشراء', show: isAdmin || hasRole('store_editor') },
+      { id: 'business', icon: <Building2 size={18} />, label: 'اتحاداوي بيزنس', show: isAdmin || hasRole(['store_editor', 'layout_editor', 'user_manager']) },
     ]},
     { title: 'النظام والإدارة', items: [
       { id: 'users', icon: <UsersIcon size={18} />, label: 'إدارة الأعضاء', show: isAdmin || hasRole('user_manager') },

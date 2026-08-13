@@ -39,6 +39,8 @@ import {
   Play,
   CheckCircle2,
   Sparkles,
+  Users,
+  Building2,
 } from "lucide-react";
 import { onSnapshot, doc } from "firebase/firestore";
 import Sidebar from "../components/Sidebar";
@@ -46,6 +48,7 @@ import AdvertiseWidget from "../components/AdvertiseWidget";
 import TicketsWidget from "../components/TicketsWidget";
 import HtmlWidget from "../components/HtmlWidget";
 import ClubMembersWidget from "../components/ClubMembersWidget";
+import BusinessWidget from "../components/BusinessWidget";
 import { SafeImage } from "../components/SafeImage";
 import { getOptimizedImage } from "../lib/cloudinary";
 
@@ -1232,6 +1235,15 @@ export default function Home() {
           </motion.section>
         );
 
+      case "business":
+      case "business_directory":
+      case "ittihad_business":
+        return (
+          <motion.section key={section.id} variants={itemVariants}>
+            <BusinessWidget />
+          </motion.section>
+        );
+
       case "tickets":
         return (
           <motion.section key={section.id} variants={itemVariants}>
@@ -1266,6 +1278,9 @@ export default function Home() {
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent pointer-events-none"></div>
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl -translate-y-1/2 translate-x-1/2 rounded-full pointer-events-none"></div>
               
+              {/* Fan / Stadium Background Watermark Icon on the Left */}
+              <Users size={80} className="absolute -left-3 -bottom-4 text-white/10 pointer-events-none group-hover:scale-110 group-hover:text-amber-300/20 transition-all duration-500" />
+
               <div className="relative z-10 flex items-center justify-between gap-4">
                 <div className="text-right flex-1">
                   <h3 className="text-sm sm:text-base font-black text-white italic drop-shadow">
@@ -1276,8 +1291,15 @@ export default function Home() {
                     جرب الآن مجاناً
                   </div>
                 </div>
-                <div className="h-10 w-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-xl group-hover:rotate-12 transition-transform duration-500 shrink-0">
-                  <Sparkles size={20} className="animate-pulse text-amber-300" />
+
+                {/* Fan & Stadium Badge Icon on the Left */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-400/20 to-emerald-500/30 backdrop-blur-md border border-amber-400/40 flex items-center justify-center text-amber-300 shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 relative">
+                    <Users size={22} className="text-amber-300" />
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-900 flex items-center justify-center">
+                      <Sparkles size={9} className="text-white" />
+                    </span>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -1832,9 +1854,15 @@ export default function Home() {
   };
 
   const hasClubMembersSection = homeSections.some(s => s.type === 'club_members' || s.type === 'club_members_ad' || s.type === 'club_members_banner');
-  const baseSections: typeof homeSections = hasClubMembersSection 
-    ? homeSections 
-    : [...homeSections, { id: 'club_members_auto', type: 'club_members', active: true, order: 1.2, title: 'بوابة الأعضاء والأنشطة', pinned: false, spacing: 16 }];
+  const hasBusinessSection = homeSections.some(s => s.type === 'business' || s.type === 'business_directory' || s.type === 'ittihad_business');
+  
+  let baseSections = [...homeSections];
+  if (!hasClubMembersSection) {
+    baseSections.push({ id: 'club_members_auto', type: 'club_members', active: true, order: 1.2, title: 'بوابة الأعضاء والأنشطة', pinned: false, spacing: 16 });
+  }
+  if (!hasBusinessSection) {
+    baseSections.push({ id: 'business_auto', type: 'business', active: true, order: 1.3, title: 'اتحاداوي بيزنس', pinned: false, spacing: 16 });
+  }
 
   const sortedSections = [...baseSections].sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;

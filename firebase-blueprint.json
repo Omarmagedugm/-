@@ -371,6 +371,83 @@
         "order": { "type": "number" },
         "createdAt": { "type": "string" }
       }
+    },
+    "MemberDiscount": {
+      "title": "Member Discount Provider",
+      "description": "Medical and service discounts for club members",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "address": { "type": "string" },
+        "location": { "type": "string" },
+        "discountDetails": { "type": "string" },
+        "phoneNumbers": { "type": "string" },
+        "mapsUrl": { "type": "string" },
+        "websiteUrl": { "type": "string" },
+        "coverImage": { "type": "string" },
+        "active": { "type": "boolean" },
+        "featured": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "category", "address", "discountDetails", "phoneNumbers"]
+    },
+    "Business": {
+      "title": "Business Directory Item",
+      "description": "Ittihadawy fan community business listing",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "ownerName": { "type": "string" },
+        "businessName": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "phone": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "address": { "type": "string" },
+        "mapsUrl": { "type": "string" },
+        "instagramUrl": { "type": "string" },
+        "facebookUrl": { "type": "string" },
+        "websiteUrl": { "type": "string" },
+        "coverImage": { "type": "string" },
+        "gallery": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "suspended", "deleted"] },
+        "featured": { "type": "boolean" },
+        "rejectionReason": { "type": "string" },
+        "adminNotes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "approvedAt": { "type": "string" }
+      },
+      "required": ["ownerId", "businessName", "category", "description", "phone", "address", "coverImage", "status"]
+    },
+    "BusinessUpdate": {
+      "title": "Business Edit Request",
+      "description": "Pending update request for an approved business",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "businessId": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "BusinessReport": {
+      "title": "Business Report",
+      "description": "User report against a business listing",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "businessId": { "type": "string" },
+        "businessName": { "type": "string" },
+        "reason": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "resolved", "dismissed"] },
+        "createdAt": { "type": "string" }
+      }
     }
   },
   "firestore": {
@@ -398,6 +475,10 @@
     "club_announcements": { "schema": "ClubAnnouncement", "description": "Member announcements and notice board" },
     "club_services": { "schema": "ClubService", "description": "Social club services" },
     "club_members_settings": { "schema": "ClubMembersSettings", "description": "Club member general settings" },
-    "club_trips": { "schema": "ClubTrip", "description": "Social club trips and excursions" }
+    "club_trips": { "schema": "ClubTrip", "description": "Social club trips and excursions" },
+    "member_discounts": { "schema": "MemberDiscount", "description": "Medical and service discounts for club members" },
+    "businesses": { "schema": "Business", "description": "Ittihadawy community business directory" },
+    "business_updates": { "schema": "BusinessUpdate", "description": "Pending business edit requests" },
+    "business_reports": { "schema": "BusinessReport", "description": "Reports submitted for business listings" }
   }
 }

@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
+import { defaultMemberDiscounts } from '../data/defaultMemberDiscounts';
 
 export interface HomeSection {
   id: string;
-  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget' | 'city' | 'ads' | 'advertise' | 'image' | 'ai_banner' | 'tickets' | 'club_members' | 'club_members_ad' | 'club_members_banner';
+  type: 'hero' | 'matches' | 'news' | 'media' | 'history' | 'stadiums' | 'store' | 'polls' | 'live' | 'custom' | 'widget' | 'city' | 'ads' | 'advertise' | 'image' | 'ai_banner' | 'tickets' | 'club_members' | 'club_members_ad' | 'club_members_banner' | 'business' | 'business_directory' | 'ittihad_business';
   title?: string;
   active: boolean;
   order: number;
@@ -81,6 +82,65 @@ export interface MatchItem {
   sport: 'football' | 'basketball';
   featured?: boolean;
   stadiumOpacity?: number;
+}
+
+export interface BusinessItem {
+  id: string;
+  ownerId: string;
+  ownerName?: string;
+  businessName: string;
+  category: string;
+  description: string;
+  phone: string;
+  whatsapp?: string;
+  address: string;
+  mapsUrl?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  websiteUrl?: string;
+  coverImage: string;
+  gallery?: string[];
+  status: 'pending' | 'approved' | 'rejected' | 'suspended' | 'deleted';
+  featured?: boolean;
+  rejectionReason?: string;
+  adminNotes?: string;
+  createdAt: string;
+  updatedAt?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  stats?: {
+    views?: number;
+    phoneClicks?: number;
+    whatsappClicks?: number;
+    mapClicks?: number;
+    websiteClicks?: number;
+    socialClicks?: number;
+  };
+}
+
+export interface BusinessUpdate {
+  id: string;
+  businessId: string;
+  ownerId: string;
+  previousData: Partial<BusinessItem>;
+  requestedData: Partial<BusinessItem>;
+  status: 'pending' | 'approved' | 'rejected';
+  adminNote?: string;
+  createdAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+}
+
+export interface BusinessReport {
+  id: string;
+  businessId: string;
+  businessName: string;
+  userId?: string;
+  userName?: string;
+  reason: string;
+  details?: string;
+  status: 'pending' | 'resolved' | 'dismissed';
+  createdAt: string;
 }
 
 export interface CityInfo {
@@ -318,6 +378,24 @@ export interface ClubMembersSettings {
   updatedAt?: string;
 }
 
+export interface MemberDiscount {
+  id: string;
+  name: string;
+  category: string;
+  address: string;
+  location?: string;
+  discountDetails: string;
+  phoneNumbers: string;
+  mapsUrl?: string | null;
+  websiteUrl?: string | null;
+  socialLinks?: Record<string, string> | null;
+  coverImage?: string | null;
+  active: boolean;
+  featured: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface StoreOrder {
   id: string;
   userId: string;
@@ -400,6 +478,10 @@ interface AppState {
   clubServices: ClubService[];
   clubTrips: ClubTrip[];
   clubMembersSettings: ClubMembersSettings | null;
+  memberDiscounts: MemberDiscount[];
+  businesses: BusinessItem[];
+  businessUpdates: BusinessUpdate[];
+  businessReports: BusinessReport[];
   homeSections: HomeSection[];
   songs: Song[];
   albums: Album[];
@@ -454,6 +536,10 @@ interface AppState {
   setClubServices: (services: ClubService[]) => void;
   setClubTrips: (trips: ClubTrip[]) => void;
   setClubMembersSettings: (settings: ClubMembersSettings | null) => void;
+  setMemberDiscounts: (memberDiscounts: MemberDiscount[]) => void;
+  setBusinesses: (businesses: BusinessItem[]) => void;
+  setBusinessUpdates: (updates: BusinessUpdate[]) => void;
+  setBusinessReports: (reports: BusinessReport[]) => void;
   setHomeSections: (sections: HomeSection[]) => void;
   setSongs: (songs: Song[]) => void;
   setAlbums: (albums: Album[]) => void;
@@ -652,6 +738,10 @@ export const useAppStore = create<AppState>()(
       clubServices: [],
       clubTrips: [],
       clubMembersSettings: null,
+      memberDiscounts: defaultMemberDiscounts,
+      businesses: [],
+      businessUpdates: [],
+      businessReports: [],
       homeSections: [
         { id: 'hero', type: 'hero', active: true, order: 0 },
         { id: 'matches', type: 'matches', active: true, order: 1 },
@@ -734,6 +824,10 @@ export const useAppStore = create<AppState>()(
       setClubServices: (clubServices) => set({ clubServices }),
       setClubTrips: (clubTrips) => set({ clubTrips }),
       setClubMembersSettings: (clubMembersSettings) => set({ clubMembersSettings }),
+      setMemberDiscounts: (memberDiscounts) => set({ memberDiscounts }),
+      setBusinesses: (businesses) => set({ businesses }),
+      setBusinessUpdates: (businessUpdates) => set({ businessUpdates }),
+      setBusinessReports: (businessReports) => set({ businessReports }),
       setHomeSections: (homeSections) => set({ homeSections }),
       setSongs: (songs) => set({ songs }),
       setAlbums: (albums) => set({ albums }),

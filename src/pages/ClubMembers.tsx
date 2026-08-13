@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Users, Pin, Megaphone, Clock, MapPin, Phone, FileText, ChevronLeft, 
   Search, ShieldCheck, Dumbbell, Building2, HelpCircle, Calendar, 
   CheckCircle2, AlertCircle, ArrowLeft, X, ExternalLink, Sparkles, Filter, Info,
   Compass, Ticket, DollarSign, Palmtree, User, Waves, Target, Trophy, Activity,
-  CalendarDays, Clock3, Medal
+  CalendarDays, Clock3, Medal, Percent
 } from 'lucide-react';
 import { useAppStore, ClubCommittee, ClubAnnouncement, ClubService, ClubTrip } from '../store';
 import { 
@@ -17,6 +18,7 @@ import {
 } from '../data/defaultClubData';
 
 export default function ClubMembers() {
+  const navigate = useNavigate();
   const { clubCommittees, clubAnnouncements, clubServices, clubTrips, clubMembersSettings } = useAppStore();
 
   const [activeTab, setActiveTab] = useState<'committees' | 'services' | 'noticeboard' | 'trips'>('committees');
@@ -176,6 +178,31 @@ export default function ClubMembers() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Discounts Feature Card Banner */}
+      <div className="max-w-md mx-auto px-4 mb-4">
+        <motion.div
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate('/club-members/discounts')}
+          className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 rounded-2xl p-3.5 text-white shadow-md border border-emerald-500/30 cursor-pointer relative overflow-hidden flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3 z-10">
+            <div className="w-11 h-11 rounded-xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20 text-amber-300 shrink-0 group-hover:scale-105 transition-transform">
+              <Percent size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-sm font-black text-white leading-tight">الخصومات</h2>
+                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-400 text-slate-900">جديد</span>
+              </div>
+              <p className="text-[11px] font-semibold text-emerald-100/90 mt-0.5">استفد من الخصومات والمزايا المتاحة للأعضاء</p>
+            </div>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white shrink-0 group-hover:bg-white/30 transition-all z-10">
+            <ChevronLeft size={18} />
+          </div>
+        </motion.div>
       </div>
 
       {/* Main Navigation Tabs */}

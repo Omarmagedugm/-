@@ -64,6 +64,10 @@ const Store = safeLazy(() => import('./pages/Store'));
 const Bookmarks = safeLazy(() => import('./pages/Bookmarks'));
 const Library = safeLazy(() => import('./pages/Library'));
 const ClubMembers = safeLazy(() => import('./pages/ClubMembers'));
+const DiscountsPage = safeLazy(() => import('./pages/DiscountsPage'));
+const DiscountDetailPage = safeLazy(() => import('./pages/DiscountDetailPage'));
+const BusinessDirectory = safeLazy(() => import('./pages/BusinessDirectory'));
+const BusinessDetail = safeLazy(() => import('./pages/BusinessDetail'));
 const CustomPage = safeLazy(() => import('./pages/CustomPage'));
 const PrivacyPolicy = safeLazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = safeLazy(() => import('./pages/TermsOfService'));
@@ -395,6 +399,12 @@ function AppContent() {
               <Route path="/bookmarks" element={<Bookmarks />} />
               <Route path="/library" element={<Library />} />
               <Route path="/club-members" element={<ClubMembers />} />
+              <Route path="/club-members/discounts" element={<DiscountsPage />} />
+              <Route path="/club-members/discounts/:id" element={<DiscountDetailPage />} />
+              <Route path="/discounts" element={<DiscountsPage />} />
+              <Route path="/discounts/:id" element={<DiscountDetailPage />} />
+              <Route path="/business" element={<BusinessDirectory />} />
+              <Route path="/business/:id" element={<BusinessDetail />} />
               <Route path="/page/:slug" element={<CustomPage />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
