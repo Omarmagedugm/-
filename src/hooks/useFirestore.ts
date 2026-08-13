@@ -18,9 +18,38 @@ export function useFirestoreSync() {
   useEffect(() => {
     let unsubs: (() => void)[] = [];
 
+    const subscribeSnapshot = (
+      docOrQuery: any, 
+      onNext: (snap: any) => void, 
+      path: string, 
+      op: OperationType = OperationType.LIST
+    ) => {
+      try {
+        const unsub = onSnapshot(
+          docOrQuery, 
+          (snap) => {
+            try {
+              onNext(snap);
+            } catch (e) {
+              console.warn(`Snapshot callback error for ${path}:`, e);
+            }
+          }, 
+          (err) => {
+            handleFirestoreError(err, op, path);
+            setDataLoaded(true);
+          }
+        );
+        return unsub;
+      } catch (err) {
+        handleFirestoreError(err, op, path);
+        setDataLoaded(true);
+        return () => {};
+      }
+    };
+
     // Real-time Collections Sync
     const setupRealtimeSync = () => {
-      const unsubProfile = (uid: string) => onSnapshot(doc(db, 'users', uid), (docSnap) => {
+      const unsubProfile = (uid: string) => subscribeSnapshot(doc(db, 'users', uid), (docSnap) => {
         if (docSnap.exists()) {
           const userData = docSnap.data() as any;
           updateProfile({ ...userData, uid });
@@ -30,34 +59,32 @@ export function useFirestoreSync() {
             updateDoc(doc(db, 'users', uid), { role: 'admin' }).catch(() => {});
           }
         }
-      }, (error) => {
-        if (error.code !== 'permission-denied') handleFirestoreError(error, OperationType.GET, `users/${uid}`);
-      });
+      }, `users/${uid}`, OperationType.GET);
 
-      const unsubLiveFootball = onSnapshot(doc(db, 'settings', 'liveStream'), (snap) => {
+      const unsubLiveFootball = subscribeSnapshot(doc(db, 'settings', 'liveStream'), (snap) => {
         if (snap.exists()) updateLiveStreams({ football: snap.data() as any });
-      }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/liveStream'));
+      }, 'settings/liveStream', OperationType.GET);
 
-      const unsubLiveBasketball = onSnapshot(doc(db, 'settings', 'liveStream_basketball'), (snap) => {
+      const unsubLiveBasketball = subscribeSnapshot(doc(db, 'settings', 'liveStream_basketball'), (snap) => {
         if (snap.exists()) updateLiveStreams({ basketball: snap.data() as any });
-      }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/liveStream_basketball'));
+      }, 'settings/liveStream_basketball', OperationType.GET);
 
-      const unsubMatches = onSnapshot(query(collection(db, 'matches'), orderBy('date', 'desc')), (snap) => {
+      const unsubMatches = subscribeSnapshot(query(collection(db, 'matches'), orderBy('date', 'desc')), (snap) => {
         const data = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
         if (data.length > 0 || !isFetchedRef.current) setMatches(data as any);
-      }, (err) => handleFirestoreError(err, OperationType.LIST, 'matches'));
+      }, 'matches');
 
-      const unsubNews = onSnapshot(query(collection(db, 'news'), orderBy('date', 'desc'), limit(50)), (snap) => {
+      const unsubNews = subscribeSnapshot(query(collection(db, 'news'), orderBy('date', 'desc'), limit(50)), (snap) => {
         const data = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
         if (data.length > 0 || !isFetchedRef.current) setNews(data as any);
-      }, (err) => handleFirestoreError(err, OperationType.LIST, 'news'));
+      }, 'news');
 
-      const unsubMedia = onSnapshot(query(collection(db, 'media'), orderBy('date', 'desc'), limit(50)), (snap) => {
+      const unsubMedia = subscribeSnapshot(query(collection(db, 'media'), orderBy('date', 'desc'), limit(50)), (snap) => {
         const data = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
         if (data.length > 0 || !isFetchedRef.current) setMedia(data as any);
-      }, (err) => handleFirestoreError(err, OperationType.LIST, 'media'));
+      }, 'media');
 
-      const unsubLayout = onSnapshot(doc(db, 'settings', 'homeLayout'), (snap) => {
+      const unsubLayout = subscribeSnapshot(doc(db, 'settings', 'homeLayout'), (snap) => {
         if (snap.exists()) {
           const data = snap.data();
           if (data && data.sections) {
@@ -77,41 +104,41 @@ export function useFirestoreSync() {
             setHomeSections(mergedSections);
           }
         }
-      }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/homeLayout'));
+      }, 'settings/homeLayout', OperationType.GET);
 
-      // Real-time listener additions for instant updates when editing in Admin
-      unsubs.push(onSnapshot(collection(db, 'clubs'), s => setClubs(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Clubs sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'products'), s => setProducts(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Products sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'ads'), s => setAds(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Ads sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'custom_pages'), s => setCustomPages(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Custom pages sync failed', err)));
-      unsubs.push(onSnapshot(doc(db, 'settings', 'global'), s => { if (s.exists()) setSettings({ id: s.id, ...(s.data() as any) }); }, err => console.warn('Settings global sync failed', err)));
-      unsubs.push(onSnapshot(doc(db, 'settings', 'ai_config'), s => { if (s.exists()) setAiConfig(s.data()); }, err => console.warn('AI config sync failed', err)));
-      unsubs.push(onSnapshot(doc(db, 'city_info', 'alexandria'), s => { if (s.exists()) setCityInfo({ id: s.id, ...(s.data() as any) }); }, err => console.warn('City info sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'songs'), s => setSongs(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Songs sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'books'), s => setBooks(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Books sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'news_categories'), s => setNewsCategories(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('News categories sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'news_tags'), s => setNewsTags(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('News tags sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'club_titles'), s => setClubTitles(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Club titles sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'club_stats'), s => setClubStats(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Club stats sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'club_stadiums'), s => setStadiums(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Stadiums sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'club_timeline'), s => setHistoryEvents(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('History events sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'club_committees'), s => setClubCommittees(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Club committees sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'club_announcements'), s => setClubAnnouncements(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Club announcements sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'club_services'), s => setClubServices(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Club services sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'club_trips'), s => setClubTrips(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Club trips sync failed', err)));
-      unsubs.push(onSnapshot(doc(db, 'club_members_settings', 'main'), s => { if (s.exists()) setClubMembersSettings({ id: s.id, ...(s.data() as any) }); }, err => console.warn('Club members settings sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'member_discounts'), s => { if (!s.empty) setMemberDiscounts(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any); }, err => console.warn('Member discounts sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'businesses'), s => setBusinesses(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Businesses sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'business_updates'), s => setBusinessUpdates(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Business updates sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'business_reports'), s => setBusinessReports(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), err => console.warn('Business reports sync failed', err)));
+      // Real-time listener additions with safe error catching
+      unsubs.push(subscribeSnapshot(collection(db, 'clubs'), s => setClubs(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'clubs'));
+      unsubs.push(subscribeSnapshot(collection(db, 'products'), s => setProducts(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'products'));
+      unsubs.push(subscribeSnapshot(collection(db, 'ads'), s => setAds(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'ads'));
+      unsubs.push(subscribeSnapshot(collection(db, 'custom_pages'), s => setCustomPages(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'custom_pages'));
+      unsubs.push(subscribeSnapshot(doc(db, 'settings', 'global'), s => { if (s.exists()) setSettings({ id: s.id, ...(s.data() as any) }); }, 'settings/global', OperationType.GET));
+      unsubs.push(subscribeSnapshot(doc(db, 'settings', 'ai_config'), s => { if (s.exists()) setAiConfig(s.data()); }, 'settings/ai_config', OperationType.GET));
+      unsubs.push(subscribeSnapshot(doc(db, 'city_info', 'alexandria'), s => { if (s.exists()) setCityInfo({ id: s.id, ...(s.data() as any) }); }, 'city_info/alexandria', OperationType.GET));
+      unsubs.push(subscribeSnapshot(collection(db, 'songs'), s => setSongs(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'songs'));
+      unsubs.push(subscribeSnapshot(collection(db, 'books'), s => setBooks(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'books'));
+      unsubs.push(subscribeSnapshot(collection(db, 'news_categories'), s => setNewsCategories(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'news_categories'));
+      unsubs.push(subscribeSnapshot(collection(db, 'news_tags'), s => setNewsTags(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'news_tags'));
+      unsubs.push(subscribeSnapshot(collection(db, 'club_titles'), s => setClubTitles(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'club_titles'));
+      unsubs.push(subscribeSnapshot(collection(db, 'club_stats'), s => setClubStats(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'club_stats'));
+      unsubs.push(subscribeSnapshot(collection(db, 'club_stadiums'), s => setStadiums(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'club_stadiums'));
+      unsubs.push(subscribeSnapshot(collection(db, 'club_timeline'), s => setHistoryEvents(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'club_timeline'));
+      unsubs.push(subscribeSnapshot(collection(db, 'club_committees'), s => setClubCommittees(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'club_committees'));
+      unsubs.push(subscribeSnapshot(collection(db, 'club_announcements'), s => setClubAnnouncements(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'club_announcements'));
+      unsubs.push(subscribeSnapshot(collection(db, 'club_services'), s => setClubServices(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'club_services'));
+      unsubs.push(subscribeSnapshot(collection(db, 'club_trips'), s => setClubTrips(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'club_trips'));
+      unsubs.push(subscribeSnapshot(doc(db, 'club_members_settings', 'main'), s => { if (s.exists()) setClubMembersSettings({ id: s.id, ...(s.data() as any) }); }, 'club_members_settings/main', OperationType.GET));
+      unsubs.push(subscribeSnapshot(collection(db, 'member_discounts'), s => { if (!s.empty) setMemberDiscounts(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any); }, 'member_discounts'));
+      unsubs.push(subscribeSnapshot(collection(db, 'businesses'), s => setBusinesses(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'businesses'));
+      unsubs.push(subscribeSnapshot(collection(db, 'business_updates'), s => setBusinessUpdates(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'business_updates'));
+      unsubs.push(subscribeSnapshot(collection(db, 'business_reports'), s => setBusinessReports(s.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as any), 'business_reports'));
 
       // Add common unsubs
       unsubs.push(unsubLiveFootball, unsubLiveBasketball, unsubMatches, unsubNews, unsubMedia, unsubLayout);
-      unsubs.push(onSnapshot(collection(db, 'media_playlists'), s => setMediaPlaylists(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), err => console.warn('Media playlists sync failed', err)));
-      unsubs.push(onSnapshot(query(collection(db, 'fan_posts'), orderBy('createdAt', 'desc'), limit(50)), s => setFanPosts(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), err => console.warn('Fan posts sync failed', err)));
-      unsubs.push(onSnapshot(query(collection(db, 'polls'), orderBy('createdAt', 'desc'), limit(20)), s => setPolls(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), err => console.warn('Polls sync failed', err)));
-      unsubs.push(onSnapshot(query(collection(db, 'predictions'), orderBy('createdAt', 'desc'), limit(100)), s => setPredictions(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), err => console.warn('Predictions sync failed', err)));
-      unsubs.push(onSnapshot(collection(db, 'users'), s => setUsers(s.docs.map(d => ({id: d.id, uid: d.id, ...(d.data() as any)})) as any), err => console.warn('Users sync failed', err)));
+      unsubs.push(subscribeSnapshot(collection(db, 'media_playlists'), s => setMediaPlaylists(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), 'media_playlists'));
+      unsubs.push(subscribeSnapshot(query(collection(db, 'fan_posts'), orderBy('createdAt', 'desc'), limit(50)), s => setFanPosts(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), 'fan_posts'));
+      unsubs.push(subscribeSnapshot(query(collection(db, 'polls'), orderBy('createdAt', 'desc'), limit(20)), s => setPolls(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), 'polls'));
+      unsubs.push(subscribeSnapshot(query(collection(db, 'predictions'), orderBy('createdAt', 'desc'), limit(100)), s => setPredictions(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), 'predictions'));
+      unsubs.push(subscribeSnapshot(collection(db, 'users'), s => setUsers(s.docs.map(d => ({id: d.id, uid: d.id, ...(d.data() as any)})) as any), 'users'));
 
       const currentUser = auth.currentUser;
       if (currentUser) {
@@ -143,7 +170,7 @@ export function useFirestoreSync() {
             ? query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
             : query(collection(db, 'orders'), where('userId', '==', currentUser.uid), orderBy('createdAt', 'desc'));
             
-          unsubs.push(onSnapshot(ordersQuery, (s) => setOrders(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), err => console.warn('Orders sync failed', err)));
+          unsubs.push(subscribeSnapshot(ordersQuery, (s) => setOrders(s.docs.map(d => ({id: d.id, ...(d.data() as any)})) as any), 'orders'));
         }, 1500);
       }
     };

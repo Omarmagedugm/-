@@ -16,7 +16,7 @@ import {
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, onSnapshot, query, orderBy, doc, getDoc, setDoc, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db, auth } from '../lib/firebase';
+import { db, auth, handleFirestoreError } from '../lib/firebase';
 import { useAppStore } from '../store';
 
 import Sidebar from '../components/Sidebar';
@@ -90,6 +90,9 @@ const JerseyTryOn: React.FC = () => {
       if (jerseysData.length > 0 && !selectedJersey) {
         setSelectedJersey(jerseysData[0]);
       }
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'jerseys');
       setLoading(false);
     });
 

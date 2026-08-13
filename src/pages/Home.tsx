@@ -81,7 +81,7 @@ export default function Home() {
   useEffect(() => {
     const unsubAiConfig = onSnapshot(doc(db, 'settings', 'ai_config'), (snap) => {
       if (snap.exists()) setAiConfig(snap.data());
-    });
+    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/ai_config'));
     return () => unsubAiConfig();
   }, []);
 

@@ -758,7 +758,7 @@ export default function Admin() {
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'settings', 'featured_match'), (snap) => {
       if (snap.exists()) setFeaturedMatchId(snap.data().matchId);
-    });
+    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/featured_match'));
     return () => unsub();
   }, []);
 

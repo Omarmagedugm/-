@@ -483,67 +483,81 @@ export default function BusinessDetail() {
       {/* Lightbox Modal for Gallery */}
       {lightboxIndex !== null && allImages.length > 0 && (
         <div 
-          className="fixed inset-0 z-[200] bg-slate-950/95 backdrop-blur-2xl flex flex-col justify-between p-4 sm:p-6 select-none animate-in fade-in duration-200"
+          className="fixed inset-0 z-[200] bg-slate-950/95 backdrop-blur-2xl flex flex-col justify-between p-3 sm:p-6 select-none animate-in fade-in duration-200 overflow-y-auto"
           onClick={() => setLightboxIndex(null)}
         >
-          {/* Top Bar */}
-          <div className="flex items-center justify-between z-10 w-full max-w-5xl mx-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2">
+          {/* Center Image Stage Container */}
+          <div 
+            className="relative flex-1 flex flex-col items-center justify-center my-auto w-full max-w-4xl mx-auto min-h-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Control Bar directly ABOVE the image frame */}
+            <div className="w-full flex items-center justify-between mb-3 px-2 max-w-2xl">
+              <div className="bg-white/10 backdrop-blur-md text-white text-xs sm:text-sm font-black px-3.5 py-1.5 rounded-full border border-white/10">
+                صورة {lightboxIndex + 1} من {allImages.length}
+              </div>
+
+              {/* Exit Button directly ABOVE the image */}
               <button 
                 onClick={() => setLightboxIndex(null)}
-                className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm rounded-full shadow-xl flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm rounded-full shadow-2xl flex items-center gap-2 transition-all active:scale-95 cursor-pointer border border-red-400/30 ring-2 ring-red-500/20"
+                title="إغلاق المعرض (ESC)"
               >
-                <X className="w-5 h-5" />
-                <span>إغلاق المعرض (ESC)</span>
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>إغلاق (X)</span>
               </button>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-md text-white text-xs sm:text-sm font-black px-4 py-2 rounded-full border border-white/10">
-              صورة {lightboxIndex + 1} من {allImages.length}
+            {/* Image frame with Next / Prev buttons */}
+            <div className="relative flex items-center justify-center w-full max-w-2xl my-1">
+              {allImages.length > 1 && (
+                <>
+                  <button 
+                    onClick={() => setLightboxIndex((prev) => (prev !== null ? (prev - 1 + allImages.length) % allImages.length : 0))}
+                    className="absolute right-2 sm:-right-5 top-1/2 -translate-y-1/2 p-2.5 sm:p-3.5 bg-black/70 hover:bg-red-600 text-white rounded-full backdrop-blur-md transition-all z-20 active:scale-90 border border-white/20 shadow-2xl cursor-pointer"
+                    title="الصورة السابقة"
+                  >
+                    <ChevronRight className="w-5 h-5 sm:w-7 sm:h-7" />
+                  </button>
+
+                  <button 
+                    onClick={() => setLightboxIndex((prev) => (prev !== null ? (prev + 1) % allImages.length : 0))}
+                    className="absolute left-2 sm:-left-5 top-1/2 -translate-y-1/2 p-2.5 sm:p-3.5 bg-black/70 hover:bg-red-600 text-white rounded-full backdrop-blur-md transition-all z-20 active:scale-90 border border-white/20 shadow-2xl cursor-pointer"
+                    title="الصورة التالية"
+                  >
+                    <ChevronLeft className="w-5 h-5 sm:w-7 sm:h-7" />
+                  </button>
+                </>
+              )}
+
+              <img 
+                src={allImages[lightboxIndex]} 
+                alt={`Gallery view ${lightboxIndex + 1}`} 
+                className="max-w-full max-h-[58vh] sm:max-h-[64vh] rounded-2xl sm:rounded-3xl object-contain shadow-2xl border border-white/10 transition-all duration-300"
+              />
+            </div>
+
+            {/* Exit Button directly BELOW the image frame */}
+            <div className="mt-3 flex items-center justify-center">
+              <button 
+                onClick={() => setLightboxIndex(null)}
+                className="px-5 py-2 bg-red-600/90 hover:bg-red-600 text-white font-black text-xs sm:text-sm rounded-full shadow-2xl flex items-center gap-2 transition-all active:scale-95 cursor-pointer border border-red-400/40"
+              >
+                <X className="w-4 h-4" />
+                <span>إغلاق المعرض</span>
+              </button>
             </div>
           </div>
 
-          {/* Center Image Stage with Next/Prev Arrows */}
-          <div 
-            className="relative flex-1 flex items-center justify-center my-4 w-full max-w-5xl mx-auto min-h-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {allImages.length > 1 && (
-              <>
-                <button 
-                  onClick={() => setLightboxIndex((prev) => (prev !== null ? (prev - 1 + allImages.length) % allImages.length : 0))}
-                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 p-3 sm:p-4 bg-white/15 hover:bg-white/30 text-white rounded-full backdrop-blur-md transition-all z-20 active:scale-90 border border-white/20 shadow-2xl cursor-pointer"
-                  title="الصورة السابقة"
-                >
-                  <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8" />
-                </button>
-
-                <button 
-                  onClick={() => setLightboxIndex((prev) => (prev !== null ? (prev + 1) % allImages.length : 0))}
-                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 p-3 sm:p-4 bg-white/15 hover:bg-white/30 text-white rounded-full backdrop-blur-md transition-all z-20 active:scale-90 border border-white/20 shadow-2xl cursor-pointer"
-                  title="الصورة التالية"
-                >
-                  <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8" />
-                </button>
-              </>
-            )}
-
-            <img 
-              src={allImages[lightboxIndex]} 
-              alt={`Gallery view ${lightboxIndex + 1}`} 
-              className="max-w-full max-h-[70vh] rounded-3xl object-contain shadow-2xl border border-white/10 transition-all duration-300"
-            />
-          </div>
-
           {/* Bottom Bar Thumbnails & Dismiss Hint */}
-          <div className="w-full max-w-5xl mx-auto space-y-2 z-10" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-4xl mx-auto space-y-2 z-10 mt-2" onClick={(e) => e.stopPropagation()}>
             {allImages.length > 1 && (
               <div className="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar py-1">
                 {allImages.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setLightboxIndex(idx)}
-                    className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 transition-all border-2 cursor-pointer ${
+                    className={`relative w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 transition-all border-2 cursor-pointer ${
                       lightboxIndex === idx ? 'border-primary scale-105 shadow-lg ring-2 ring-primary/50' : 'border-transparent opacity-50 hover:opacity-100'
                     }`}
                   >
@@ -554,7 +568,7 @@ export default function BusinessDetail() {
             )}
 
             <p className="text-center text-[11px] font-bold text-slate-400">
-              انقر في أي مكان خارج الصورة أو اضغط زر ESC أو انقر على زر إغلاق المعرض في الأعلى للخروج
+              يمكنك أيضاً الضغط على زر ESC أو النقر في أي مكان خارج الصورة للخروج
             </p>
           </div>
         </div>
